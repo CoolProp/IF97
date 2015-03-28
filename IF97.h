@@ -290,40 +290,61 @@ public:
 };
 
 /********************************************************************************/
-/**************************       Region #5       *******************************/
+/**************************       Region #3       *******************************/
 /********************************************************************************/
-static RegionResidualElement Region5residdata[] = {
-    {1, 1,  0.15736404855259e-2},
-    {1, 2,  0.90153761673944e-3},
-    {1, 3, -0.50270077677648e-2},
-    {2, 3,  0.22440037409485e-5},
-    {2, 9, -0.41163275453471e-5},
-    {3, 7,  0.37919454822955e-7}
+static RegionResidualElement Region3residdata[] = {
+{0, 0,    0.10658070028513e1},
+{0, 0,   -0.15732845290239e-2},
+{0, 1,    0.20944396974307e2 },
+{0, 2,   -0.76867707878716e1},
+{0, 7,    0.26185947787954e1},
+{0, 10,  -0.28080781148620e1},
+{0, 12,   0.12053369696517e1},
+{0, 23,  -0.84566812812502e-2 },
+{1, 2,   -0.12654315477714e1},
+{1, 6,   -0.11524407806681e1},
+{1, 15,   0.88521043984318},
+{1, 17,  -0.64207765181607},
+{2, 0,    0.38493460186671}, 
+{2, 2,   -0.85214708824206},
+{2, 6,    0.48972281541877e1},
+{2, 7,   -0.30502617256965e1},
+{2, 22,   0.39420536879154e-1},
+{2, 26,   0.12558408424308},
+{3, 0,   -0.27999329698710},
+{3, 2,    0.13899799569460e1},
+{3, 4,   -0.20189915023570e1},
+{3, 16,  -0.82147637173963e-1},
+{3, 26,  -0.47596035734923},
+{4, 0,    0.43984074473500e-2},
+{4, 2,   -0.44476435428739},
+{4, 4,    0.90572070719733},
+{4, 26,   0.70522450087967},
+{5, 1,    0.10770512626332},
+{5, 3,   -0.32913623258954},
+{5, 26,  -0.50871062041158},
+{6, 0,   -0.22175400873096e-1},
+{6, 2,    0.94260751665092e-1},
+{6, 26,   0.16436278447961},
+{7, 2,   -0.13503372241348e-1},
+{8, 26,  -0.14834345352472e-1},
+{9, 2,    0.57922953628084e-3},
+{9, 26,   0.32308904703711e-2},
+{10, 0,   0.80964802996215e-4},
+{10, 1,  -0.16557679795037e-3},
+{11, 26, -0.44923899061815e-4},
 };
-static RegionIdealElement Region5idealdata[] = {
-    { 0, -0.13179983674201e2},
-    { 1,  0.68540841634434e1},
-    {-3, -0.24805148933466e-1},
-    {-2,  0.36901534980333},
-    {-1, -0.31161318213925e1},
-    { 2, -0.32961626538917}
-};
-static std::vector<RegionResidualElement> reg5rdata(Region5residdata, Region5residdata + sizeof(Region5residdata)/sizeof(RegionResidualElement));
-static std::vector<RegionIdealElement> reg50data(Region5idealdata, Region5idealdata + sizeof(Region5idealdata)/sizeof(RegionIdealElement));
 
-class Region5 : public BaseRegion
+static std::vector<RegionResidualElement> reg3rdata(Region3residdata, Region3residdata + sizeof(Region3residdata)/sizeof(RegionResidualElement));
+
+class Region3
 {
+protected:
+    double T_star, p_star;
 public:
-    Region5() : BaseRegion(reg5rdata, reg50data)  {
-        T_star = 1000; p_star = 1e6; 
-    };
-    double TAUrterm(double T){
-        return T_star/T;
+    Region3() : T_star(1000), p_star(1e6)  {};
+    double cpmass(){
     }
-    double PIrterm(double p){
-        return p/p_star;
-    }
-    double TAU0term(double T){return T_star/T;}
 };
 
 /********************************************************************************/
@@ -375,5 +396,45 @@ public:
         return T_star*0.5*(n[10] + D - sqrt(pow(n[10]+D, 2) - 4*(n[9] + n[10]*D)));
     };
 };
+
+
+/********************************************************************************/
+/**************************       Region #5       *******************************/
+/********************************************************************************/
+static RegionResidualElement Region5residdata[] = {
+    {1, 1,  0.15736404855259e-2},
+    {1, 2,  0.90153761673944e-3},
+    {1, 3, -0.50270077677648e-2},
+    {2, 3,  0.22440037409485e-5},
+    {2, 9, -0.41163275453471e-5},
+    {3, 7,  0.37919454822955e-7}
+};
+static RegionIdealElement Region5idealdata[] = {
+    { 0, -0.13179983674201e2},
+    { 1,  0.68540841634434e1},
+    {-3, -0.24805148933466e-1},
+    {-2,  0.36901534980333},
+    {-1, -0.31161318213925e1},
+    { 2, -0.32961626538917}
+};
+static std::vector<RegionResidualElement> reg5rdata(Region5residdata, Region5residdata + sizeof(Region5residdata)/sizeof(RegionResidualElement));
+static std::vector<RegionIdealElement> reg50data(Region5idealdata, Region5idealdata + sizeof(Region5idealdata)/sizeof(RegionIdealElement));
+
+class Region5 : public BaseRegion
+{
+public:
+    Region5() : BaseRegion(reg5rdata, reg50data)  {
+        T_star = 1000; p_star = 1e6; 
+    };
+    double TAUrterm(double T){
+        return T_star/T;
+    }
+    double PIrterm(double p){
+        return p/p_star;
+    }
+    double TAU0term(double T){return T_star/T;}
+};
+
+
 
 #endif
