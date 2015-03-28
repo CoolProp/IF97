@@ -1,6 +1,6 @@
-*************
+=============
 CoolProp IF97
-*************
+=============
 
 (c) Ian Bell and the CoolProp team
 
