@@ -289,8 +289,6 @@ public:
     double TAU0term(double T){return T_star/T;}
 };
 
-
-
 /********************************************************************************/
 /**************************       Region #5       *******************************/
 /********************************************************************************/
@@ -326,6 +324,56 @@ public:
         return p/p_star;
     }
     double TAU0term(double T){return T_star/T;}
+};
+
+/********************************************************************************/
+/**************************       Region #4       *******************************/
+/********************************************************************************/
+struct SaturationElement{
+    int i;
+    double n;
+};
+static SaturationElement sat[] = {
+    {1,  0.11670521452767e4},
+    {2, -0.72421316703206e6},
+    {3, -0.17073846940092e2},
+    {4,  0.12020824702470e5},
+    {5, -0.32325550322333e7},
+    {6,  0.14915108613530e2},
+    {7, -0.48232657361591e4},
+    {8,  0.40511340542057e6},
+    {9, -0.23855557567849},
+    {10, 0.65017534844798e3},
+};
+static std::vector<SaturationElement> reg4data(sat, sat + sizeof(sat)/sizeof(SaturationElement));
+/// This "region" is the saturation curve
+class Region4
+{
+public:
+    std::vector<double> n;
+    double p_star, T_star;
+
+    Region4() : p_star(1e6), T_star(1.0){
+        n.resize(1); n[0] = 0;
+        for (std::size_t i = 0; i < reg4data.size(); ++i){
+            n.push_back(reg4data[i].n);
+        }
+    };
+    double p_T(double T){
+        double theta = T/T_star+n[9]/(T/T_star-n[10]);
+        double A = theta*theta + n[1] * theta + n[2];
+        double B = n[3]*theta*theta + n[4]*theta + n[5];
+        double C = n[6]*theta*theta + n[7]*theta + n[8];
+        return p_star*pow(2*C/(-B+sqrt(B*B-4*A*C)), 4);
+    };
+    double T_p(double p){
+        double beta = pow(p/p_star, 0.25);
+        double E = beta*beta + n[3]*beta + n[6];
+        double F = n[1]*beta*beta + n[4]*beta + n[7];
+        double G = n[2]*beta*beta + n[5]*beta + n[8];
+        double D = 2*G/(-F-sqrt(F*F-4*E*G));
+        return T_star*0.5*(n[10] + D - sqrt(pow(n[10]+D, 2) - 4*(n[9] + n[10]*D)));
+    };
 };
 
 #endif

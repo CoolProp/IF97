@@ -26,5 +26,13 @@ int main(){
     double cp5 = R5.cpmass(1500, 0.5e6);
     double w5 = R5.speed_sound(1500, 0.5e6);
 
+    Region4 R4;
+    double p300 = R4.p_T(300);
+    double p500 = R4.p_T(500);
+    double p600 = R4.p_T(600);
+    double T0p1 = R4.T_p(0.1e6);
+    double T1 = R4.T_p(1e6);
+    double T10 = R4.T_p(10e6);
+
     return 0;
 }
