@@ -1,5 +1,5 @@
-#ifndef IF97_H
-#define IF97_H
+#ifndef IF97HEADER_H
+#define IF97HEADER_H
 
 #include <vector>
 #include <cmath>
@@ -16,6 +16,7 @@ struct RegionResidualElement
     double n; ///< The leading numerical constant
 };
 
+enum I97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W};
 class BaseRegion
 {
 public:
@@ -62,6 +63,17 @@ public:
     virtual double PIrterm(double) = 0;
     virtual double TAUrterm(double) = 0;
     virtual double TAU0term(double) = 0;
+    double output(I97parameters key, double T, double p){
+        switch(key){
+        case IF97_DMASS: return rhomass(T, p);
+        case IF97_HMASS: return hmass(T, p);
+        case IF97_SMASS: return smass(T, p);
+        case IF97_UMASS: return umass(T, p);
+        case IF97_CPMASS: return cpmass(T, p);
+        case IF97_CVMASS: return cvmass(T, p);
+        case IF97_W: return speed_sound(T, p);
+        }
+    }
 
 protected:
     std::vector<int> Ir, Jr;
@@ -289,6 +301,27 @@ public:
     double TAU0term(double T){return T_star/T;}
 };
 
+double Region23data[] = {
+{0.34805185628969e3},
+{-0.11671859879975e1}, 
+{0.10192970039326e-2},
+{0.57254459862746e3},
+{0.13918839778870e2}
+};
+
+static const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
+
+double Region23_T(double T){
+    const double p_star = 1e6, T_star = 1, theta = T/T_star;
+    double PI = region23_n[0] + region23_n[1]*theta + region23_n[2]*theta*theta;
+    return PI*p_star;
+}
+double Region23_p(double p){
+    const double p_star = 1e6, T_star = 1, PI = p/p_star;
+    double THETA = region23_n[4] + sqrt((PI - region23_n[5])/region23_n[3]);
+    return THETA*T_star;
+}
+
 /********************************************************************************/
 /**************************       Region #3       *******************************/
 /********************************************************************************/
@@ -435,6 +468,73 @@ public:
     double TAU0term(double T){return T_star/T;}
 };
 
+enum IF97REGIONS {REGION_1, REGION_2, REGION_2A, REGION_2B, REGION_2C, REGION_3, REGION_4, REGION_5};
 
+IF97REGIONS RegionDetermination_TP(double T, double p)
+{
+    static Region4 R4;
+    if (T > 2273.15){
+        throw std::exception("Out of range");
+    }
+    else if (T > 1073.15 && T < 2273.15){
+        if (p < 50e6){
+            return REGION_5;
+        }
+        else{
+            throw std::exception("Out of range");
+        }
+    }
+    else if (T > 623.15 && T < 1073.15){
+        if (p > 100e6){
+            throw std::exception("Out of range");
+        }
+        else if (p < 16.5292e6){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
+            return REGION_2;
+        }
+        else if (p > Region23_T(T)){
+            return REGION_3;
+        }
+        else{
+            return REGION_2;
+        }
+    }
+    else if (T > 273.15 && T < 623.15){
+        if (p > 100e6){
+            throw std::exception("Out of range");
+        }
+        else if(p > R4.p_T(T)){
+            return REGION_1;
+        }
+        else{
+            return REGION_2;
+        }
+    }
+    else{
+        throw std::exception("Out of range");
+    }
+}
+
+double RegionOutput(IF97REGIONS region, I97parameters outkey, double T, double p){
+    static Region1 R1;
+    static Region2 R2;
+    static Region3 R3;
+    static Region4 R4;
+    static Region5 R5;
+    
+    switch (region){
+        case REGION_1: return R1.output(outkey, T, p);
+        case REGION_2: return R2.output(outkey, T, p);
+        //case REGION_3: return R3.output(outkey, T, p);
+        case REGION_5: return R5.output(outkey, T, p);
+    }
+}
+
+double IF97_rhomass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_DMASS, T, p); };
+double IF97_hmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_HMASS, T, p); };
+double IF97_smass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_SMASS, T, p); };
+double IF97_umass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_UMASS, T, p); };
+double IF97_cpmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_CPMASS, T, p); };
+double IF97_cvmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_CVMASS, T, p); };
+double IF97_speed_sound_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_W, T, p); };
 
 #endif
