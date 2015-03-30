@@ -49,6 +49,7 @@ int main(){
     double cp_3 = R3.cpmass(T, rho);
 
     print_IF97_Table5();
+    print_boundary_line_Table3();
 
     Region3a R3a;
     double vv = R3a.v(630, 50e6);

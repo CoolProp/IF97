@@ -1188,15 +1188,208 @@ namespace IF97{
             case 'Z': return R3z.v(T, p);
         }
     }
+
+    struct DivisionElement{
+        int I;
+        double n;
+    };
+
+    static DivisionElement ABdata[] = {
+    {0, 0.154793642129415e4},
+    {1, -0.187661219490113e3},
+    {2, 0.213144632222113e2},
+    {-1, -0.191887498864292e4},
+    {-2, 0.918419702359447e3},
+    };
+
+    static DivisionElement CDdata[] = {
+    {0, 0.585276966696349e3},
+    {1, 0.278233532206915e1},
+    {2, -0.127283549295878e-1},
+    {3, 0.159090746562729e-3}
+    };
+
+    static DivisionElement GHdata[] = {
+    {0, -0.249284240900418e5},
+    {1, 0.428143584791546e4},
+    {2, -0.269029173140130e3},
+    {3, 0.751608051114157e1},
+    {4, -0.787105249910383e-1},
+    };
+
+    static DivisionElement IJdata[] = {
+    {0, 0.584814781649163e3},
+    {1, -0.616179320924617},
+    {2, 0.260763050899562},
+    {3, -0.587071076864459e-2},
+    {4, 0.515308185433082e-4},
+    };
+
+    static DivisionElement JKdata[] = {
+    {0, 0.617229772068439e3},
+    {1, -0.770600270141675e1},
+    {2, 0.697072596851896},
+    {3, -0.157391839848015e-1},
+    {4, 0.137897492684194e-3},
+    };
+
+    static DivisionElement MNdata[] = {
+    {0, 0.535339483742384e3},
+    {1, 0.761978122720128e1},
+    {2, -0.158365725441648},
+    {3, 0.192871054508108e-2},
+    };
+
+    static DivisionElement OPdata[] = {
+    {0, 0.969461372400213e3},
+    {1, -0.332500170441278e3},
+    {2, 0.642859598466067e2},
+    {-1, 0.773845935768222e3},
+    {-2, -0.152313732937084e4},
+    };
+
+    static DivisionElement QUdata[] = {
+    {0, 0.565603648239126e3},
+    {1, 0.529062258221222e1},
+    {2, -0.102020639611016},
+    {3, 0.122240301070145e-2},
+    };
+
+    static DivisionElement RXdata[] = {
+    {0, 0.584561202520006e3},
+    {1, -0.102961025163669e1},
+    {2, 0.243293362700452},
+    {3, -0.294905044740799e-2},
+    };
+
+    static DivisionElement UVdata[] = {
+    {0, 0.528199646263062e3},
+    {1, 0.890579602135307e1},
+    {2, -0.222814134903755},
+    {3, 0.286791682263697e-2},
+    };
+
+    static DivisionElement WXdata[] = {
+    {0, 0.728052609145380e1},
+    {1, 0.973505869861952e2},
+    {2, 0.147370491183191e2},
+    {-1, 0.329196213998375e3},
+    {-2, 0.873371668682417e3},
+    };
+
+    class Region3RegionDivision{
+    protected:
+        std::size_t N;
+        std::vector<int> I;
+        std::vector<double> n;
+    public:
+    
+        Region3RegionDivision(DivisionElement data[], std::size_t N){
+            this->N = N;
+            for (std::size_t i = 0; i < N; ++i){
+                n.push_back(data[i].n);
+                I.push_back(data[i].I);
+            }
+        }
+        virtual double T_p(double p){
+            const double pi = p/1e6;
+            double summer = 0;
+            for (std::size_t i = 0; i < N; ++i){
+                summer += n[i]*pow(pi, I[i]);
+            }
+            return summer*1.0;
+        };
+    };
+
+    class ABline : public Region3RegionDivision{ 
+        public: ABline() : Region3RegionDivision(ABdata, 5){ }; 
+        virtual double T_p(double p){
+            const double pi = p/1e6, ln_pi = log(pi);
+            double summer = 0;
+            for (std::size_t i = 0; i < N; ++i){
+                summer += n[i]*pow(ln_pi, I[i]);
+            }
+            return summer*1.0;
+        };
+    };
+    class CDline : public Region3RegionDivision{ public: CDline() : Region3RegionDivision(CDdata, 4){ }; };
+    class EFline { 
+    public:
+        double T_p(double p){ 
+            const double pi = p/1e6; 
+            return 3.727888004*(pi - 22.064) + 647.096; 
+        }; 
+    };
+    class GHline : public Region3RegionDivision{ public: GHline() : Region3RegionDivision(GHdata, 5){ }; };
+    class IJline : public Region3RegionDivision{ public: IJline() : Region3RegionDivision(IJdata, 5){ }; };
+    class JKline : public Region3RegionDivision{ public: JKline() : Region3RegionDivision(JKdata, 5){ }; };
+    class MNline : public Region3RegionDivision{ public: MNline() : Region3RegionDivision(MNdata, 4){ }; };
+    class OPline : public Region3RegionDivision{ 
+    public: 
+        OPline() : Region3RegionDivision(OPdata, 5){ }; 
+        virtual double T_p(double p){
+            const double pi = p/1e6, ln_pi = log(pi);
+            double summer = 0;
+            for (std::size_t i = 0; i < N; ++i){
+                summer += n[i]*pow(ln_pi, I[i]);
+            }
+            return summer*1.0;
+        };
+    };
+    class QUline : public Region3RegionDivision{ public: QUline() : Region3RegionDivision(QUdata, 4){ }; };
+    class RXline : public Region3RegionDivision{ public: RXline() : Region3RegionDivision(RXdata, 4){ }; };
+    class UVline : public Region3RegionDivision{ public: UVline() : Region3RegionDivision(UVdata, 4){ }; };
+    class WXline : public Region3RegionDivision{ 
+        public: WXline() : Region3RegionDivision(WXdata, 5){ }; 
+        virtual double T_p(double p){
+            const double pi = p/1e6, ln_pi = log(pi);
+            double summer = 0;
+            for (std::size_t i = 0; i < N; ++i){
+                summer += n[i]*pow(ln_pi, I[i]);
+            }
+            return summer*1.0;
+        };
+    };
+
+    enum DividingLineEnum {LINE_AB, LINE_CD, LINE_EF, LINE_GH, LINE_IJ, LINE_JK, LINE_MN, LINE_OP, LINE_QU, LINE_RX, LINE_UV, LINE_WX};
+
+    double DividingLine(char region, double p){
+        static ABline AB;
+        static CDline CD;
+        static EFline EF;
+        static GHline GH;
+        static IJline IJ;
+        static JKline JK;
+        static MNline MN;
+        static OPline OP;
+        static QUline QU;
+        static RXline RX;
+        static UVline UV;
+        static WXline WX;
+
+        switch(region){
+            case LINE_AB: return AB.T_p(p);
+            case LINE_CD: return CD.T_p(p);
+            case LINE_EF: return EF.T_p(p);
+            case LINE_GH: return GH.T_p(p);
+            case LINE_IJ: return IJ.T_p(p);
+            case LINE_JK: return JK.T_p(p);
+            case LINE_MN: return MN.T_p(p);
+            case LINE_OP: return OP.T_p(p);
+            case LINE_QU: return QU.T_p(p);
+            case LINE_RX: return RX.T_p(p);
+            case LINE_UV: return UV.T_p(p);
+            case LINE_WX: return WX.T_p(p);
+        }
+    }
+
 } /* namespace IF97*/
 
 #if defined(ENABLE_CATCH)
 
 struct Region3BackwardsData{
-    char region;
-    double T, p, v;
+    char region; double T, p, v;
 };
-
 
 Region3BackwardsData _Table5[] = {
     // Table 5 data 
@@ -1256,7 +1449,6 @@ Region3BackwardsData _Table5[] = {
 };
 static std::vector<Region3BackwardsData> Table5(_Table5, _Table5 + sizeof(_Table5)/sizeof(Region3BackwardsData));
 
-
 void print_IF97_Table5()
 {
     for (std::size_t i = 0; i < Table5.size(); ++i){
@@ -1265,7 +1457,39 @@ void print_IF97_Table5()
             std::cout << Table5[i].region << " " << Table5[i].T << " " << Table5[i].p << " " << v << " " << Table5[i].v << std::endl;
         }
     }
+};
 
+struct Table3Data{
+    IF97::DividingLineEnum region; 
+    double p, T;
+};
+
+static Table3Data _Table3[] = {
+    // Table 3
+    {IF97::LINE_AB, 40e6, 6.930341408e2},
+    {IF97::LINE_CD, 25e6, 6.493659208e2},
+    {IF97::LINE_EF, 40e6, 7.139593992e2},
+    {IF97::LINE_GH, 23e6, 6.498873759e2},
+    {IF97::LINE_IJ, 23e6, 6.515778091e2},
+    {IF97::LINE_JK, 23e6, 6.558338344e2},
+    {IF97::LINE_MN, 22.8e6, 6.496054133e2},
+    {IF97::LINE_OP, 22.8e6, 6.500106943e2},
+    {IF97::LINE_QU, 22e6, 6.456355027e2},
+    {IF97::LINE_RX, 22e6, 6.482622754e2},
+    // Table 11
+    {IF97::LINE_UV, 22.3e6, 6.477996121e2},
+    {IF97::LINE_WX, 22.3e6, 6.482049480e2},
+};
+static std::vector<Table3Data> Table3(_Table3, _Table3 + sizeof(_Table3)/sizeof(Table3Data));
+
+void print_boundary_line_Table3()
+{
+    for (std::size_t i = 0; i < Table3.size(); ++i){
+        double T = IF97::DividingLine(Table3[i].region, Table3[i].p);
+        if (std::abs(T - Table3[i].T) > 1e-7){
+            printf("p: %g errT: %g\n", Table3[i].p, T - Table3[i].T);
+        }
+    }
 };
 
 #endif
