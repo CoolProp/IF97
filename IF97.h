@@ -330,13 +330,13 @@ namespace IF97
     /********************************************************************************/
     static RegionResidualElement Region3residdata[] = {
     {0, 0,    0.10658070028513e1},
-    {0, 0,   -0.15732845290239e-2},
-    {0, 1,    0.20944396974307e2 },
+    {0, 0,   -0.15732845290239e2},
+    {0, 1,    0.20944396974307e2},
     {0, 2,   -0.76867707878716e1},
     {0, 7,    0.26185947787954e1},
     {0, 10,  -0.28080781148620e1},
     {0, 12,   0.12053369696517e1},
-    {0, 23,  -0.84566812812502e-2 },
+    {0, 23,  -0.84566812812502e-2},
     {1, 2,   -0.12654315477714e1},
     {1, 6,   -0.11524407806681e1},
     {1, 15,   0.88521043984318},
@@ -350,9 +350,9 @@ namespace IF97
     {3, 0,   -0.27999329698710},
     {3, 2,    0.13899799569460e1},
     {3, 4,   -0.20189915023570e1},
-    {3, 16,  -0.82147637173963e-1},
+    {3, 16,  -0.82147637173963e-2},
     {3, 26,  -0.47596035734923},
-    {4, 0,    0.43984074473500e-2},
+    {4, 0,    0.43984074473500e-1},
     {4, 2,   -0.44476435428739},
     {4, 4,    0.90572070719733},
     {4, 26,   0.70522450087967},
@@ -376,11 +376,84 @@ namespace IF97
     class Region3
     {
     protected:
-        double T_star, p_star;
+        std::vector<int> Ir, Jr;
+        std::vector<double> nr;
+        double T_star, p_star, R;
     public:
-        Region3() : T_star(1000), p_star(1e6)  {};
-        double cpmass(){
-        }
+        Region3() : T_star(1000), p_star(1e6) {
+            for (std::size_t i = 0; i < reg3rdata.size(); ++i){
+                nr.push_back(reg3rdata[i].n);
+                Ir.push_back(reg3rdata[i].I);
+                Jr.push_back(reg3rdata[i].J);
+            }
+            R = 461.526;
+        };
+        double phi(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = nr[0]*log(delta);
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+        double delta_dphi_ddelta(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = nr[0];
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*Ir[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+        double tau_dphi_dtau(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = 0;
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*Jr[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+        double delta2_d2phi_ddelta2(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = -nr[0];
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*Ir[i]*(Ir[i]-1)*pow(delta, Ir[i])*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+        double tau2_d2phi_dtau2(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = 0;
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*Jr[i]*(Jr[i]-1)*pow(delta, Ir[i])*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+        double deltatau_d2phi_ddelta_dtau(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = 0;
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*Jr[i]*Ir[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+        double p(double T, double rho){
+            return rho*R*T*delta_dphi_ddelta(T, rho);
+        };
+        double umass(double T, double rho){
+            return R*T*tau_dphi_dtau(T, rho);
+        };
+        double smass(double T, double rho){
+            return R*(tau_dphi_dtau(T, rho) - phi(T, rho));
+        };
+        double hmass(double T, double rho){
+            return R*T*(tau_dphi_dtau(T, rho) + delta_dphi_ddelta(T, rho));
+        };
+        double cpmass(double T, double rho){
+            return R*(-tau2_d2phi_dtau2(T, rho) + pow(delta_dphi_ddelta(T, rho) - deltatau_d2phi_ddelta_dtau(T, rho), 2)/(2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)));
+        };
+        double cvmass(double T, double rho){
+            return R*(-tau2_d2phi_dtau2(T, rho));
+        };
     };
 
     /********************************************************************************/
