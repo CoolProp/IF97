@@ -1,3 +1,5 @@
+#define ENABLE_CATCH
+
 #include "IF97.h"
 #include <cstdio>
 
@@ -45,5 +47,10 @@ int main(){
     double u_3 = R3.umass(T, rho);
     double s_3 = R3.smass(T, rho);
     double cp_3 = R3.cpmass(T, rho);
+
+    print_IF97_Table5();
+
+    Region3a R3a;
+    double vv = R3a.v(630, 50e6);
     return 0;
 }
