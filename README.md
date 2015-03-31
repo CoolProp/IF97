@@ -18,9 +18,13 @@ cmake ..
 cmake --build .
 ```
 
-This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf
+This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf .  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%
 
-Caveats
--------
+Usage
+-----
 
-For now, only the forward (X = f(T,p)) properties have been implemented.  The backwards formulations are on the way.
+See ``IF97.cpp``.  
+
+The primary functions needed are ``rhomass_TP(T,p)``, ``hmass_Tp(T,p)``, etc. where in all cases, the units are base-SI units (Pa, K, J/kg, etc.)
+
+There are also ``Tsat97(p)`` and ``psat97(T)`` functions to get values from the saturation line
