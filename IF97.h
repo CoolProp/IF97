@@ -306,7 +306,7 @@ namespace IF97
         double TAU0term(double T){return T_star/T;}
     };
 
-    double Region23data[] = {
+    static double Region23data[] = {
     {0.34805185628969e3},
     {-0.11671859879975e1}, 
     {0.10192970039326e-2},
@@ -1758,7 +1758,7 @@ namespace IF97
             }
         }
 
-        char BackwardsRegion3RegionDetermination(double T, double p){
+        inline char BackwardsRegion3RegionDetermination(double T, double p){
             if (p > 100e6){
                 throw std::exception("pressure out of range");
             }
