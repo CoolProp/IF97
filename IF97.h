@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>      // std::setprecision
+#include <stdexcept>
 
 enum I97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W};
 struct RegionIdealElement
@@ -1513,7 +1514,7 @@ namespace IF97
                 case 'Y': return R3y.v(T, p);
                 case 'Z': return R3z.v(T, p);
                 default:
-                    throw std::exception("Unable to match region");
+                    throw std::out_of_range::out_of_range("Unable to match region");
             }
         }
 
@@ -1709,14 +1710,14 @@ namespace IF97
                 case LINE_UV: return UV.T_p(p);
                 case LINE_WX: return WX.T_p(p);
                 default:
-                    throw std::exception("Unable to match dividing line");
+                    throw std::out_of_range::out_of_range("Unable to match dividing line");
             }
         }
         // In the very near critical region, its messy
         char BackwardsRegion3SubRegionDetermination(double T, double p){
 
             if (p > 22.5e6){
-               throw std::exception("Out of range");
+               throw std::out_of_range::out_of_range("Out of range");
             }
             else if (22.11e6 < p && p <= 22.5e6){
                 // Supercritical
@@ -1760,7 +1761,7 @@ namespace IF97
 
         char BackwardsRegion3RegionDetermination(double T, double p){
             if (p > 100e6){
-                throw std::exception("pressure out of range");
+                throw std::out_of_range::out_of_range("pressure out of range");
             }
             else if (p > 40e6 && p <= 100e6){
                 if (T <= DividingLine(LINE_AB, p)){ return 'A';}
@@ -1973,7 +1974,7 @@ namespace IF97
             case IF97_CVMASS: return cvmass(T, rho);
             case IF97_W: return speed_sound(T, rho);
             default:
-                throw std::exception("bad key to output");
+                throw std::out_of_range::out_of_range("bad key to output");
             }
         }
     };
@@ -2071,19 +2072,19 @@ namespace IF97
     {
         static Region4 R4;
         if (T > 2273.15){
-            throw std::exception("Out of range");
+            throw std::out_of_range::out_of_range("Out of range");
         }
         else if (T > 1073.15 && T < 2273.15){
             if (p < 50e6){
                 return REGION_5;
             }
             else{
-                throw std::exception("Out of range");
+                throw std::out_of_range::out_of_range("Out of range");
             }
         }
         else if (T > 623.15 && T < 1073.15){
             if (p > 100e6){
-                throw std::exception("Out of range");
+                throw std::out_of_range::out_of_range("Out of range");
             }
             else if (p < 16.5292e6){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
                 return REGION_2;
@@ -2097,7 +2098,7 @@ namespace IF97
         }
         else if (T > 273.15 && T < 623.15){
             if (p > 100e6){
-                throw std::exception("Out of range");
+                throw std::out_of_range::out_of_range("Out of range");
             }
             else if(p > R4.p_T(T)){
                 return REGION_1;
@@ -2107,7 +2108,7 @@ namespace IF97
             }
         }
         else{
-            throw std::exception("Out of range");
+            throw std::out_of_range::out_of_range("Out of range");
         }
     }
 
