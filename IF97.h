@@ -316,12 +316,12 @@ namespace IF97
 
     static const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
 
-    double Region23_T(double T){
+    inline double Region23_T(double T){
         const double p_star = 1e6, T_star = 1, theta = T/T_star;
         double PI = region23_n[0] + region23_n[1]*theta + region23_n[2]*theta*theta;
         return PI*p_star;
     }
-    double Region23_p(double p){
+    inline double Region23_p(double p){
         const double p_star = 1e6, T_star = 1, PI = p/p_star;
         double THETA = region23_n[4] + sqrt((PI - region23_n[5])/region23_n[3]);
         return THETA*T_star;
@@ -1457,7 +1457,7 @@ namespace IF97
             };
         };
 
-        double Region3_v_TP(char region, double T, double p){
+        inline double Region3_v_TP(char region, double T, double p){
             static Region3a R3a;
             static Region3b R3b;
             static Region3c R3c;
@@ -1681,7 +1681,7 @@ namespace IF97
 
         enum DividingLineEnum {LINE_AB, LINE_CD, LINE_EF, LINE_GH, LINE_IJ, LINE_JK, LINE_MN, LINE_OP, LINE_QU, LINE_RX, LINE_UV, LINE_WX};
 
-        double DividingLine(DividingLineEnum region, double p){
+        inline double DividingLine(DividingLineEnum region, double p){
             static ABline AB;
             static CDline CD;
             static EFline EF;
@@ -1713,7 +1713,7 @@ namespace IF97
             }
         }
         // In the very near critical region, its messy
-        char BackwardsRegion3SubRegionDetermination(double T, double p){
+        inline char BackwardsRegion3SubRegionDetermination(double T, double p){
 
             if (p > 22.5e6){
                throw std::exception("Out of range");
@@ -2067,7 +2067,7 @@ namespace IF97
 
     enum IF97REGIONS {REGION_1, REGION_2, REGION_2A, REGION_2B, REGION_2C, REGION_3, REGION_4, REGION_5};
 
-    IF97REGIONS RegionDetermination_TP(double T, double p)
+    inline IF97REGIONS RegionDetermination_TP(double T, double p)
     {
         static Region4 R4;
         if (T > 2273.15){
@@ -2111,7 +2111,7 @@ namespace IF97
         }
     }
 
-    double RegionOutput(IF97REGIONS region, I97parameters outkey, double T, double p){
+    inline double RegionOutput(IF97REGIONS region, I97parameters outkey, double T, double p){
         static Region1 R1;
         static Region2 R2;
         static Region3 R3;
@@ -2131,26 +2131,26 @@ namespace IF97
     // ******************************************************************************** //
 
     /// Get the mass density [kg/m^3] as a function of T [K] and p [Pa]
-    double rhomass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_DMASS, T, p); };
+    inline double rhomass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_DMASS, T, p); };
     /// Get the mass enthalpy [J/kg] as a function of T [K] and p [Pa]
-    double hmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_HMASS, T, p); };
+    inline double hmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_HMASS, T, p); };
     /// Get the mass entropy [J/kg/K] as a function of T [K] and p [Pa]
-    double smass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_SMASS, T, p); };
+    inline double smass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_SMASS, T, p); };
     /// Get the mass internal energy [J/kg] as a function of T [K] and p [Pa]
-    double umass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_UMASS, T, p); };
+    inline double umass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_UMASS, T, p); };
     /// Get the mass constant-pressure specific heat [J/kg/K] as a function of T [K] and p [Pa]
-    double cpmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_CPMASS, T, p); };
+    inline double cpmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_CPMASS, T, p); };
     /// Get the mass constant-volume specific heat [J/kg/K] as a function of T [K] and p [Pa]
-    double cvmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_CVMASS, T, p); };
+    inline double cvmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_CVMASS, T, p); };
     /// Get the speed of sound [m/s] as a function of T [K] and p [Pa]
-    double speed_sound_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_W, T, p); };
+    inline double speed_sound_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_W, T, p); };
     /// Get the saturation temperature [K] as a function of p [Pa]
-    double Tsat97(double p){
+    inline double Tsat97(double p){
         static Region4 R4;
         return R4.T_p(p);
     }
     /// Get the saturation pressure [Pa] as a function of T [K]
-    double psat97(double T){
+    inline double psat97(double T){
         static Region4 R4;
         return R4.p_T(T);
     }
