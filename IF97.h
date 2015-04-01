@@ -308,11 +308,11 @@ namespace IF97
     };
 
     static double Region23data[] = {
-    {0.34805185628969e3},
-    {-0.11671859879975e1}, 
-    {0.10192970039326e-2},
-    {0.57254459862746e3},
-    {0.13918839778870e2}
+    0.34805185628969e3,
+    -0.11671859879975e1, 
+    0.10192970039326e-2,
+    0.57254459862746e3,
+    0.13918839778870e2
     };
 
     static const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
