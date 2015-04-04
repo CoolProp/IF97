@@ -71,6 +71,8 @@ namespace IF97
         virtual double TAU0term(double) = 0;
         double output(I97parameters key, double T, double p){
             switch(key){
+            case IF97_T: return T;
+            case IF97_P: return p;
             case IF97_DMASS: return rhomass(T, p);
             case IF97_HMASS: return hmass(T, p);
             case IF97_SMASS: return smass(T, p);
@@ -79,6 +81,7 @@ namespace IF97
             case IF97_CVMASS: return cvmass(T, p);
             case IF97_W: return speed_sound(T, p);
             }
+            throw std::out_of_range("Unable to match input parameters");
         }
 
     protected:
@@ -151,14 +154,14 @@ namespace IF97
             return -1/(PI*PI);
         }
         double dgamma0_dTAU(double T, double p){
-            double PI = p/p_star, _TAU = TAU0term(T), summer = 0;
+            double _TAU = TAU0term(T), summer = 0;
             for (std::size_t i = 0; i < J0.size(); ++i){
                 summer += n0[i]*J0[i]*pow(_TAU, J0[i]-1);
             }
             return summer;
         }
         double d2gamma0_dTAU2(double T, double p){
-            double PI = p/p_star, _TAU = TAU0term(T), summer = 0;
+            double _TAU = TAU0term(T), summer = 0;
             for (std::size_t i = 0; i < J0.size(); ++i){
                 summer += n0[i]*J0[i]*(J0[i]-1)*pow(_TAU, J0[i]-2);
             }
@@ -216,7 +219,7 @@ namespace IF97
         };    
         double speed_sound(double T, double p){
             /// Evidently this formulation is special for some reason, and cannot be implemented using the base class formulation
-            double tau = T_star/T, PI = p/p_star;
+            double tau = T_star/T;
             double RHS = pow(dgammar_dPI(T,p), 2)/(pow(dgammar_dPI(T,p)-tau*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*d2gammar_dTAU2(T,p)) - d2gammar_dPI2(T, p));
             return sqrt(R*T*RHS);
         }
@@ -2066,7 +2069,7 @@ namespace IF97
         double TAU0term(double T){return T_star/T;}
     };
 
-    enum IF97REGIONS {REGION_1, REGION_2, REGION_2A, REGION_2B, REGION_2C, REGION_3, REGION_4, REGION_5};
+    enum IF97REGIONS {REGION_1, REGION_2, REGION_3, REGION_4, REGION_5};
 
     inline IF97REGIONS RegionDetermination_TP(double T, double p)
     {
@@ -2123,8 +2126,10 @@ namespace IF97
             case REGION_1: return R1.output(outkey, T, p);
             case REGION_2: return R2.output(outkey, T, p);
             case REGION_3: return R3.output(outkey, T, p);
+            case REGION_4: throw std::out_of_range("Cannot use Region 4 with T and p as inputs");
             case REGION_5: return R5.output(outkey, T, p);
         }
+        throw std::out_of_range("Unable to match region");
     }
     
     // ******************************************************************************** //
@@ -2219,10 +2224,11 @@ Region3BackwardsData _Table5[] = {
     {'Z', 646.89, 22e6, 3.798732962e-3},
     {'Z', 647.15, 22.064e6, 3.701940010e-3},
 };
-static std::vector<Region3BackwardsData> Table5(_Table5, _Table5 + sizeof(_Table5)/sizeof(Region3BackwardsData));
 
-void print_IF97_Table5()
+
+inline void print_IF97_Table5()
 {
+    static std::vector<Region3BackwardsData> Table5(_Table5, _Table5 + sizeof(_Table5)/sizeof(Region3BackwardsData));
     for (std::size_t i = 0; i < Table5.size(); ++i){
         double v = IF97::Region3Backwards::Region3_v_TP(Table5[i].region, Table5[i].T, Table5[i].p);
         if (std::abs(v - Table5[i].v) > 1e-12){
@@ -2261,7 +2267,7 @@ static Table3Data _Table3[] = {
 };
 static std::vector<Table3Data> Table3(_Table3, _Table3 + sizeof(_Table3)/sizeof(Table3Data));
 
-void print_boundary_line_Table3()
+inline void print_boundary_line_Table3()
 {
     for (std::size_t i = 0; i < Table3.size(); ++i){
         double T = IF97::Region3Backwards::DividingLine(Table3[i].region, Table3[i].p);

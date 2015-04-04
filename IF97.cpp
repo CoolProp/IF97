@@ -52,20 +52,5 @@ int main(){
     printf("%5s %11.9e %11.9e %11.9e\n", "w", speed_sound_Tp(T1, p1), speed_sound_Tp(T2, p2), speed_sound_Tp(T3, p3));
     printf("***************************************************************\n");
 
-    Region3 R3;
-    double T = 650, rho = 500;
-    double p_3 = R3.p(T, rho);
-    double u_3 = R3.umass(T, rho);
-    double s_3 = R3.smass(T, rho);
-    double cp_3 = R3.cpmass(T, rho);
-
-    print_IF97_Table5();
-    print_boundary_line_Table3();
-
-    Region4 R4;
-    double p623 = R4.p_T(623.15);
-
-    IF97::Region3Backwards::Region3a R3a;
-    double vv = R3a.v(630, 50e6);
     return 0;
 }
