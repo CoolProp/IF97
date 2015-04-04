@@ -2168,7 +2168,7 @@ struct Region3BackwardsData{
     char region; double T, p, v;
 };
 
-Region3BackwardsData _Table5[] = {
+static Region3BackwardsData _Table5[] = {
     // Table 5 data 
     {'A', 630, 50e6, 1.470853100e-3},
     {'A', 670, 80e6, 1.503831359e-3},
