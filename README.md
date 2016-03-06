@@ -47,3 +47,9 @@ MIT-style license (see LICENSE)
 Basically, you can do anything you like with the code.  The MIT license is a very permissive license, allowing you to modify, distribute, sell, etc. the code.  It is *not* a copy-left license, you can use this in commercial code.  
 
 You are strongly requested, but not required, to cite both this repository and that of coolprop: www.coolprop.org
+
+Wrappers
+--------
+
+Wrappers directory started for 3rd Party Apps, inlcuding:
+- Mathad 15 (Jeff Henning main contributor)
