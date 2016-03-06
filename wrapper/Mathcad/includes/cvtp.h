@@ -36,7 +36,7 @@ FUNCTIONINFO    if97_cvtp =
 	"if97_cvtp",                      // name by which Mathcad will recognize the function
 	"T,p",                           // if97_cvtp will be called as if97_cvtp(T,p)
 	// description of if97_cvtp(p)
-	"Obtains the mass constant-volume specific heat [J/kg/K] as a function of T [K] and p [Pa].",
+	"Obtains the isochoric specific heat [J/kg/K] as a function of T [K] and p [Pa].",
 	(LPCFUNCTION)if97_CvTP,           // pointer to executable code
 	COMPLEX_SCALAR,                  // the return type is a complex scalar
 	2,                               // there are two input parameters
