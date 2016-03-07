@@ -7,16 +7,7 @@
 #define PSTAR 1e6          // Used to put [MPa] values in [Pa]
 #include "../../IF97.h"
 
-#define  MUST_BE_REAL           1
-#define  INSUFFICIENT_MEMORY    2
-#define  INTERRUPTED            3
-#define  T_OUT_OF_RANGE         4
-#define  P_OUT_OF_RANGE         5
-#define  SATURATED              6
-#define  NO_SOLUTION_FOUND      7
-#define  D_OUT_OF_RANGE         8
-
-#define  NUMBER_OF_ERRORS       8   
+enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, D_OUT_OF_RANGE, NUMBER_OF_ERRORS};   
 
     // table of error messages
     char * myErrorMessageTable[NUMBER_OF_ERRORS] =  
@@ -28,7 +19,8 @@
 		"Pressure out of Range",
 		"Saturated Conditions",
 		"No Solution Found",
-		"Density out of Range"
+		"Density out of Range",
+		"Error Count - Not Used"
     };
 
 	const double Ttrip   = 273.16;				// Triple point in [K]

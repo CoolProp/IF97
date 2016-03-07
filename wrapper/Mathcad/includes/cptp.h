@@ -36,7 +36,7 @@ FUNCTIONINFO    if97_cptp =
 	"if97_cptp",                      // name by which Mathcad will recognize the function
 	"T,p",                           // if97_cptp will be called as if97_cptp(T,p)
 	// description of if97_cptp(p)
-	"Obtains the mass constant-pressure specific heat [J/kg/K] as a function of T [K] and p [Pa].",
+	"Obtains the isobaric specific heat [J/kg/K] as a function of T [K] and p [Pa].",
 	(LPCFUNCTION)if97_CpTP,           // pointer to executable code
 	COMPLEX_SCALAR,                  // the return type is a complex scalar
 	2,                               // there are two input parameters
