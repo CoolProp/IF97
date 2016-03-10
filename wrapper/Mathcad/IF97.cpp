@@ -4,6 +4,12 @@
 #include <string>
 #include "mcadincl.h"
 
+//  By default, IF97.h uses the supplemental curve fit equations in Region 3 which are less accurate, but faster than iterating
+//  to find the density in terms of T & p.  Defining REGION3_ITERATE will use these equations to find density and then use it 
+//  as an initial guess for a more accurate reverse calculation using a Newton-Raphson technique.  This technique takes about 
+//  2.6X longer than the supplemental equations alone.
+#define REGION3_ITERATE
+
 #define PSTAR 1e6          // Used to put [MPa] values in [Pa]
 #include "../../IF97.h"
 

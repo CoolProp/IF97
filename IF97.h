@@ -1903,6 +1903,7 @@ namespace IF97
             }
             return summer;
         };
+#ifdef REGION3_ITERATE
 		//
 		// These two extra terms Needed to evaluate Newton-Raphson
 		// ****************************************************************************
@@ -1923,6 +1924,7 @@ namespace IF97
             return summer;
         };
 		// ****************************************************************************
+#endif
         double delta_dphi_ddelta(double T, double rho){
             const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
             double summer = nr[0];
@@ -1966,6 +1968,8 @@ namespace IF97
         double p(double T, double rho){
             return rho*R*T*delta_dphi_ddelta(T, rho);
         };
+
+#ifdef REGION3_ITERATE
 		//
 		// Newton-Raphson Technique for solving p(T,rho) for rho
 		//    Solves to find root of p - rho*R*T*delta*dphi_ddelta = 0
@@ -1986,7 +1990,7 @@ namespace IF97
 		double rhomass(double T, double p, double rho0)
 		{
 			int iter = 0;
-			while ( fabs(f(T,p,rho0)) > 1.0e-14 )
+			while ( std::abs(f(T,p,rho0)) > 1.0e-14 )
 			{
 				rho0 = rho0 - ( f(T,p,rho0)/df(T,p,rho0) );
 				// don't go more than 100 iterations or throw an exception
@@ -1995,6 +1999,8 @@ namespace IF97
 			return rho0;
 		}
 		// END Newton-Raphson
+#endif
+
         double umass(double T, double rho){
             return R*T*tau_dphi_dtau(T, rho);
         };
@@ -2018,11 +2024,12 @@ namespace IF97
             char region = Region3Backwards::BackwardsRegion3RegionDetermination(T, p);
             double rho = 1/Region3Backwards::Region3_v_TP(region, T, p);
 
+#ifdef REGION3_ITERATE
 			// Use previous rho value from algebraic equations 
 			//      as an initial guess to solve rhomass iteratively 
 			//      with Newton-Raphson
 			rho = rhomass(T, p, rho);   
-
+#endif
             switch(key)
             {               // return all properties using the new rho value
             case IF97_DMASS: return rho;
