@@ -2,7 +2,7 @@
 //
 
 // this code executes the user function if97_rhotp(P), which is a wrapper for
-// the CoolProp-IF97 function, Tsat97(P), used to calculate the saturation
+// the CoolProp-IF97 function, rhomass_Tp(P), used to calculate the saturation
 // temperature along the saturation curve in terms of pressure
 LRESULT  if97_RhoTP(
 	LPCOMPLEXSCALAR c,  // pointer to the result

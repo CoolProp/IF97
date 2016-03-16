@@ -7,7 +7,14 @@
 #include <iomanip>      // std::setprecision
 #include <stdexcept>
 
-enum I97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W};
+enum I97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W,
+					// Enumerations for saturation curve functions
+					// Always keep LIQ values together, first, and start with IF97_DLIQ
+					IF97_DLIQ, IF97_HLIQ, IF97_SLIQ, IF97_ULIQ, IF97_CPLIQ, IF97_CVLIQ, IF97_WLIQ,     
+					// Always keep VAP values together, last, and start with IF97_DVAP
+					IF97_DVAP, IF97_HVAP, IF97_SVAP, IF97_UVAP, IF97_CPVAP, IF97_CVVAP, IF97_WVAP};
+					
+
 struct RegionIdealElement
 {
     int J; ///< The first index
@@ -2022,6 +2029,43 @@ namespace IF97
         };
         double output(I97parameters key, double T, double p){
             char region = Region3Backwards::BackwardsRegion3RegionDetermination(T, p);
+
+			// if this is a saturated vapor or liquid function, make sure we're on
+			// the correct side of the saturation curve and adjust region before
+			// calculating density.
+			if ((key >= IF97_DVAP ))                        // Looking for Saturated Liquid...
+			{                                               // ...force above saturation curve
+				if (region == 'C') region = 'T';
+				else if (region == 'S')
+					if ( p < 20.5e6 ) 
+						region = 'T';
+					else 
+						region = 'R';
+				else if (region == 'U')
+					if ( p < 21.90096265e6 ) 
+						region = 'X';
+					else 
+						region = 'Z';
+				else if (region == 'Y') region = 'Z';
+			}
+			else if (key >= IF97_DLIQ )                     // Looking for Saturated Vapor...
+			{                                               // ...force below saturation curve
+				if (region == 'Z') 
+				{
+					if ( p > 21.93161551e6 )
+						region = 'Y';
+					else 
+						region = 'U'; 
+				}
+				else if (region == 'X') region = 'U';
+				else if ((region == 'R') || (region == 'K')) region = 'S';
+				else if (region == 'T')
+					if ( p > 19.00881189173929e6 )
+						region = 'S';
+					else 
+						region = 'C';
+			}
+
             double rho = 1/Region3Backwards::Region3_v_TP(region, T, p);
 
 #ifdef REGION3_ITERATE
@@ -2030,17 +2074,38 @@ namespace IF97
 			//      with Newton-Raphson
 			rho = rhomass(T, p, rho);   
 #endif
-            switch(key)
-            {               // return all properties using the new rho value
-            case IF97_DMASS: return rho;
-            case IF97_HMASS: return hmass(T, rho);
-            case IF97_SMASS: return smass(T, rho);
-            case IF97_UMASS: return umass(T, rho);
-            case IF97_CPMASS: return cpmass(T, rho);
-            case IF97_CVMASS: return cvmass(T, rho);
-            case IF97_W: return speed_sound(T, rho);
-            default:
-                throw std::invalid_argument("Bad key to output");
+            switch(key)                 // return all properties using the new rho value
+			{
+				case IF97_DLIQ: 
+				case IF97_DVAP:
+				case IF97_DMASS: return rho;
+
+				case IF97_HLIQ:
+				case IF97_HVAP: 
+				case IF97_HMASS: return hmass(T, rho);
+
+				case IF97_SLIQ:
+				case IF97_SVAP: 
+				case IF97_SMASS: return smass(T, rho);
+
+				case IF97_ULIQ:
+				case IF97_UVAP: 
+				case IF97_UMASS: return umass(T, rho);
+
+				case IF97_CPLIQ:
+				case IF97_CPVAP:
+				case IF97_CPMASS: return cpmass(T, rho);
+
+				case IF97_CVLIQ:
+				case IF97_CVVAP:
+				case IF97_CVMASS: return cvmass(T, rho);
+
+				case IF97_WLIQ:
+				case IF97_WVAP:
+				case IF97_W: return speed_sound(T, rho);
+
+				default:
+					throw std::invalid_argument("Bad key to output");  // JPH: changed this to invalid_argument exception
             }
         }
     };
@@ -2164,7 +2229,7 @@ namespace IF97
                 return REGION_2;
             }
         }
-        else if (T > 273.15 && T < 623.15){
+        else if (T >= 273.15 && T <= 623.15){
             if (p > 100e6){
                 throw std::out_of_range("Pressure out of range");
             }
@@ -2215,6 +2280,142 @@ namespace IF97
     inline double cvmass_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_CVMASS, T, p); };
     /// Get the speed of sound [m/s] as a function of T [K] and p [Pa]
     inline double speed_sound_Tp(double T, double p){ return RegionOutput(RegionDetermination_TP(T, p), IF97_W, T, p); };
+	// ******************************************************************************** //
+	//                             Saturation Functions                                 //
+	// ******************************************************************************** //
+    /// Get the saturated liquid mass density [kg/m^3] as a function of p [Pa]
+    inline double rholiq_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_1, IF97_DMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_DLIQ, T, p);
+	};
+    /// Get the saturated vapor mass density [kg/m^3] as a function of p [Pa]
+    inline double rhovap_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_2, IF97_DMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_DVAP, T, p);
+	};
+	// ******************************************************************************** //
+    /// Get the saturated liquid mass enthalpy [J/kg] as a function of p [Pa]
+    inline double hliq_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_1, IF97_HMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_HLIQ, T, p);
+	};
+    /// Get the saturated vapor mass enthalpy [J/kg] as a function of p [Pa]
+    inline double hvap_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_2, IF97_HMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_HVAP, T, p);
+	};
+	// ******************************************************************************** //
+    /// Get the saturated liquid mass entropy [J/kg/K] as a function of p [Pa]
+    inline double sliq_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_1, IF97_SMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_SLIQ, T, p);
+	};
+    /// Get the saturated vapor mass entropy [J/kg/K] as a function of p [Pa]
+    inline double svap_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_2, IF97_SMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_SVAP, T, p);
+	};
+	// ******************************************************************************** //
+    /// Get the saturated liquid mass internal energy [J/kg] as a function of p [Pa]
+    inline double uliq_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_1, IF97_UMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_ULIQ, T, p);
+	};
+    /// Get the saturated vapor mass internal energy [J/kg] as a function of p [Pa]
+    inline double uvap_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_2, IF97_UMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_UVAP, T, p);
+	};
+	// ******************************************************************************** //
+    /// Get the saturated liquid mass isobaric specific heat [J/kg/K] as a function of T [K] and p [Pa]
+    inline double cpliq_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_1, IF97_CPMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_CPLIQ, T, p);
+	};
+    /// Get the saturated vapor mass isobaric specific heat [J/kg/K] as a function of T [K] and p [Pa]
+    inline double cpvap_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_2, IF97_CPMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_CPVAP, T, p);
+	};
+	// ******************************************************************************** //
+    /// Get the saturated liquid mass isochoric specific heat [J/kg/K] as a function of T [K] and p [Pa]
+    inline double cvliq_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_1, IF97_CVMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_CVLIQ, T, p);
+	};
+    /// Get the saturated vapor mass isochoric specific heat [J/kg/K] as a function of T [K] and p [Pa]
+    inline double cvvap_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_2, IF97_CVMASS, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_CVVAP, T, p);
+	};
+	// ******************************************************************************** //
+    /// Get the saturated liquid speed of sound [m/s] as a function of T [K] and p [Pa]
+    inline double speed_soundliq_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_1, IF97_W, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_WLIQ, T, p);
+	};
+    /// Get the saturated vapor speed of sound [m/s] as a function of T [K] and p [Pa]
+    inline double speed_soundvap_p(double p)
+	{
+		double T = Tsat97(p);
+		if (RegionDetermination_TP(T,p) != REGION_3)
+			return RegionOutput(REGION_2, IF97_W, T, p);
+		else
+			return RegionOutput(RegionDetermination_TP(T, p), IF97_WVAP, T, p);
+	};
+	// ******************************************************************************** //
     /// Get the saturation temperature [K] as a function of p [Pa]
     inline double Tsat97(double p){
         static Region4 R4;
