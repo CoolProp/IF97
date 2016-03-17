@@ -51,5 +51,5 @@ You are strongly requested, but not required, to cite both this repository and t
 Wrappers
 --------
 
-Wrappers directory started for 3rd Party Apps, inlcuding:
+Wrappers directory started for 3rd Party Apps, including:
 - Mathad 15 (Jeff Henning main contributor)
