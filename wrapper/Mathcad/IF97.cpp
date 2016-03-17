@@ -13,9 +13,11 @@
 #define PSTAR 1e6          // Used to put [MPa] values in [Pa]
 #include "../../IF97.h"
 
-enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, D_OUT_OF_RANGE, NUMBER_OF_ERRORS};   
+// Mathcad Error Codes
+enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, D_OUT_OF_RANGE, NUMBER_OF_ERRORS};
 
-    // table of error messages
+	// Table of Error Messages
+	// These message strings MUST be in the order of the Error Code enumeration above, with the last being a dummy value for error count
     char * myErrorMessageTable[NUMBER_OF_ERRORS] =  
     {   
         "Argument must be real",
@@ -38,49 +40,49 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
 	const double Pmax    = 100.0*PSTAR;			// Max Pressure [MPa] 
 	const double Text    = 2273.15;				// Extended (Region 5) Temperature Limit (Region 5) [K]
 	const double Pext    = 50.0*PSTAR;			// Extended (Region 5) Pressure Limit (Region 5) [MPa]
-	const double P23min  = 16.5292*PSTAR;
-	const double T23min  = 623.15;
-	const double T23max  = 863.15;
+	const double P23min  = 16.5292*PSTAR;       // Min Pressure on Region23 boundary curve; Max is Pmax
+	const double T23min  = 623.15;              // Min Temperature on Region23 boundary curve
+	const double T23max  = 863.15;              // Max Temperature on Region23 boundary curve
 
 	// Include the Function call stubs here:
 	//
 	// *************************************************************
 	// Basic function stubs
 	// *************************************************************
-	#include ".\includes/tsatp.h"
-	#include ".\includes/ttrip.h"
-	#include ".\includes/tcrit.h"
-	#include ".\includes/psatt.h"
-	#include ".\includes/ptrip.h"
-	#include ".\includes/pcrit.h"
-	#include ".\includes/rhotp.h"
-	#include ".\includes/vtp.h"
-	#include ".\includes/htp.h"
-	#include ".\includes/utp.h"
-	#include ".\includes/stp.h"
-	#include ".\includes/cptp.h"
-	#include ".\includes/cvtp.h"
-	#include ".\includes/wtp.h"
-	/*
+	#include ".\includes\tsatp.h"
+	#include ".\includes\ttrip.h"
+	#include ".\includes\tcrit.h"
+	#include ".\includes\psatt.h"
+	#include ".\includes\ptrip.h"
+	#include ".\includes\pcrit.h"
+	#include ".\includes\rhotp.h"
+	#include ".\includes\vtp.h"
+	#include ".\includes\htp.h"
+	#include ".\includes\utp.h"
+	#include ".\includes\stp.h"
+	#include ".\includes\cptp.h"
+	#include ".\includes\cvtp.h"
+	#include ".\includes\wtp.h"
 	// *************************************************************
 	// Saturation function stubs (to be implemented soon)
 	// *************************************************************
-	#include "rhof.h"
-	#include "rhog.h"
-	#include "vf.h"
-	#include "vg.h"
-	#include "hf.h"
-	#include "hg.h"
-	#include "uf.h"
-	#include "ug.h"
-	#include "sf.h"
-	#include "sg.h"
-	#include "cpf.h"
-	#include "cpg.h"
-	#include "cvf.h"
-	#include "cvg.h"
-	#include "wf.h"
-	#include "wg.h"
+	#include ".\includes\rhof.h"
+	#include ".\includes\rhog.h"
+	#include ".\includes\vf.h"
+	#include ".\includes\vg.h"
+	#include ".\includes\hf.h"
+	#include ".\includes\hg.h"
+	#include ".\includes\uf.h"
+	#include ".\includes\ug.h"
+	#include ".\includes\sf.h"
+	#include ".\includes\sg.h"
+	#include ".\includes\cpf.h"
+	#include ".\includes\cpg.h"
+	#include ".\includes\cvf.h"
+	#include ".\includes\cvg.h"
+	#include ".\includes\wf.h"
+	#include ".\includes\wg.h"
+	/*
 	// *************************************************************
 	// Transport Property Stubs (to be implemented soon)
 	// *************************************************************
@@ -142,7 +144,6 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_cptp );
                     CreateUserFunction( hDLL, &if97_cvtp );
                     CreateUserFunction( hDLL, &if97_wtp );
-					/*
 					// *************************************************************
 					// Saturation functions
 					// *************************************************************
@@ -162,11 +163,12 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_cvg );
                     CreateUserFunction( hDLL, &if97_wf );
                     CreateUserFunction( hDLL, &if97_wg );
+					/*
 					// *************************************************************
 					// Transport Property functions
 					// *************************************************************
                     CreateUserFunction( hDLL, &if97_mutp );
-                    CreateUserFunction( hDLL, &if97_mutrho );
+                    CreateUserFunction( hDLL, &if97_mutrho );  // for checking only
                     CreateUserFunction( hDLL, &if97_muf );
                     CreateUserFunction( hDLL, &if97_mug );
 					// *************************************************************
