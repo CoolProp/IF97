@@ -1903,6 +1903,28 @@ namespace IF97
             }
             return summer;
         };
+#ifdef REGION3_ITERATE
+		//
+		// These two extra terms Needed to evaluate Newton-Raphson
+		// ****************************************************************************
+        double dphi_ddelta(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = nr[0]/delta;
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*Ir[i]*pow(delta, Ir[i]-1)*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+        double d2phi_ddelta2(double T, double rho){
+            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            double summer = -nr[0]/pow(delta,2);
+            for (std::size_t i = 1; i < 40; ++i){
+                summer += nr[i]*Ir[i]*(Ir[i]-1.0)*pow(delta, Ir[i]-2)*pow(tau, Jr[i]);
+            }
+            return summer;
+        };
+		// ****************************************************************************
+#endif
         double delta_dphi_ddelta(double T, double rho){
             const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
             double summer = nr[0];
@@ -1946,6 +1968,39 @@ namespace IF97
         double p(double T, double rho){
             return rho*R*T*delta_dphi_ddelta(T, rho);
         };
+
+#ifdef REGION3_ITERATE
+		//
+		// Newton-Raphson Technique for solving p(T,rho) for rho
+		//    Solves to find root of p - rho*R*T*delta*dphi_ddelta = 0
+		//    The equation is rearranged to solve for rho and turned
+		//    into functions f(T,P,rho0) and f'(T,P,rho0) for the
+		//    Newton-Raphson technique.  Functions for
+		//    dphi/ddelta and d²phi/ddelta² were also required.  These
+		//    additional taylor functions are defined above.
+		//
+        double f(double T, double p, double rho0){
+			const double rho_c = 322.0;
+            return 1.0/pow(rho0,2) - R*T*dphi_ddelta(T, rho0)/(p*rho_c);
+        };
+        double df(double T, double p, double rho0){
+			const double rho_c = 322.0;
+            return -2.0/pow(rho0,3) - R*T*d2phi_ddelta2(T, rho0)/(p*pow(rho_c,2));
+        };
+		double rhomass(double T, double p, double rho0)
+		{
+			int iter = 0;
+			while ( std::abs(f(T,p,rho0)) > 1.0e-14 )
+			{
+				rho0 = rho0 - ( f(T,p,rho0)/df(T,p,rho0) );
+				// don't go more than 100 iterations or throw an exception
+				if (iter++ > 100) throw std::logic_error("Failed to converge!");  
+			}
+			return rho0;
+		}
+		// END Newton-Raphson
+#endif
+
         double umass(double T, double rho){
             return R*T*tau_dphi_dtau(T, rho);
         };
@@ -1968,7 +2023,15 @@ namespace IF97
         double output(I97parameters key, double T, double p){
             char region = Region3Backwards::BackwardsRegion3RegionDetermination(T, p);
             double rho = 1/Region3Backwards::Region3_v_TP(region, T, p);
-            switch(key){
+
+#ifdef REGION3_ITERATE
+			// Use previous rho value from algebraic equations 
+			//      as an initial guess to solve rhomass iteratively 
+			//      with Newton-Raphson
+			rho = rhomass(T, p, rho);   
+#endif
+            switch(key)
+            {               // return all properties using the new rho value
             case IF97_DMASS: return rho;
             case IF97_HMASS: return hmass(T, rho);
             case IF97_SMASS: return smass(T, rho);
@@ -1977,7 +2040,7 @@ namespace IF97
             case IF97_CVMASS: return cvmass(T, rho);
             case IF97_W: return speed_sound(T, rho);
             default:
-                throw std::out_of_range("bad key to output");
+                throw std::invalid_argument("Bad key to output");
             }
         }
     };
@@ -2007,15 +2070,16 @@ namespace IF97
     {
     public:
         std::vector<double> n;
-        double p_star, T_star;
+        double p_star, T_star, T_trip, T_crit;
 
-        Region4() : p_star(1e6), T_star(1.0){
+        Region4() : p_star(1.0e6), T_star(1.0),T_trip(273.16), T_crit(647.096) {
             n.resize(1); n[0] = 0;
             for (std::size_t i = 0; i < reg4data.size(); ++i){
                 n.push_back(reg4data[i].n);
             }
         };
         double p_T(double T){
+			if ( ( T < T_trip ) || ( T > T_crit ) ) throw std::out_of_range("Temperature out of range");
             double theta = T/T_star+n[9]/(T/T_star-n[10]);
             double A = theta*theta + n[1] * theta + n[2];
             double B = n[3]*theta*theta + n[4]*theta + n[5];
@@ -2023,6 +2087,7 @@ namespace IF97
             return p_star*pow(2*C/(-B+sqrt(B*B-4*A*C)), 4);
         };
         double T_p(double p){
+			if ( ( p < 0.000611656*p_star ) || ( p > 22.064*p_star ) ) throw std::out_of_range("Pressure out of range");
             double beta = pow(p/p_star, 0.25);
             double E = beta*beta + n[3]*beta + n[6];
             double F = n[1]*beta*beta + n[4]*beta + n[7];
@@ -2075,19 +2140,19 @@ namespace IF97
     {
         static Region4 R4;
         if (T > 2273.15){
-            throw std::out_of_range("Out of range");
+            throw std::out_of_range("Temperature out of range");
         }
-        else if (T > 1073.15 && T < 2273.15){
+        else if (T > 1073.15 && T <= 2273.15){
             if (p < 50e6){
                 return REGION_5;
             }
             else{
-                throw std::out_of_range("Out of range");
+                throw std::out_of_range("Pressure out of range");
             }
         }
         else if (T > 623.15 && T < 1073.15){
             if (p > 100e6){
-                throw std::out_of_range("Out of range");
+                throw std::out_of_range("Pressure out of range");
             }
             else if (p < 16.5292e6){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
                 return REGION_2;
@@ -2101,7 +2166,7 @@ namespace IF97
         }
         else if (T > 273.15 && T < 623.15){
             if (p > 100e6){
-                throw std::out_of_range("Out of range");
+                throw std::out_of_range("Pressure out of range");
             }
             else if(p > R4.p_T(T)){
                 return REGION_1;
@@ -2111,7 +2176,7 @@ namespace IF97
             }
         }
         else{
-            throw std::out_of_range("Out of range");
+            throw std::out_of_range("Temperature out of range");
         }
     }
 
@@ -2126,14 +2191,14 @@ namespace IF97
             case REGION_1: return R1.output(outkey, T, p);
             case REGION_2: return R2.output(outkey, T, p);
             case REGION_3: return R3.output(outkey, T, p);
-            case REGION_4: throw std::out_of_range("Cannot use Region 4 with T and p as inputs");
+            case REGION_4: throw std::invalid_argument("Cannot use Region 4 with T and p as inputs");
             case REGION_5: return R5.output(outkey, T, p);
         }
         throw std::out_of_range("Unable to match region");
     }
     
     // ******************************************************************************** //
-    //                                     API
+    //                                     API                                          //
     // ******************************************************************************** //
 
     /// Get the mass density [kg/m^3] as a function of T [K] and p [Pa]
