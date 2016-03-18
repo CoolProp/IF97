@@ -8,10 +8,9 @@
 #include <stdexcept>
 
 enum I97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W,
-                    // Enumerations for saturation curve functions
-                    // Always keep LIQ values together, first, and start with IF97_DLIQ
+                    // Enumerations for saturated liquid functions
                     IF97_DLIQ, IF97_HLIQ, IF97_SLIQ, IF97_ULIQ, IF97_CPLIQ, IF97_CVLIQ, IF97_WLIQ,     
-                    // Always keep VAP values together, last, and start with IF97_DVAP
+                    // Enumerations for saturated vapor functions
                     IF97_DVAP, IF97_HVAP, IF97_SVAP, IF97_UVAP, IF97_CPVAP, IF97_CVVAP, IF97_WVAP};
                     
 
@@ -2027,13 +2026,41 @@ namespace IF97
             double RHS = 2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)-pow(delta_dphi_ddelta(T,rho)-deltatau_d2phi_ddelta_dtau(T,rho),2)/tau2_d2phi_dtau2(T,rho);
             return sqrt(R*T*RHS);
         };
+        bool SatLiquid(I97parameters key){
+            switch(key)                 // See if saturated vapor value is requested
+            {
+                case IF97_DLIQ: 
+                case IF97_HLIQ:
+                case IF97_SLIQ:
+                case IF97_ULIQ:
+                case IF97_CPLIQ:
+                case IF97_CVLIQ:
+                case IF97_WLIQ: return true;
+
+                default: return false;
+            }
+        }
+        bool SatVapor(I97parameters key){
+            switch(key)                 // See if saturated vapor value is requested
+            {
+                case IF97_DVAP: 
+                case IF97_HVAP:
+                case IF97_SVAP:
+                case IF97_UVAP:
+                case IF97_CPVAP:
+                case IF97_CVVAP:
+                case IF97_WVAP: return true;
+
+                default: return false;
+            }
+        }
         double output(I97parameters key, double T, double p){
             char region = Region3Backwards::BackwardsRegion3RegionDetermination(T, p);
 
             // if this is a saturated vapor or liquid function, make sure we're on
             // the correct side of the saturation curve and adjust region before
             // calculating density.
-            if ((key >= IF97_DVAP ))                        // Looking for Saturated Liquid...
+            if ( SatVapor(key) )                        // Looking for Saturated Vapor...
             {                                               // ...force above saturation curve
                 if (region == 'C') region = 'T';
                 else if (region == 'S')
@@ -2048,7 +2075,7 @@ namespace IF97
                         region = 'Z';
                 else if (region == 'Y') region = 'Z';
             }
-            else if (key >= IF97_DLIQ )                     // Looking for Saturated Vapor...
+            else if ( SatLiquid(key) )                     // Looking for Saturated Liquid...
             {                                               // ...force below saturation curve
                 if (region == 'Z') 
                 {
