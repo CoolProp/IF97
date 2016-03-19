@@ -2026,72 +2026,68 @@ namespace IF97
             double RHS = 2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)-pow(delta_dphi_ddelta(T,rho)-deltatau_d2phi_ddelta_dtau(T,rho),2)/tau2_d2phi_dtau2(T,rho);
             return sqrt(R*T*RHS);
         };
-        bool SatLiquid(I97parameters key){
-            switch(key)                 // See if saturated vapor value is requested
+        char SatSubRegionAdust(I97parameters key, double p, char subregion){
+            char newsub = subregion;
+            switch(key)                 // See if saturated liquid value is requested
             {
-                case IF97_DLIQ: 
-                case IF97_HLIQ:
-                case IF97_SLIQ:
-                case IF97_ULIQ:
-                case IF97_CPLIQ:
-                case IF97_CVLIQ:
-                case IF97_WLIQ: return true;
-
-                default: return false;
-            }
-        }
-        bool SatVapor(I97parameters key){
-            switch(key)                 // See if saturated vapor value is requested
-            {
-                case IF97_DVAP: 
-                case IF97_HVAP:
-                case IF97_SVAP:
+                case IF97_DVAP:         // If looking for Saturated Vapor... 
+                case IF97_HVAP:         // NOTE: Add any new property enumerations
+                case IF97_SVAP:         //       to this search list.
                 case IF97_UVAP:
                 case IF97_CPVAP:
                 case IF97_CVVAP:
-                case IF97_WVAP: return true;
+                case IF97_WVAP: {       // ...force below saturation curve
+                                    if (subregion == 'C') newsub = 'T';
+                                    else if (subregion == 'S')
+                                    {
+                                        if ( p < 20.5e6 ) 
+                                            newsub = 'T';
+                                        else 
+                                            newsub = 'R';
+                                    }
+                                    else if (subregion == 'U')
+                                    {
+                                        if ( p < 21.90096265e6 ) 
+                                            newsub = 'X';
+                                        else 
+                                            newsub = 'Z';
+                                    }
+                                    else if (subregion == 'Y') newsub = 'Z';
+                                    break;
+                                };
 
-                default: return false;
+                case IF97_DLIQ:         // If looking for Saturated Liquid...
+                case IF97_HLIQ:         // NOTE: Add any new property enumerations
+                case IF97_SLIQ:         //       to this search list.
+                case IF97_ULIQ:
+                case IF97_CPLIQ:
+                case IF97_CVLIQ:
+                case IF97_WLIQ: {       // ...force above saturation curve
+                                    if (subregion == 'Z') 
+                                    {
+                                        if ( p > 21.93161551e6 )
+                                            newsub = 'Y';
+                                        else 
+                                            newsub = 'U'; 
+                                    }
+                                    else if (subregion == 'X') newsub = 'U';
+                                    else if ((subregion == 'R') || (subregion == 'K')) newsub = 'S';
+                                    else if (subregion == 'T')
+                                        if ( p > 19.00881189173929e6 )
+                                            newsub = 'S';
+                                        else 
+                                            newsub = 'C';
+                                };
             }
-        }
+            return newsub;
+        };
         double output(I97parameters key, double T, double p){
             char region = Region3Backwards::BackwardsRegion3RegionDetermination(T, p);
 
             // if this is a saturated vapor or liquid function, make sure we're on
             // the correct side of the saturation curve and adjust region before
             // calculating density.
-            if ( SatVapor(key) )                        // Looking for Saturated Vapor...
-            {                                               // ...force above saturation curve
-                if (region == 'C') region = 'T';
-                else if (region == 'S')
-                    if ( p < 20.5e6 ) 
-                        region = 'T';
-                    else 
-                        region = 'R';
-                else if (region == 'U')
-                    if ( p < 21.90096265e6 ) 
-                        region = 'X';
-                    else 
-                        region = 'Z';
-                else if (region == 'Y') region = 'Z';
-            }
-            else if ( SatLiquid(key) )                     // Looking for Saturated Liquid...
-            {                                               // ...force below saturation curve
-                if (region == 'Z') 
-                {
-                    if ( p > 21.93161551e6 )
-                        region = 'Y';
-                    else 
-                        region = 'U'; 
-                }
-                else if (region == 'X') region = 'U';
-                else if ((region == 'R') || (region == 'K')) region = 'S';
-                else if (region == 'T')
-                    if ( p > 19.00881189173929e6 )
-                        region = 'S';
-                    else 
-                        region = 'C';
-            }
+            region = SatSubRegionAdust(key, p, region);
 
             double rho = 1/Region3Backwards::Region3_v_TP(region, T, p);
 
