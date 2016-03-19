@@ -2026,7 +2026,7 @@ namespace IF97
             double RHS = 2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)-pow(delta_dphi_ddelta(T,rho)-deltatau_d2phi_ddelta_dtau(T,rho),2)/tau2_d2phi_dtau2(T,rho);
             return sqrt(R*T*RHS);
         };
-        char SatSubRegionAdust(I97parameters key, double p, char subregion){
+        char SatSubRegionAdjust(I97parameters key, double p, char subregion){
             char newsub = subregion;
             switch(key)                 // See if saturated liquid value is requested
             {
@@ -2087,7 +2087,7 @@ namespace IF97
             // if this is a saturated vapor or liquid function, make sure we're on
             // the correct side of the saturation curve and adjust region before
             // calculating density.
-            region = SatSubRegionAdust(key, p, region);
+            region = SatSubRegionAdjust(key, p, region);
 
             double rho = 1/Region3Backwards::Region3_v_TP(region, T, p);
 
