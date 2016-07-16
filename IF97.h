@@ -60,7 +60,7 @@ namespace IF97
             double tau = T_star/T;
             return -R*tau*tau*(d2gammar_dTAU2(T, p) + d2gamma0_dTAU2(T, p));
         }
-        double cvmass(double T, double p){
+        virtual double cvmass(double T, double p){
             double tau = T_star/T, PI = p/p_star;
             return cpmass(T,p)-R*pow(1 + PI*dgammar_dPI(T,p) - tau*PI*d2gammar_dPIdTAU(T,p),2)/(1-PI*PI*d2gammar_dPI2(T, p));
         }
@@ -221,10 +221,17 @@ namespace IF97
             T_star = 1386; p_star = 16.53e6; 
         };    
         double speed_sound(double T, double p){
-            /// Evidently this formulation is special for some reason, and cannot be implemented using the base class formulation
+            // Evidently this formulation is special for some reason, and cannot be implemented using the base class formulation
+			// see Table 3
             double tau = T_star/T;
             double RHS = pow(dgammar_dPI(T,p), 2)/(pow(dgammar_dPI(T,p)-tau*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*d2gammar_dTAU2(T,p)) - d2gammar_dPI2(T, p));
             return sqrt(R*T*RHS);
+        }
+        double cvmass(double T, double p) {
+            // Evidently this formulation is special for some reason, and cannot be implemented using the base class formulation
+            // see Table 3
+            double tau = T_star / T;
+            return R*(-tau*tau*d2gammar_dTAU2(T,p) + pow(dgammar_dPI(T, p) - tau*d2gammar_dPIdTAU(T, p), 2) / d2gammar_dPI2(T, p));
         }
         double TAUrterm(double T){
             return T_star/T - 1.222;
