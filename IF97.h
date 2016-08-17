@@ -2056,8 +2056,7 @@ namespace IF97
 
                                   // If looking for Saturated Liquid...
                 case LIQUID:{     // ...force above saturation curve
-                                if (subregion == 'Z') 
-                                {
+                                if (subregion == 'Z') {
                                     if ( p > 21.93161551e6 )
                                         return 'Y';
                                     else 
@@ -2065,11 +2064,12 @@ namespace IF97
                                 }
                                 else if (subregion == 'X') return 'U';
                                 else if ((subregion == 'R') || (subregion == 'K')) return 'S';
-                                else if (subregion == 'T')
+                                else if (subregion == 'T'){
                                     if ( p > 19.00881189173929e6 )
                                         return 'S';
                                     else 
                                         return 'C';
+                                }
                                 break;
                             };
                 case NONE:
