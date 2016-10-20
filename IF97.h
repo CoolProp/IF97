@@ -2075,6 +2075,7 @@ namespace IF97
                 case NONE:
                 default: return subregion;
             }
+            return subregion;  // in case no adjustment needs to be made
         };
 
         double output(IF97parameters key, double T, double p, IF97SatState State){
