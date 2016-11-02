@@ -25,11 +25,32 @@ struct RegionResidualElement
 
 namespace IF97
 {    
-    double Tsat97(double p);
+    // Setup Water Constants for Trivial Functions and use in Region Classes
+    // Constant values from:
+    // Revised Release on the IAPWS Industrial Formulation 1997
+    //     for the Thermodynamic Properties of Water and Steam, August 2007
+    // IAPWS G5-01(2016), Guideline on the Use of Fundamental Physical Constants
+    //      and Basic Constants of Water
+    const double p_fact       = 1e6;                 // Converts IAPWS MPa units to Pa
+    const double IF97_Tcrit   = 647.096;             // K
+    const double IF97_Pcrit   = 22.064*p_fact;       // Pa
+    const double IF97_Rhocrit = 322.0;               // kg/ft³
+    const double IF97_Ttrip   = 273.16;              // K
+    const double IF97_Ptrip   = 0.000611656*p_fact;  // Pa
+    const double IF97_Tmin    = 273.15;              // K
+    const double IF97_Tmax    = 2273.15;             // K
+    const double IF97_Pmin    = 0.000611213*p_fact;  // Pa
+    const double IF97_Pmax    = 100.0*p_fact;        // Pa
+    const double IF97_Rgas    = 461.526;             // J/kg-K : mass based!
+    const double IF97_MW      = 0.018015268;         // kg/mol
+    const double IF97_Acentric= 0.3442920843;        // (unitless)
+    //
+    double Tsat97(double p);  // Forward declaration of Tsat97 required for calls below.
+    //
     class BaseRegion
     {
     public:
-        BaseRegion(std::vector<RegionResidualElement> resid, std::vector<RegionIdealElement> ideal) : R(461.526){
+        BaseRegion(std::vector<RegionResidualElement> resid, std::vector<RegionIdealElement> ideal) : R(IF97_Rgas){
             for (std::size_t i = 0; i < resid.size(); ++i){
                 nr.push_back(resid[i].n);
                 Ir.push_back(resid[i].I);
@@ -1903,7 +1924,7 @@ namespace IF97
                 Ir.push_back(reg3rdata[i].I);
                 Jr.push_back(reg3rdata[i].J);
             }
-            R = 461.526;
+            R = IF97_Rgas;
         };
         double phi(double T, double rho){
             const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
@@ -2332,12 +2353,32 @@ namespace IF97
     inline double Tsat97(double p){
         static Region4 R4;
         return R4.T_p(p);
-    }
+    };
     /// Get the saturation pressure [Pa] as a function of T [K]
     inline double psat97(double T){
         static Region4 R4;
         return R4.p_T(T);
-    }
+    };
+    // ******************************************************************************** //
+    //                              Trivial Funcitons                                   //
+    // ******************************************************************************** //
+    /// Get the Triple Point Temperature and Pressure
+    inline double get_Ttrip(){ return IF97_Ttrip; };
+    inline double get_ptrip(){ return IF97_Ptrip; };
+    /// Get the Critical Point Temperature and Pressure and Density
+    inline double get_Tcrit(){ return IF97_Tcrit; };
+    inline double get_pcrit(){ return IF97_Pcrit; };
+    inline double get_rhocrit(){ return IF97_Rhocrit; };
+    /// Get the Max and Min Temperatures and Pressures
+    inline double get_Tmin(){ return IF97_Tmin; };
+    inline double get_Pmin(){ return IF97_Pmin; };
+    inline double get_Tmax(){ return IF97_Tmax; };
+    inline double get_Pmax(){ return IF97_Pmax; };
+    /// Get physical constants
+    inline double get_MW() { return IF97_MW; };
+    inline double get_Rgas() { return IF97_Rgas; };
+    inline double get_Acentric() { return IF97_Acentric; };
+
 }; /* namespace IF97 */
 
 #if defined(ENABLE_CATCH)
