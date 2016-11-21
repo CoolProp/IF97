@@ -1,5 +1,7 @@
 *~
 
+/build*
+
 /wrapper/Mathcad/*.sdf
 /wrapper/Mathcad/*.suo
 /wrapper/Mathcad/*.user
