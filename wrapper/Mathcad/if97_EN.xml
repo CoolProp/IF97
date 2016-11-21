@@ -227,5 +227,20 @@
     <category>if97 (Water Properties)</category>
     <description>Calculates the saturated vapor speed of sound [m/s] as a function of pressure, p [Pa].</description>
   </function>
+  <!-- Below are the entries for the backwards if97 functions -->
+    <function>
+        <name>if97_tph</name>
+        <local_name>if97_tph</local_name>
+        <params>p,h</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the temperature, T [K], as a function of p [Pa] and mass enthalpy, h, [J/kg].</description>
+    </function>
+    <function>
+      <name>if97_tps</name>
+      <local_name>if97_tps</local_name>
+      <params>p,s</params>
+      <category>if97 (Water Properties)</category>
+      <description>Calculates the temperature, T [K], as a function of p [Pa] and mass entropy, s, [J/kg-K].</description>
+  </function>
 
 </FUNCTIONS>

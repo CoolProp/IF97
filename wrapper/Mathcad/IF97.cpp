@@ -10,11 +10,12 @@
 //  2.6X longer than the supplemental equations alone.
 #define REGION3_ITERATE
 
-#define PSTAR 1e6          // Used to put [MPa] values in [Pa]
+// #define IAPWS_UNITS          // Set to use IAPWS Units of [MPa] and [kJ] (instead of [Pa] and [J] )
 #include "../../IF97.h"
 
 // Mathcad Error Codes
-enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, D_OUT_OF_RANGE, NUMBER_OF_ERRORS};
+enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, 
+          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, NUMBER_OF_ERRORS};
 
     // Table of Error Messages
     // These message strings MUST be in the order of the Error Code enumeration above, with the last being a dummy value for error count
@@ -28,21 +29,10 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
         "Saturated Conditions",
         "No Solution Found",
         "Density out of Range",
+        "Enthalpy out of Range",
+        "Entropy out of Range",
         "Error Count - Not Used"
     };
-
-    const double Ttrip   = 273.16;              // Triple point in [K]
-    const double Ptrip   = 611.657e-6*PSTAR;    // Triple point in [MPa] 
-    const double Tcrit   = 647.096;             // Critical point in [K]
-    const double Pcrit   = 22.064*PSTAR;        // Critical point in [MPa]
-    const double rhocrit = 322.0;               // Critical point in [kg/m³]
-    const double Tmax    = 1073.15;             // Max Temperature [K]
-    const double Pmax    = 100.0*PSTAR;         // Max Pressure [MPa] 
-    const double Text    = 2273.15;             // Extended (Region 5) Temperature Limit (Region 5) [K]
-    const double Pext    = 50.0*PSTAR;          // Extended (Region 5) Pressure Limit (Region 5) [MPa]
-    const double P23min  = 16.5292*PSTAR;       // Min Pressure on Region23 boundary curve; Max is Pmax
-    const double T23min  = 623.15;              // Min Temperature on Region23 boundary curve
-    const double T23max  = 863.15;              // Max Temperature on Region23 boundary curve
 
     // Include the Function call stubs here:
     //
@@ -97,6 +87,15 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     // *************************************************************
     #include ".\includes\p23.h"
     #include ".\includes\t23.h"
+    #include ".\includes\regionph.h"
+    #include ".\includes\regionps.h"
+    #include ".\includes\h3ab.h"
+    #include ".\includes\h2bc.h"
+    // *************************************************************
+    // Reverse Functions
+    // *************************************************************
+    #include ".\includes\tph.h"
+    #include ".\includes\tps.h"
 
     // DLL entry point code.  the _CRT_INIT function is needed
     // if you are using Microsoft's 32 bit compiler
@@ -181,6 +180,15 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     // *************************************************************
                     CreateUserFunction( hDLL, &if97_p23 );
                     CreateUserFunction( hDLL, &if97_t23 );
+                    CreateUserFunction( hDLL, &if97_h2bc );
+                    CreateUserFunction( hDLL, &if97_h3ab );
+                    CreateUserFunction( hDLL, &if97_regionph );
+                    CreateUserFunction( hDLL, &if97_regionps );
+                    // *************************************************************
+                    // Reverse functions
+                    // *************************************************************
+                    CreateUserFunction( hDLL, &if97_tph );
+                    CreateUserFunction( hDLL, &if97_tps );
                     break;
                     }
 
@@ -199,13 +207,3 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     }
 
   
-#undef  PSTAR
-#undef  MUST_BE_REAL
-#undef  INSUFFICIENT_MEMORY
-#undef  INTERRUPTED
-#undef  T_OUT_OF_RANGE
-#undef  P_OUT_OF_RANGE
-#undef  SATURATED
-#undef  NO_SOLUTION_FOUND
-#undef  D_OUT_OF_RANGE
-#undef  NUMBER_OF_ERRORS
