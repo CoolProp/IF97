@@ -21,10 +21,10 @@ To Build
 
 * Build the if97 DLL in Visual Studio.  The project will auotmatically copy the DLL to the appropriate Mathcad installation directory.  You may have to allow user write access to both:
 
-	``C:\\Program Files (x86)\\Mathcad\\Mathcad 15\\userefi``
+	``C:\Program Files (x86)\Mathcad\Mathcad 15\userefi``
 	
     and
 		
-	``C:\\Program Files (x86)\\Mathcad\\Mathcad 15\\doc\\funcdoc``
+	``C:\Program Files (x86)\Mathcad\Mathcad 15\doc\funcdoc``
 
 * Follow the above instructions for use.

@@ -10,7 +10,7 @@ int main(){
     printf("*****************************************************************\n");
     printf("******************** Verification Tables ************************\n");
     printf("* Tables below are printed for verification.  Unless otherwise  *\n");
-    printf("* noted, tables are reporoduced from the                        *\n");
+    printf("* noted, tables are reproduced from the                         *\n");
     printf("* \"Revised Release on the IAPWS Industrial Formulation 1997\"    *\n");
     printf("* IAPWS R7-97(2012).                                            *\n");
     printf("*****************************************************************\n\n\n");
@@ -55,7 +55,7 @@ int main(){
     printf("        formulas from the (2014) \"Revised Supplementary       \n");
     printf("        Release on Backward Equations for Specific Volume\".   \n");
     printf("        As a result, the values below will not be exactly      \n");
-    printf("        the Table 33 values, but should be withing +/-1.0E-6.  \n");
+    printf("        the Table 33 values, but should be within +/-1.0E-6.  \n");
     printf("        of the published values.                               \n\n");
 
     T1 = 1500, T2 = 1500, T3 = 2000, p1 = 0.5e6, p2 = 30e6, p3 = 30e6;
