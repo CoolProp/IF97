@@ -8,11 +8,11 @@ To Use
 
 * Compile in VS2010 or later using the solution and project files
 
-* Copy the if97.dll file to C:\\Program Files (x86)\\Mathcad\\Mathcad 15\\userefi or equivalent for your version (this will be done automatically by the project)
+* Copy the if97.dll file to C:\\Program Files (x86)\\Mathcad\\Mathcad 15\\userefi or equivalent for your version (this will be done automatically by the project)  
+  
+* Copy the IF97_EN.xml to C:\\Program Files (x86)\\Mathcad\\Mathcad 15\\doc\\funcdoc.  Functions and descriptions will then be available in the Mathcad 15 interface under Insert|Function or the Functions button on the toolbar.
 
-* Functions and descriptions will be available in Mathcad 15 under Insert|Function or the Functions button on the toolbar.
-
-* View if97_verification.xmcd for examples of using the functions.
+* View if97_verification.pdf for examples of using the functions.
 
 To Build
 ========
