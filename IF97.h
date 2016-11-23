@@ -31,26 +31,37 @@ namespace IF97
     //     for the Thermodynamic Properties of Water and Steam, August 2007
     // IAPWS G5-01(2016), Guideline on the Use of Fundamental Physical Constants
     //      and Basic Constants of Water
-    const double p_fact       = 1e6;                 // Converts IAPWS MPa units to Pa
-    const double IF97_Tcrit   = 647.096;             // K
-    const double IF97_Pcrit   = 22.064*p_fact;       // Pa
-    const double IF97_Rhocrit = 322.0;               // kg/ft³
-    const double IF97_Ttrip   = 273.16;              // K
-    const double IF97_Ptrip   = 0.000611656*p_fact;  // Pa
-    const double IF97_Tmin    = 273.15;              // K
-    const double IF97_Tmax    = 2273.15;             // K
-    const double IF97_Pmin    = 0.000611213*p_fact;  // Pa
-    const double IF97_Pmax    = 100.0*p_fact;        // Pa
-    const double IF97_Rgas    = 461.526;             // J/kg-K : mass based!
-    const double IF97_MW      = 0.018015268;         // kg/mol
-    const double IF97_Acentric= 0.3442920843;        // (unitless)
+    const double p_fact  = 1e6;                 // Converts IAPWS MPa units to Pa
+    const double R_fact  = 1000;                // Converts IAPWS kJ units to J
+    //
+    const double Tcrit   = 647.096;             // K
+    const double Pcrit   = 22.064*p_fact;       // Pa
+    const double Rhocrit = 322.0;               // kg/m³
+    const double Scrit   = 4.41202148223476*R_fact; // J/kg-K (needed for backward eqn. in Region 3(a)(b)
+    const double Ttrip   = 273.16;              // K
+    const double Ptrip   = 0.000611656*p_fact;  // Pa
+    const double Tmin    = 273.15;              // K
+    const double Tmax    = 1073.15;             // K
+    const double Pmin    = 0.000611213*p_fact;  // Pa
+    const double Pmax    = 100.0*p_fact;        // Pa
+    const double Rgas    = 0.461526*R_fact;     // J/kg-K : mass based!
+    const double MW      = 0.018015268;         // kg/mol
+    //
+    const double Text    = 2273.15;             // Extended (Region 5) Temperature Limit (Region 5) [K]
+    const double Pext    = 50.0*p_fact;         // Extended (Region 5) Pressure Limit (Region 5) [MPa]
+    const double P23min  = 16.529164252605*p_fact; // Min Pressure on Region23 boundary curve; Max is Pmax
+    const double T23min  = 623.15;              // Min Temperature on Region23 boundary curve
+    const double T23max  = 863.15;              // Max Temperature on Region23 boundary curve
+    const double P2bcmin = 6.54670*p_fact;      // Min Pressure [MPa] on H2b2c boundary curve; Max is Pmax
+    const double S2bc    = 5.85*R_fact;      // Min Pressure [MPa] on H2b2c boundary curve; Max is Pmax
+
     //
     double Tsat97(double p);  // Forward declaration of Tsat97 required for calls below.
     //
     class BaseRegion
     {
     public:
-        BaseRegion(std::vector<RegionResidualElement> resid, std::vector<RegionIdealElement> ideal) : R(IF97_Rgas){
+        BaseRegion(std::vector<RegionResidualElement> resid, std::vector<RegionIdealElement> ideal) : R(Rgas){
             for (std::size_t i = 0; i < resid.size(); ++i){
                 nr.push_back(resid[i].n);
                 Ir.push_back(resid[i].I);
@@ -358,12 +369,13 @@ namespace IF97
     }
     inline double Region23_p(double p){
         const double p_star = 1e6, T_star = 1, PI = p/p_star;
-        double THETA = region23_n[4] + sqrt((PI - region23_n[5])/region23_n[3]);
+        double THETA = region23_n[3] + sqrt((PI - region23_n[4])/region23_n[2]);
         return THETA*T_star;
     }
 
     /********************************************************************************/
     /*********************       Region #3 (Backwards)      *************************/
+    /********************* Implementation for v(T,p) only.  *************************/
     /********************************************************************************/
 
     namespace Region3Backwards{
@@ -1302,9 +1314,9 @@ namespace IF97
 
         class Region3BackwardsRegion{
         protected:
-            double v_star, p_star, T_star;
+            double v_star, p_star, T_star, X_star, Y_star;
             std::size_t N;
-            double a, b, c, d, e;
+            double a, b, c, d, e, f;
             std::vector<int> I, J;
             std::vector<double> n;
         public:
@@ -1325,6 +1337,20 @@ namespace IF97
                 }
                 return pow(summer, e)*v_star;
             };
+
+            // This function piggybacks off of the Backwards structure already written
+            // for v(T,p) in Region 3. However, it can be used for the functions T(p,h) [Y=T, X=h] or
+            // T(p,s) [Y=T, X=s] in Regions 1, 2, or 3.  Additionally, it can be called for
+            // v(p,h) [Y=v, X=h] or v(p,s) [Y=v, X=s] in Region 3
+            virtual double Y(double p, double X){
+                const double pi = p/p_star, eta = X/X_star;
+                double summer = 0;
+                for (std::size_t i = 0; i < N; ++i){
+                    summer += n[i]*pow(pow(pi-a, c), I[i])*pow(pow(eta-b, d), J[i])*pow(f, J[i]);
+                }
+                return pow(summer, e)*Y_star;
+            };
+
         };
 
         class Region3a : public Region3BackwardsRegion{
@@ -1924,7 +1950,7 @@ namespace IF97
                 Ir.push_back(reg3rdata[i].I);
                 Jr.push_back(reg3rdata[i].J);
             }
-            R = IF97_Rgas;
+            R = Rgas;
         };
         double phi(double T, double rho){
             const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
@@ -2097,7 +2123,7 @@ namespace IF97
                 default: return subregion;
             }
             return subregion;  // in case no adjustment needs to be made
-        };
+        };  // SatSubRegionAdjust
 
         double output(IF97parameters key, double T, double p, IF97SatState State){
             char region = Region3Backwards::BackwardsRegion3RegionDetermination(T, p);
@@ -2156,16 +2182,16 @@ namespace IF97
     {
     public:
         std::vector<double> n;
-        double p_star, T_star, T_trip, T_crit;
+        double p_star, T_star;
 
-        Region4() : p_star(1.0e6), T_star(1.0),T_trip(273.16), T_crit(647.096) {
+        Region4() : p_star(1.0e6), T_star(1.0) {
             n.resize(1); n[0] = 0;
             for (std::size_t i = 0; i < reg4data.size(); ++i){
                 n.push_back(reg4data[i].n);
             }
         };
         double p_T(double T){
-            if ( ( T < T_trip ) || ( T > T_crit ) ) throw std::out_of_range("Temperature out of range");
+            if ( ( T < Tmin ) || ( T > Tcrit ) ) throw std::out_of_range("Temperature out of range");
             double theta = T/T_star+n[9]/(T/T_star-n[10]);
             double A = theta*theta + n[1] * theta + n[2];
             double B = n[3]*theta*theta + n[4]*theta + n[5];
@@ -2173,7 +2199,7 @@ namespace IF97
             return p_star*pow(2*C/(-B+sqrt(B*B-4*A*C)), 4);
         };
         double T_p(double p){
-            if ( ( p < 0.000611656*p_star ) || ( p > 22.064*p_star ) ) throw std::out_of_range("Pressure out of range");
+            if ( ( p < Ptrip ) || ( p > Pcrit ) ) throw std::out_of_range("Pressure out of range");
             double beta = pow(p/p_star, 0.25);
             double E = beta*beta + n[3]*beta + n[6];
             double F = n[1]*beta*beta + n[4]*beta + n[7];
@@ -2220,6 +2246,589 @@ namespace IF97
         double TAU0term(double T){return T_star/T;}
     };
 
+    /********************************************************************************/
+    /*********************         Backwards Regions        *************************/
+    /********** Implementation for T(p,h), v(p,h), T(p,s), and v(p,s)  **************/
+    /********************************************************************************/
+
+    namespace Backwards{
+
+        struct BackwardRegionResidualElement
+        {
+            double I, ///< The first index
+                   J; ///< The second index
+            double n; ///< The leading numerical constant
+        };
+
+        static BackwardRegionResidualElement Coeff1H[] = {
+            {0, 0, -0.23872489924521E+03},
+            {0, 1, 0.40421188637945E+03},
+            {0, 2, 0.11349746881718E+03},
+            {0, 6, -0.58457616048039E+01},
+            {0, 22, -0.15285482413140E-03},
+            {0, 32, -0.10866707695377E-05},
+            {1, 0, -0.13391744872602E+02},
+            {1, 1, 0.43211039183559E+02},
+            {1, 2, -0.54010067170506E+02},
+            {1, 3, 0.30535892203916E+02},
+            {1, 4, -0.65964749423638E+01},
+            {1, 10, 0.93965400878363E-02},
+            {1, 32, 0.11573647505340E-06},
+            {2, 10, -0.25858641282073E-04},
+            {2, 32, -0.40644363084799E-08},
+            {3, 10, 0.66456186191635E-07},
+            {3, 32, 0.80670734103027E-10},
+            {4, 32, -0.93477771213947E-12},
+            {5, 32, 0.58265442020601E-14},
+            {6, 32, -0.15020185953503E-16}
+        };
+
+        static BackwardRegionResidualElement Coeff1S[] = {
+            {0, 0, 0.17478268058307E+03},
+            {0, 1, 0.34806930892873E+02},
+            {0, 2, 0.65292584978455E+01},
+            {0, 3, 0.33039981775489E+00},
+            {0, 11, -0.19281382923196E-06},
+            {0, 31, -0.24909197244573E-22},
+            {1, 0, -0.26107636489332E+00},
+            {1, 1, 0.22592965981586E+00},
+            {1, 2, -0.64256463395226E-01},
+            {1, 3, 0.78876289270526E-02},
+            {1, 12, 0.35672110607366E-09},
+            {1, 31, 0.17332496994895E-23},
+            {2, 0, 0.56608900654837E-03},
+            {2, 1, -0.32635483139717E-03},
+            {2, 2, 0.44778286690632E-04},
+            {2, 9, -0.51322156908507E-09},
+            {2, 31, -0.42522657042207E-25},
+            {3, 10, 0.26400441360689E-12},
+            {3, 32, 0.78124600459723E-28},
+            {4, 32, -0.30732199903668E-30}
+        };
+
+        static BackwardRegionResidualElement Coeff2aH[] = {
+            {0, 0, 0.10898952318288E+04},
+            {0, 1, 0.84951654495535E+03},
+            {0, 2, -0.10781748091826E+03},
+            {0, 3, 0.33153654801263E+02},
+            {0, 7, -0.74232016790248E+01},
+            {0, 20, 0.11765048724356E+02},
+            {1, 0, 0.18445749355790E+01},
+            {1, 1, -0.41792700549624E+01},
+            {1, 2, 0.62478196935812E+01},
+            {1, 3, -0.17344563108114E+02},
+            {1, 7, -0.20058176862096E+03},
+            {1, 9, 0.27196065473796E+03},
+            {1, 11, -0.45511318285818E+03},
+            {1, 18, 0.30919688604755E+04},
+            {1, 44, 0.25226640357872E+06},
+            {2, 0, -0.61707422868339E-02},
+            {2, 2, -0.31078046629583E+00},
+            {2, 7, 0.11670873077107E+02},
+            {2, 36, 0.12812798404046E+09},
+            {2, 38, -0.98554909623276E+09},
+            {2, 40, 0.28224546973002E+10},
+            {2, 42, -0.35948971410703E+10},
+            {2, 44, 0.17227349913197E+10},
+            {3, 24, -0.13551334240775E+05},
+            {3, 44, 0.12848734664650E+08},
+            {4, 12, 0.13865724283226E+01},
+            {4, 32, 0.23598832556514E+06},
+            {4, 44, -0.13105236545054E+08},
+            {5, 32, 0.73999835474766E+04},
+            {5, 36, -0.55196697030060E+06},
+            {5, 42, 0.37154085996233E+07},
+            {6, 34, 0.19127729239660E+05},
+            {6, 44, -0.41535164835634E+06},
+            {7, 28, -0.62459855192507E+02}
+        };
+
+        static BackwardRegionResidualElement Coeff2bH[] = {
+            {0, 0, +0.14895041079516E+04},
+            {0, 1, +0.74307798314034E+03},
+            {0, 2, -0.97708318797837E+02},
+            {0, 12, +0.24742464705674E+01},
+            {0, 18, -0.63281320016026E+00},
+            {0, 24, +0.11385952129658E+01},
+            {0, 28, -0.47811863648625E+00},
+            {0, 40, +0.85208123431544E-02},
+            {1, 0, +0.93747147377932E+00},
+            {1, 2, +0.33593118604916E+01},
+            {1, 6, +0.33809355601454E+01},
+            {1, 12, +0.16844539671904E+00},
+            {1, 18, +0.73875745236695E+00},
+            {1, 24, -0.47128737436186E+00},
+            {1, 28, +0.15020273139707E+00},
+            {1, 40, -0.21764114219750E-02},
+            {2, 2, -0.21810755324761E-01},
+            {2, 8, -0.10829784403677E+00},
+            {2, 18, -0.46333324635812E-01},
+            {2, 40, +0.71280351959551E-04},
+            {3, 1, +0.11032831789999E-03},
+            {3, 2, +0.18955248387902E-03},
+            {3, 12, +0.30891541160537E-02},
+            {3, 24, +0.13555504554949E-02},
+            {4, 2, +0.28640237477456E-06},
+            {4, 12, -0.10779857357512E-04},
+            {4, 18, -0.76462712454814E-04},
+            {4, 24, +0.14052392818316E-04},
+            {4, 28, -0.31083814331434E-04},
+            {4, 40, -0.10302738212103E-05},
+            {5, 18, +0.28217281635040E-06},
+            {5, 24, +0.12704902271945E-05},
+            {5, 40, +0.73803353468292E-07},
+            {6, 28, -0.11030139238909E-07},
+            {7, 2, -0.81456365207833E-13},
+            {7, 28, -0.25180545682962E-10},
+            {9, 1, -0.17565233969407E-17},
+            {9, 40, +0.86934156344163E-14}
+        };
+
+        static BackwardRegionResidualElement Coeff2cH[] = {
+            {-7, 0, -0.32368398555242E+13},
+            {-7, 4, +0.73263350902181E+13},
+            {-6, 0, +0.35825089945447E+12},
+            {-6, 2, -0.58340131851590E+12},
+            {-5, 0, -0.10783068217470E+11},
+            {-5, 2, +0.20825544563171E+11},
+            {-2, 0, +0.61074783564516E+06},
+            {-2, 1, +0.85977722535580E+06},
+            {-1, 0, -0.25745723604170E+05},
+            {-1, 2, +0.31081088422714E+05},
+            {0, 0, +0.12082315865936E+04},
+            {0, 1, +0.48219755109255E+03},
+            {1, 4, +0.37966001272486E+01},
+            {1, 8, -0.10842984880077E+02},
+            {2, 4, -0.45364172676660E-01},
+            {6, 0, +0.14559115658698E-12},
+            {6, 1, +0.11261597407230E-11},
+            {6, 4, -0.17804982240686E-10},
+            {6, 10, +0.12324579690832E-06},
+            {6, 12, -0.11606921130984E-05},
+            {6, 16, +0.27846367088554E-04},
+            {6, 20, -0.59270038474176E-03},
+            {6, 22, 0.12918582991878E-02}
+        };
+
+        static BackwardRegionResidualElement Coeff2aS[] = {
+            {-1.50, -24, -0.39235983861984E+6},
+            {-1.50, -23, +0.51526573827270E+6},
+            {-1.50, -19, +0.40482443161048E+5},
+            {-1.50, -13, -0.32193790923902E+3},
+            {-1.50, -11, +0.96961424218694E+2},
+            {-1.50, -10, -0.22867846371773E+2},
+            {-1.25, -19, -0.44942914124357E+6},
+            {-1.25, -15, -0.50118336020166E+4},
+            {-1.25, -6, +0.35684463560015E+0},
+            {-1.00, -26, +0.44235335848190E+5},
+            {-1.00, -21, -0.13673388811708E+5},
+            {-1.00, -17, +0.42163260207864E+6},
+            {-1.00, -16, +0.22516925837475E+5},
+            {-1.00, -9, +0.47442144865646E+3},
+            {-1.00, -8, -0.14931130797647E+3},
+            {-0.75, -15, -0.19781126320452E+6},
+            {-0.75, -14, -0.23554399470760E+5},
+            {-0.50, -26, -0.19070616302076E+5},
+            {-0.50, -13, +0.55375669883164E+5},
+            {-0.50, -9, +0.38293691437363E+4},
+            {-0.50, -7, -0.60391860580567E+3},
+            {-0.25, -27, +0.19363102620331E+4},
+            {-0.25, -25, +0.42660643698610E+4},
+            {-0.25, -11, -0.59780638872718E+4},
+            {-0.25, -6, -0.70401463926862E+3},
+            {0.25, 1, +0.33836784107553E+3},
+            {0.25, 4, +0.20862786635187E+2},
+            {0.25, 8, +0.33834172656196E-1},
+            {0.25, 11, -0.43124428414893E-4},
+            {0.50, 0, +0.16653791356412E+3},
+            {0.50, 1, -0.13986292055898E+3},
+            {0.50, 5, -0.78849547999872E+0},
+            {0.50, 6, +0.72132411753872E-1},
+            {0.50, 10, -0.59754839398283E-2},
+            {0.50, 14, -0.12141358953904E-4},
+            {0.50, 16, +0.23227096733871E-6},
+            {0.75, 0, -0.10538463566194E+2},
+            {0.75, 4, +0.20718925496502E+1},
+            {0.75, 9, -0.72193155260427E-1},
+            {0.75, 17, +0.20749887081120E-6},
+            {1.00, 7, -0.18340657911379E-1},
+            {1.00, 18, +0.29036272348696E-6},
+            {1.25, 3, +0.21037527893619E+0},
+            {1.25, 15, +0.25681239729999E-3},
+            {1.50, 5, -0.12799002933781E-1},
+            {1.50, 18, -0.82198102652018E-5}
+        };
+
+        static BackwardRegionResidualElement Coeff2bS[] = {
+            {-6, 0, +0.31687665083497E+6},
+            {-6, 11, +0.20864175881858E+2},
+            {-5, 0, -0.39859399803599E+6},
+            {-5, 11, -0.21816058518877E+2},
+            {-4, 0, +0.22369785194242E+6},
+            {-4, 1, -0.27841703445817E+4},
+            {-4, 11, +0.99207436071480E+1},
+            {-3, 0, -0.75197512299157E+5},
+            {-3, 1, +0.29708605951158E+4},
+            {-3, 11, -0.34406878548526E+1},
+            {-3, 12, +0.38815564249115E+0},
+            {-2, 0, +0.17511295085750E+5},
+            {-2, 1, -0.14237112854449E+4},
+            {-2, 6, +0.10943803364167E+1},
+            {-2, 10, +0.89971619308495E+0},
+            {-1, 0, -0.33759740098958E+4},
+            {-1, 1, +0.47162885818355E+3},
+            {-1, 5, -0.19188241993679E+1},
+            {-1, 8, +0.41078580492196E+0},
+            {-1, 9, -0.33465378172097E+0},
+            {0, 0, +0.13870034777505E+4},
+            {0, 1, -0.40663326195838E+3},
+            {0, 2, +0.41727347159610E+2},
+            {0, 4, +0.21932549434532E+1},
+            {0, 5, -0.10320050009077E+1},
+            {0, 6, +0.35882943516703E+0},
+            {0, 9, +0.52511453726066E-2},
+            {1, 0, +0.12838916450705E+2},
+            {1, 1, -0.28642437219381E+1},
+            {1, 2, +0.56912683664855E+0},
+            {1, 3, -0.99962954584931E-1},
+            {1, 7, -0.32632037778459E-2},
+            {1, 8, +0.23320922576723E-3},
+            {2, 0, -0.15334809857450E+0},
+            {2, 1, +0.29072288239902E-1},
+            {2, 5, +0.37534702741167E-3},
+            {3, 0, +0.17296691702411E-2},
+            {3, 1, -0.38556050844504E-3},
+            {3, 3, -0.35017712292608E-4},
+            {4, 0, -0.14566393631492E-4},
+            {4, 1, +0.56420857267269E-5},
+            {5, 0, +0.41286150074605E-7},
+            {5, 1, -0.20684671118824E-7},
+            {5, 2, +0.16409393674725E-8}
+        };
+
+        static BackwardRegionResidualElement Coeff2cS[] = {
+            {-2, 0, +0.90968501005365E+03},
+            {-2, 1, +0.24045667088420E+04},
+            {-1, 0, -0.59162326387130E+03},
+            {0, 0, +0.54145404128074E+03},
+            {0, 1, -0.27098308411192E+03},
+            {0, 2, +0.97976525097926E+03},
+            {0, 3, -0.46966772959435E+03},
+            {1, 0, +0.14399274604723E+02},
+            {1, 1, -0.19104204230429E+02},
+            {1, 3, +0.53299167111971E+01},
+            {1, 4, -0.21252975375934E+02},
+            {2, 0, -0.31147334413760E+00},
+            {2, 1, +0.60334840894623E+00},
+            {2, 2, -0.42764839702509E-01},
+            {3, 0, +0.58185597255259E-02},
+            {3, 1, -0.14597008284753E-01},
+            {3, 5, +0.56631175631027E-02},
+            {4, 0, -0.76155864584577E-04},
+            {4, 1, +0.22440342919332E-03},
+            {4, 4, -0.12561095013413E-04},
+            {5, 0, +0.63323132660934E-06},
+            {5, 1, -0.20541989675375E-05},
+            {5, 2, +0.36405370390082E-07},
+            {6, 0, -0.29759897789215E-08},
+            {6, 1, +0.10136618529763E-07},
+            {7, 0, +0.59925719692351E-11},
+            {7, 1, -0.20677870105164E-10},
+            {7, 3, -0.20874278181886E-10},
+            {7, 4, +0.10162166825089E-09},
+            {7, 5, -0.16429828281347E-09}
+        };
+
+        static BackwardRegionResidualElement Coeff3aH[] = {
+            {-12, 0, -0.133645667811215E-6},
+            {-12, 1, +0.455912656802978E-5},
+            {-12, 2, -0.146294640700979E-4},
+            {-12, 6, +0.639341312970080E-2},
+            {-12, 14, +0.372783927268847E+3},
+            {-12, 16, -0.718654377460447E+4},
+            {-12, 20, +0.573494752103400E+6},
+            {-12, 22, -0.267569329111439E+7},
+            {-10, 1, -0.334066283302614E-4},
+            {-10, 5, -0.245479214069597E-1},
+            {-10, 12, +0.478087847764996E+2},
+            {-8, 0, +0.764664131818904E-5},
+            {-8, 2, +0.128350627676972E-2},
+            {-8, 4, +0.171219081377331E-1},
+            {-8, 10, -0.851007304583213E+1},
+            {-5, 2, -0.136513461629781E-1},
+            {-3, 0, -0.384460997596657E-5},
+            {-2, 1, +0.337423807911655E-2},
+            {-2, 3, -0.551624873066791E+0},
+            {-2, 4, +0.729202277107470E+0},
+            {-1, 0, -0.992522757376041E-2},
+            {-1, 2, -0.119308831407288E+0},
+            {0, 0, +0.793929190615421E+0},
+            {0, 1, +0.454270731799386E+0},
+            {1, 1, +0.209998591259910E+0},
+            {3, 0, -0.642109823904738E-2},
+            {3, 1, -0.235155868604540E-1},
+            {4, 0, +0.252233108341612E-2},
+            {4, 3, -0.764885133368119E-2},
+            {10, 4, +0.136176427574291E-1},
+            {12, 5, -0.133027883575669E-1}
+        };
+
+        static BackwardRegionResidualElement Coeff3bH[] = {
+            {-12, 0, +0.323254573644920E-4},
+            {-12, 1, -0.127575556587181E-3},
+            {-10, 0, -0.475851877356068E-3},
+            {-10, 1, +0.156183014181602E-2},
+            {-10, 5, +0.105724860113781E+0},
+            {-10, 10, -0.858514221132534E+2},
+            {-10, 12, +0.724140095480911E+3},
+            {-8, 0, +0.296475810273257E-2},
+            {-8, 1, -0.592721983365988E-2},
+            {-8, 2, -0.126305422818666E-1},
+            {-8, 4, -0.115716196364853E+0},
+            {-8, 10, +0.849000969739595E+2},
+            {-6, 0, -0.108602260086615E-1},
+            {-6, 1, +0.154304475328851E-1},
+            {-6, 2, +0.750455441524466E-1},
+            {-4, 0, +0.252520973612982E-1},
+            {-4, 1, -0.602507901232996E-1},
+            {-3, 5, -0.307622221350501E+1},
+            {-2, 0, -0.574011959864879E-1},
+            {-2, 4, +0.503471360939849E+1},
+            {-1, 2, -0.925081888584834E+0},
+            {-1, 4, +0.391733882917546E+1},
+            {-1, 6, -0.773146007130190E+2},
+            {-1, 10, +0.949308762098587E+4},
+            {-1, 14, -0.141043719679409E+7},
+            {-1, 16, +0.849166230819026E+7},
+            {0, 0, +0.861095729446704E+0},
+            {0, 2, +0.323346442811720E+0},
+            {1, 1, +0.873281936020439E+0},
+            {3, 1, -0.436653048526683E+0},
+            {5, 1, +0.286596714529479E+0},
+            {6, 1, -0.131778331276228E+0},
+            {8, 1, 0.676682064330275E-2}
+        };
+
+        static BackwardRegionResidualElement Coeff3aS[] = {
+            {-12.00, 28, +0.150042008263875E+10},
+            {-12.00, 32, -0.159397258480424E+12},
+            {-10.00, 4, +0.502181140217975E-03},
+            {-10.00, 10, -0.672057767855466E+02},
+            {-10.00, 12, +0.145058545404456E+04},
+            {-10.00, 14, -0.823889534888890E+04},
+            {-8.00, 5, -0.154852214233853E+00},
+            {-8.00, 7, +0.112305046746695E+02},
+            {-8.00, 8, -0.297000213482822E+02},
+            {-8.00, 28, +0.438565132635495E+11},
+            {-6.00, 2, +0.137837838635464E-02},
+            {-6.00, 6, -0.297478527157462E+01},
+            {-6.00, 32, +0.971777947349413E+13},
+            {-5.00, 0, -0.571527767052398E-04},
+            {-5.00, 14, +0.288307949778420E+05},
+            {-5.00, 32, -0.744428289262703E+14},
+            {-4.00, 6, +0.128017324848921E+02},
+            {-4.00, 10, -0.368275545889071E+03},
+            {-4.00, 36, +0.664768904779177E+16},
+            {-2.00, 1, +0.449359251958880E-01},
+            {-2.00, 4, -0.422897836099655E+01},
+            {-1.00, 1, -0.240614376434179E+00},
+            {-1.00, 6, -0.474341365254924E+01},
+            {0.00, 0, +0.724093999126110E+00},
+            {0.00, 1, +0.923874349695897E+00},
+            {0.00, 4, +0.399043655281015E+01},
+            {1.00, 0, +0.384066651868009E-01},
+            {2.00, 0, -0.359344365571848E-02},
+            {2.00, 3, -0.735196448821653E+00},
+            {3.00, 2, +0.188367048396131E+00},
+            {8.00, 0, +0.141064266818704E-03},
+            {8.00, 1, -0.257418501496337E-02},
+            {10.00, 2, 0.123220024851555E-2}
+        };
+
+        static BackwardRegionResidualElement Coeff3bS[] = {
+            {-12, 1, +0.527111701601660E+00},
+            {-12, 3, -0.401317830052742E+02},
+            {-12, 4, +0.153020073134484E+03},
+            {-12, 7, -0.224799398218827E+04},
+            {-8, 0, -0.193993484669048E+00},
+            {-8, 1, -0.140467557893768E+01},
+            {-8, 3, +0.426799878114024E+02},
+            {-6, 0, +0.752810643416743E+00},
+            {-6, 2, +0.226657238616417E+02},
+            {-6, 4, -0.622873556909932E+03},
+            {-5, 0, -0.660823667935396E+00},
+            {-5, 1, +0.841267087271658E+00},
+            {-5, 2, -0.253717501764397E+02},
+            {-5, 4, +0.485708963532948E+03},
+            {-5, 6, +0.880531517490555E+03},
+            {-4, 12, +0.265015592794626E+07},
+            {-3, 1, -0.359287150025783E+00},
+            {-3, 6, -0.656991567673753E+03},
+            {-2, 2, +0.241768149185367E+01},
+            {0, 0, +0.856873461222588E+00},
+            {2, 1, +0.655143675313458E+00},
+            {3, 1, -0.213535213206406E+00},
+            {4, 0, +0.562974957606348E-02},
+            {5, 24, -0.316955725450471E+15},
+            {6, 0, -0.699997000152457E-03},
+            {8, 3, +0.119845803210767E-01},
+            {12, 1, +0.193848122022095E-04},
+            {14, 2, -0.215095749182309E-04}
+        };
+
+
+        class BackwardsRegion{
+        protected:
+            double p_star, X_star, T_star;
+            std::size_t N;
+            double a, b, f;
+            std::vector<double> I, J;
+            std::vector<double> n;
+        public:
+    
+            BackwardsRegion(BackwardRegionResidualElement data[], std::size_t N){
+                this->N = N;
+                for (std::size_t i = 0; i < N; ++i){
+                    n.push_back(data[i].n);
+                    I.push_back(data[i].I);
+                    J.push_back(data[i].J);
+                }
+            }
+
+            // This function imitates the Region3BackwardsRegion structure already written above
+            // for v(T,p) in Region 3. However, it can be used for the functions T(p,h) [Y=T, X=h] or
+            // T(p,s) [Y=T, X=s] in Regions 1, 2, or 3.  Additionally, it can be called for
+            // v(p,h) [Y=v, X=h] or v(p,s) [Y=v, X=s] in Region 3.  since there are no direct formulas
+            // for v(p,h) and v(p,s) in Regions 1 and 2, they have got be evaluated in a two step
+            // process by evaluating v(T,p) using T(p,X) and the p value suppied.
+            virtual double T_pX(double p, double X){
+                const double pi = p/p_star, eta = X/X_star;
+                double summer = 0;
+                for (std::size_t i = 0; i < N; ++i){
+                    summer += n[i]*pow(pi+a, I[i])*pow(eta+b, J[i])*pow(f, J[i]);
+                }
+                return summer*T_star;
+            };
+        };  // BackwardsRegion Class
+
+        // Region 1 *******************************************************************************
+        class Region1H : public BackwardsRegion{
+        public:
+            Region1H() : BackwardsRegion(Coeff1H, 20){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 2500.0*R_fact; a = 0; b = 1.0; f = 1;
+            };
+        };
+        class Region1S : public BackwardsRegion{
+        public:
+            Region1S() : BackwardsRegion(Coeff1S, 20){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 1.0*R_fact; a = 0; b = 2.0; f = 1;
+            };
+        };
+        // Region 2 *******************************************************************************
+        class Region2aH : public BackwardsRegion{
+        public:
+            Region2aH() : BackwardsRegion(Coeff2aH, 34){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 2000.0*R_fact; a = 0; b = -2.1; f = 1;
+            };
+        };
+        class Region2bH : public BackwardsRegion{
+        public:
+            Region2bH() : BackwardsRegion(Coeff2bH, 38){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 2000.0*R_fact; a = -2; b = -2.6; f = 1;
+            };
+        };
+        class Region2cH : public BackwardsRegion{
+        public:
+            Region2cH() : BackwardsRegion(Coeff2cH, 23){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 2000.0*R_fact; a = 25; b = -1.8; f = 1;
+            };
+        };
+        class Region2aS : public BackwardsRegion{
+        public:
+            Region2aS() : BackwardsRegion(Coeff2aS, 46){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 2.0*R_fact; a = 0; b = -2; f = 1;
+            };
+        };
+        class Region2bS : public BackwardsRegion{
+        public:
+            Region2bS() : BackwardsRegion(Coeff2bS, 44){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 0.7853*R_fact; a = 0; b = -10; f = -1;
+            };
+        };
+        class Region2cS : public BackwardsRegion{
+        public:
+            Region2cS() : BackwardsRegion(Coeff2cS, 30){ 
+                p_star = 1*p_fact; T_star = 1.0; X_star = 2.9251*R_fact; a = 0; b = -2; f = -1;
+            };
+        };
+        // Region 3 *******************************************************************************
+        class Region3aH : public BackwardsRegion{
+        public:
+            Region3aH() : BackwardsRegion(Coeff3aH, 31){ 
+                p_star = 100*p_fact; T_star = 760.0; X_star = 2300.0*R_fact; a = 0.240; b = -0.615; f = 1;
+            };
+        };
+        class Region3bH : public BackwardsRegion{
+        public:
+            Region3bH() : BackwardsRegion(Coeff3bH, 33){ 
+                p_star = 100*p_fact; T_star = 860.0; X_star = 2800.0*R_fact; a = 0.298; b = -0.720; f = 1;
+            };
+        };
+        class Region3aS : public BackwardsRegion{
+        public:
+            Region3aS() : BackwardsRegion(Coeff3aS, 33){ 
+                p_star = 100*p_fact; T_star = 760.0; X_star = 4.4*R_fact; a = 0.240; b = -0.703; f = 1;
+            };
+        };
+        class Region3bS : public BackwardsRegion{
+        public:
+            Region3bS() : BackwardsRegion(Coeff3bS, 28){ 
+                p_star = 100*p_fact; T_star = 860.0; X_star = 5.3*R_fact; a = 0.760; b = -0.818; f = 1;
+            };
+        };
+
+        static double Region2b2cdata[] = {
+	     0.90584278514723E+3,
+	    -0.67955786399241E+0,
+	     0.12809002730136E-3,
+	     0.26526571908428E+4,
+	     0.45257578905948E+1
+        };
+
+        static const std::vector<double> region2b2c_n(Region2b2cdata, Region2b2cdata + sizeof(Region2b2cdata)/sizeof(double));
+
+        inline double P2b2c_h(double h){
+            const double p_star = 1*p_fact, h_star = 1*R_fact, eta = h/h_star;
+            double PI = region2b2c_n[0] + region2b2c_n[1]*eta + region2b2c_n[2]*eta*eta;
+            return PI*p_star;
+        }
+        inline double H2b2c_p(double p){
+            const double p_star = 1*p_fact, h_star = 1*R_fact, PI = p/p_star;
+            double ETA = region2b2c_n[3] + sqrt((PI - region2b2c_n[4])/region2b2c_n[2]);
+            return ETA*h_star;
+        }
+
+        static double Region3abdata[] = {
+	     0.201464004206875E+4,
+	     0.374696550136983E+1,
+	    -0.219921901054187E-1,
+	     0.875131686009950E-4,
+        };
+
+        static const std::vector<double> region3ab_n(Region3abdata, Region3abdata + sizeof(Region3abdata)/sizeof(double));
+
+        inline double H3ab_p(double p){
+            const double p_star = 1*p_fact, h_star = 1*R_fact, PI = p/p_star;
+            double ETA = region3ab_n[0] + region3ab_n[1]*PI + region3ab_n[2]*PI*PI + region3ab_n[3]*PI*PI*PI;
+            return ETA*h_star;
+        };
+
+    };  // Backward Namespace
+
+    /********************************************************************************/
+    /**************************      General          *******************************/
+    /********************************************************************************/
+
     enum IF97REGIONS {REGION_1, REGION_2, REGION_3, REGION_4, REGION_5};
 
     inline IF97REGIONS RegionDetermination_TP(double T, double p)
@@ -2236,7 +2845,7 @@ namespace IF97
                 throw std::out_of_range("Pressure out of range");
             }
         }
-        else if (T > 623.15 && T < 1073.15){
+        else if (T > 623.15 && T <= 1073.15){
             if (p > 100e6){
                 throw std::out_of_range("Pressure out of range");
             }
@@ -2251,20 +2860,19 @@ namespace IF97
             }
         }
         else if (T >= 273.15 && T <= 623.15){
-            if (p > 100e6){
+            if (p > 100e6)
                 throw std::out_of_range("Pressure out of range");
-            }
-            else if(p > R4.p_T(T)){
+            else if(p > R4.p_T(T))
                 return REGION_1;
-            }
-            else{
+            else if(p < R4.p_T(T))
                 return REGION_2;
-            }
+            else
+                return REGION_4;
         }
         else{
             throw std::out_of_range("Temperature out of range");
         }
-    }
+    };
 
     inline double RegionOutput(IF97parameters outkey, double T, double p, IF97SatState State){
         static Region1 R1;
@@ -2289,6 +2897,156 @@ namespace IF97
             case REGION_5: return R5.output(outkey, T, p);
         }
         throw std::out_of_range("Unable to match region");
+    };
+
+
+    inline IF97REGIONS RegionDetermination_pX(double p, double X, IF97parameters inkey){
+        // Setup needed Region Equations for region determination
+        static Region1 R1;
+        static Region2 R2;
+        // Get Saturation Region Limits
+        double Tsat = 0;
+        double Xliq = 0;
+        double Xvap = 0;
+
+        // Check overall boundary limits
+        if ((p < Pmin) || (p > Pmax))
+                throw std::out_of_range("Pressure out of range");
+        double Xmin = R1.output(inkey,Tmin,p);
+        double Xmax = R2.output(inkey,Tmax,p);
+        if ((X < Xmin) || (X > Xmax))
+            if (inkey == IF97_HMASS)
+                throw std::out_of_range("Enthalpy out of range");
+            else
+                throw std::out_of_range("Entropy out of range");
+
+        // Check saturation Dome first
+        if (p <= Pcrit) {
+            Tsat = Tsat97(p);
+            Xliq = R1.output(inkey,Tsat,p);
+            Xvap = R2.output(inkey,Tsat,p);
+            if ((Xliq <= X) && (X <= Xvap))    // Within Saturation Dome
+                return REGION_4;               //    Region 4
+        }
+        // End Check saturation Dome
+
+        // Check values below 16.529 MPa
+        if (p <= P23min) {                        // p <= P23min (saturation dome)
+            if (X <= Xliq) return REGION_1;
+            else if (X >= Xvap) return REGION_2;
+            else return REGION_4;
+        } 
+        // Check values above 16.529 MPa
+        else if (X <= R1.output(inkey,623.15,p))
+                return REGION_1;
+        else if (X >= R2.output(inkey,Region23_p(p),p))
+                return REGION_2;
+        else
+                return REGION_3;
+    };  // Region Output backward
+
+
+    inline double BackwardRegion(double p, double X, IF97parameters inkey){
+        // This routine is for testing purposes only.  It returns the
+        // Region as an integer based on the backward evaluation of either
+        // (p,h) or (p,s)
+
+        // Make sure iput and output keys are valid for Backward formulas
+        if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
+            throw std::invalid_argument("Backward Formulas take variable inputs of Enthalpy or Entropy only.");
+
+        IF97REGIONS region = RegionDetermination_pX(p, X, inkey);
+
+        switch(region){
+        case REGION_1: return 1; break;
+        case REGION_2: return 2; break;
+        case REGION_3: return 3; break;
+        case REGION_4: return 4; break;
+        default: return 0; break;
+        }
+    }
+
+    inline double RegionOutputBackward(double p, double X, IF97parameters inkey){
+        // Note that this routine returns only temperature (IF97_T).  All other values should be
+        // calculated from this temperature and the known pressure using forward equations.
+        // Setup Backward Regions for output
+        static Backwards::Region1H B1H;
+        static Backwards::Region1S B1S;
+        static Backwards::Region2aH B2aH;
+        static Backwards::Region2bH B2bH;
+        static Backwards::Region2cH B2cH;
+        static Backwards::Region2aS B2aS;
+        static Backwards::Region2bS B2bS;
+        static Backwards::Region2cS B2cS;
+        static Backwards::Region3aH B3aH;
+        static Backwards::Region3bH B3bH;
+        static Backwards::Region3aS B3aS;
+        static Backwards::Region3bS B3bS;
+
+        // Make sure iput and output keys are valid for Backward formulas
+        if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
+            throw std::invalid_argument("Backward Formulas take variable inputs of Enthalpy or Entropy only.");
+
+        // Get Saturation Parameters
+
+        IF97REGIONS region = RegionDetermination_pX(p, X, inkey);
+
+        switch (region){
+        case REGION_1: if (inkey == IF97_HMASS) 
+                           return B1H.T_pX(p,X);
+                       else
+                           return B1S.T_pX(p,X);
+                       break;
+        case REGION_2: if (inkey == IF97_HMASS){
+                           if (p <= 4.0*p_fact)
+                               return B2aH.T_pX(p,X);
+                           else if (X >= Backwards::H2b2c_p(p))
+                               return B2bH.T_pX(p,X);
+                           else
+                               return B2cH.T_pX(p,X);
+                       } else {
+                           if (p <= 4.0*p_fact)
+                               return B2aS.T_pX(p,X);
+                           else if (X >= S2bc)
+                               return B2bS.T_pX(p,X);
+                           else 
+                               return B2cS.T_pX(p,X);
+                       }; break;
+        case REGION_3: if (inkey == IF97_HMASS){
+                           if (X <= Backwards::H3ab_p(p))
+                               return B3aH.T_pX(p,X);
+                           else
+                               return B3bH.T_pX(p,X);
+                       } else {
+                           if (X <= Scrit)
+                               return B3aS.T_pX(p,X);
+                           else
+                               return B3bS.T_pX(p,X);
+                       }; break;
+        case REGION_4: return Tsat97(p); break;
+        default: throw std::out_of_range("Unable to match region");
+        }
+    }  // Region Output backward
+
+    inline double rho_pX(double p, double X, IF97parameters inkey){
+        // NOTE: This implementation works, and with the 2016 Supplementary Release
+        //       for v(p,T) for Region 3 implemented, it is no longer iterative.  
+        //       However, the 2014 Supplementary Release for v(p,h) and v(p,s) are 
+        //       more direct and may be slightly faster, since only one algebraic 
+        //       equation is needed insteadm of two in Region 3.
+        static Region1 R1;
+        static Region2 R2;
+        double T = RegionOutputBackward( p, X, inkey);
+        double Tsat = Tsat97(p); 
+        if (abs(T-Tsat) < 1.0E-10){                                // If in saturation dome
+            double Xliq = R1.output(inkey,Tsat,p);
+            double Xvap = R2.output(inkey,Tsat,p);
+            double vliq = 1.0/R1.output(IF97_DMASS,Tsat,p);
+            double vvap = 1.0/R1.output(IF97_DMASS,Tsat,p);
+            return 1.0/(vliq + (X-Xliq)*(vvap-vliq)/(Xvap-Xliq));  //    Return Mixure Density
+        } else {                                                   // else
+            RegionOutput(IF97_DMASS, T, p, NONE);
+        }
     }
 
     // ******************************************************************************** //
@@ -2360,24 +3118,45 @@ namespace IF97
         return R4.p_T(T);
     };
     // ******************************************************************************** //
+    //                              Backward Functions                                  //
+    // ******************************************************************************** //
+    inline double T_phmass(double p,double h){
+        return RegionOutputBackward( p, h, IF97_HMASS);
+    };
+    inline double rhomass_phmass(double p,double h){
+        return rho_pX( p, h, IF97_HMASS);
+    };
+    inline double T_psmass(double p,double s){
+        return RegionOutputBackward( p, s, IF97_SMASS);
+    };
+    inline double rhomass_psmass(double p,double s){
+        return rho_pX( p, s, IF97_SMASS);
+    };
+    inline double Region_ph(double p, double h){
+        return BackwardRegion( p, h, IF97_HMASS);
+    };
+    inline double Region_ps(double p, double s){
+        return BackwardRegion( p, s, IF97_SMASS);
+    };
+    // ******************************************************************************** //
     //                              Trivial Funcitons                                   //
     // ******************************************************************************** //
     /// Get the Triple Point Temperature and Pressure
-    inline double get_Ttrip(){ return IF97_Ttrip; };
-    inline double get_ptrip(){ return IF97_Ptrip; };
+    inline double get_Ttrip(){ return Ttrip; };
+    inline double get_ptrip(){ return Ptrip; };
     /// Get the Critical Point Temperature and Pressure and Density
-    inline double get_Tcrit(){ return IF97_Tcrit; };
-    inline double get_pcrit(){ return IF97_Pcrit; };
-    inline double get_rhocrit(){ return IF97_Rhocrit; };
+    inline double get_Tcrit(){ return Tcrit; };
+    inline double get_pcrit(){ return Pcrit; };
+    inline double get_rhocrit(){ return Rhocrit; };
     /// Get the Max and Min Temperatures and Pressures
-    inline double get_Tmin(){ return IF97_Tmin; };
-    inline double get_Pmin(){ return IF97_Pmin; };
-    inline double get_Tmax(){ return IF97_Tmax; };
-    inline double get_Pmax(){ return IF97_Pmax; };
+    inline double get_Tmin(){ return Tmin; };
+    inline double get_Pmin(){ return Pmin; };
+    inline double get_Tmax(){ return Tmax; };
+    inline double get_Pmax(){ return Pmax; };
     /// Get physical constants
-    inline double get_MW() { return IF97_MW; };
-    inline double get_Rgas() { return IF97_Rgas; };
-    inline double get_Acentric() { return IF97_Acentric; };
+    inline double get_MW() { return MW; };
+    inline double get_Rgas() { return Rgas; };
+    inline double get_Acentric() { return -log10(psat97(0.7*Tcrit)/Pcrit) - 1; };
 
 }; /* namespace IF97 */
 

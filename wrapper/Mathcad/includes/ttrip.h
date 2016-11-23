@@ -9,7 +9,7 @@ LRESULT  if97_Ttrip(
     LPCCOMPLEXSCALAR a) // pointer to the parameter received from Mathcad
 {  
     // stuff result into return scalar structure
-    c->real = Ttrip;
+    c->real = IF97::Ttrip;
 
     // normal return
     return 0;

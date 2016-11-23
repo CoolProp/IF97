@@ -35,9 +35,13 @@ Usage
 
 See ``IF97.cpp``.  
 
-The primary functions needed are ``rhomass_TP(T,p)``, ``hmass_Tp(T,p)``, etc. where in all cases, the units are base-SI units (Pa, K, J/kg, etc.)
+The primary functions needed are ``rhomass_TP(T,p)``, ``hmass_Tp(T,p)``, etc. where in all cases, the units are base-SI units (Pa, K, J/kg, etc.)  
+  
+Liquid and vapor values along the saturation curve can be obtained using ``rholiq_p(p)``, ``rhovap_p(p)``, ``sliq_p(p)``, ``svap_p(p)``, etc.; all as a function of pressure.
 
 There are also ``Tsat97(p)`` and ``psat97(T)`` functions to get values from the saturation line.
+
+Backward functions have been implemented to return temperature as a function of pressure and either enthalpy or entropy; ``T_phmass(p,h)`` and ``T_psmass(p,s)``.
 
 License
 -------

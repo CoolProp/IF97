@@ -12,7 +12,7 @@ LRESULT  if97_T23(
     if ( a->imag != 0.0 )
         return MAKELRESULT(MUST_BE_REAL,1);
 
-    if ( (a->real < P23min) || (a->real > Pmax) )
+    if ( (a->real < IF97::P23min) || (a->real > IF97::Pmax) )
         return MAKELRESULT(T_OUT_OF_RANGE,1);
 
     //otherwise, all is well, evaluate function

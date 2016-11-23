@@ -9,7 +9,7 @@ LRESULT  if97_Pcrit(
     LPCCOMPLEXSCALAR a) // pointer to the parameter received from Mathcad
 {  
     // stuff result into return scalar structure
-    c->real = Pcrit;
+    c->real = IF97::Pcrit;
 
     // normal return
     return 0;
