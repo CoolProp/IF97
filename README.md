@@ -41,7 +41,7 @@ Liquid and vapor values along the saturation curve can be obtained using ``rholi
 
 There are also ``Tsat97(p)`` and ``psat97(T)`` functions to get values from the saturation line.
 
-Backward functions have been implemented to return temperature as a function of pressure and either enthalpy or entropy; ``T_phmass(p,h)`` and ``T_psmass(p,s)``.
+Backward functions have been implemented to return temperature as a function of pressure and either enthalpy or entropy; ``T_phmass(p,h)`` and ``T_psmass(p,s)``.  Backward functions have also been imlemented to return temperature or pressure as a function of enthalpy and entropy, ``p_hsmass(h,s)`` and ``T_hsmass(h,s)``, to facilitate thermodynamic cycle calculations.
 
 License
 -------

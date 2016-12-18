@@ -241,6 +241,20 @@
       <params>p,s</params>
       <category>if97 (Water Properties)</category>
       <description>Calculates the temperature, T [K], as a function of p [Pa] and mass entropy, s, [J/kg-K].</description>
-  </function>
+    </function>
+    <function>
+        <name>if97_ths</name>
+        <local_name>if97_ths</local_name>
+        <params>h,s</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the temperature, T [K], as a function of mass enthalpy, h [J/kg], and mass entropy, s [J/kg-K].</description>
+    </function>
+    <function>
+        <name>if97_phs</name>
+        <local_name>if97_phs</local_name>
+        <params>h,s</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the pressure, p [Pa], as a function of mass enthalpy, h [J/kg], and mass entropy, s [J/kg-K].</description>
+    </function>
 
 </FUNCTIONS>

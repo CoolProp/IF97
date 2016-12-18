@@ -104,13 +104,19 @@
     <ClInclude Include="includes\cvf.h" />
     <ClInclude Include="includes\cvg.h" />
     <ClInclude Include="includes\cvtp.h" />
+    <ClInclude Include="includes\h13.h" />
+    <ClInclude Include="includes\h2ab.h" />
     <ClInclude Include="includes\h2bc.h" />
     <ClInclude Include="includes\h3ab.h" />
     <ClInclude Include="includes\hf.h" />
     <ClInclude Include="includes\hg.h" />
+    <ClInclude Include="includes\hmaxs.h" />
+    <ClInclude Include="includes\hmins.h" />
+    <ClInclude Include="includes\hsats.h" />
     <ClInclude Include="includes\htp.h" />
     <ClInclude Include="includes\p23.h" />
     <ClInclude Include="includes\pcrit.h" />
+    <ClInclude Include="includes\phs.h" />
     <ClInclude Include="includes\psatt.h" />
     <ClInclude Include="includes\ptrip.h" />
     <ClInclude Include="includes\regionph.h" />
@@ -123,6 +129,7 @@
     <ClInclude Include="includes\stp.h" />
     <ClInclude Include="includes\t23.h" />
     <ClInclude Include="includes\tcrit.h" />
+    <ClInclude Include="includes\ths.h" />
     <ClInclude Include="includes\tph.h" />
     <ClInclude Include="includes\tps.h" />
     <ClInclude Include="includes\tsatp.h" />

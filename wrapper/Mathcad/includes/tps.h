@@ -21,7 +21,7 @@ LRESULT  if97_TPS(
     catch (const std::out_of_range& e) { 
         if (e.what()[0] == 'P') 
             return MAKELRESULT(P_OUT_OF_RANGE,1);
-        else // (e.what == "S")
+        else // (e.what == "Entropy")
             return MAKELRESULT(S_OUT_OF_RANGE,2);
     }
     catch (const std::logic_error&) {
