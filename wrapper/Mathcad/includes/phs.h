@@ -23,7 +23,7 @@ LRESULT  if97_PHS(
             return MAKELRESULT(H_OUT_OF_RANGE,1);
         else if ((e.what()[0] == 'E') && (e.what()[3] == 'r'))  // e.what == "Entropy..."
             return MAKELRESULT(S_OUT_OF_RANGE,2);
-        else if (e.what()[0] == 'U')                            // e.what == "Unable to deterine region"
+        else if (e.what()[0] == 'U')                            // e.what == "Unable to determine region"
             return MAKELRESULT(REGION_NOT_FOUND,2);
         else                                                    // some other error
             return MAKELRESULT(INTERRUPTED,2);

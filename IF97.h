@@ -2049,7 +2049,7 @@ namespace IF97
         //    into functions f(T,P,rho0) and f'(T,P,rho0) for the
         //    Newton-Raphson technique.  Functions for
         //    dphi/ddelta and d²phi/ddelta² were also required.  These
-        //    additional taylor functions are defined above.
+        //    additional Taylor functions are defined above.
         //
         double f(double T, double p, double rho0){
             const double rho_c = 322.0;
@@ -3094,7 +3094,7 @@ namespace IF97
             // T(p,s) [Y=T, X=s] in Regions 1, 2, or 3.  Additionally, it can be called for
             // v(p,h) [Y=v, X=h] or v(p,s) [Y=v, X=s] in Region 3.  since there are no direct formulas
             // for v(p,h) and v(p,s) in Regions 1 and 2, they have got be evaluated in a two step
-            // process by evaluating v(T,p) using T(p,X) and the p value suppied.
+            // process by evaluating v(T,p) using T(p,X) and the p value supplied.
             virtual double T_pX(double p, double X){
                 const double pi = p/p_star, eta = X/X_star;
                 double summer = 0;
@@ -3105,8 +3105,8 @@ namespace IF97
             };
 
             // This function implements the backward boundary formulas for h'(s), h"(s) as defined 
-            // in the IAPWS supplimentary releases of 2014 for region 3.  It should only be called
-            // when the apropriate coefficients are provided for an h(s) instance of this class.
+            // in the IAPWS supplementary releases of 2014 for region 3.  It should only be called
+            // when the appropriate coefficients are provided for an h(s) instance of this class.
             virtual double h_s(double s){
                 const double sigma1 = s/s_star, sigma2 = s/s2_star;
                 double summer = 0;
@@ -3120,8 +3120,8 @@ namespace IF97
             };
 
             // This function implements the backward formulas for p(h,s) as defined in the IAPWS
-            // supplimentary releases of 2014 for regions 1, 2, and 3.  It should only be called
-            // when the apropriate coefficients are provided for a p(h,s) instance of this class.
+            // supplementary releases of 2014 for regions 1, 2, and 3.  It should only be called
+            // when the appropriate coefficients are provided for a p(h,s) instance of this class.
             virtual double p_hs(double h, double s){
                 const double eta = h/h_star, sigma = s/s_star;
                 double summer = 0;
@@ -3510,7 +3510,7 @@ namespace IF97
         // Region as an integer based on the backward evaluation of either
         // (p,h) or (p,s)
 
-        // Make sure iput and output keys are valid for Backward formulas
+        // Make sure input and output keys are valid for Backward formulas
         if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
             throw std::invalid_argument("Backward Formulas take variable inputs of Enthalpy or Entropy only.");
 
@@ -3542,7 +3542,7 @@ namespace IF97
         static Backwards::Region3aS B3aS;
         static Backwards::Region3bS B3bS;
 
-        // Make sure iput and output keys are valid for Backward formulas
+        // Make sure input and output keys are valid for Backward formulas
         if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
             throw std::invalid_argument("Backward Formulas take variable inputs of Enthalpy or Entropy only.");
 
@@ -3592,7 +3592,7 @@ namespace IF97
         //       for v(p,T) for Region 3 implemented, it is no longer iterative.  
         //       However, the 2014 Supplementary Release for v(p,h) and v(p,s) are 
         //       more direct and may be slightly faster, since only one algebraic 
-        //       equation is needed insteadm of two in Region 3.
+        //       equation is needed instead of two in Region 3.
         static Region1 R1;
         static Region2 R2;
         double T = RegionOutputBackward( p, X, inkey);
@@ -3602,7 +3602,7 @@ namespace IF97
             double Xvap = R2.output(inkey,Tsat,p);
             double vliq = 1.0/R1.output(IF97_DMASS,Tsat,p);
             double vvap = 1.0/R1.output(IF97_DMASS,Tsat,p);
-            return 1.0/(vliq + (X-Xliq)*(vvap-vliq)/(Xvap-Xliq));  //    Return Mixure Density
+            return 1.0/(vliq + (X-Xliq)*(vvap-vliq)/(Xvap-Xliq));  //    Return Mixture Density
         } else {                                                   // else
             RegionOutput(IF97_DMASS, T, p, NONE);
         }
@@ -3623,10 +3623,10 @@ namespace IF97
         if (s < STPmax)  // Use forward equation along Pmax using T(Pmax,s) as Temperature
             return RegionOutput( IF97_HMASS,RegionOutputBackward(Pmax,s,IF97_SMASS),Pmax, NONE);
         else { 
-        // Determining H(s) along Tmax is difficult because there is no direct p(T,s) formualtion.
+        // Determining H(s) along Tmax is difficult because there is no direct p(T,s) formulation.
         // This linear combination fit h(s)=a*ln(s)+b/s+c/s²+d is not perfect, but it's close
         // and can serve as a limit along that Tmax boundary. Coefficients in HTmaxdata above.
-        // There is a better way to do this using newton-raphson on Tmax = T(p,s), but it is iterative and slow.
+        // There is a better way to do this using Newton-Raphson on Tmax = T(p,s), but it is iterative and slow.
             double ETA = Hmax_n[0]*log(sigma) + Hmax_n[1]/sigma + Hmax_n[2]/pow(sigma,2) +Hmax_n[3];
             return ETA*h_star;
         }
@@ -3679,7 +3679,7 @@ namespace IF97
                 return BACK_4;                //      REGION 4
             else if (h < H23min)              //  if below bounding box
                 return BACK_3B;               //      REGION 3(b)
-            else if (h > H23max)              //  if above bonnding box
+            else if (h > H23max)              //  if above bounding box
                 return BACK_2C;               //      REGION 2(c)
             else {                            //  Need to check TB23 Curve
                 double TB23 = b23hs.t_hs(h,s);       //  Calc TB23(h,s)
@@ -3853,7 +3853,7 @@ namespace IF97
         return BackwardRegion( p, s, IF97_SMASS);
     };
     // ******************************************************************************** //
-    //                              Trivial Funcitons                                   //
+    //                              Trivial Functions                                   //
     // ******************************************************************************** //
     /// Get the Triple Point Temperature and Pressure
     inline double get_Ttrip(){ return Ttrip; };
