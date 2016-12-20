@@ -15,7 +15,7 @@
 
 // Mathcad Error Codes
 enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, 
-          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, NUMBER_OF_ERRORS};
+          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, REGION_NOT_FOUND, NUMBER_OF_ERRORS};
 
     // Table of Error Messages
     // These message strings MUST be in the order of the Error Code enumeration above, with the last being a dummy value for error count
@@ -31,6 +31,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
         "Density out of Range",
         "Enthalpy out of Range",
         "Entropy out of Range",
+        "Region not found",
         "Error Count - Not Used"
     };
 
@@ -54,7 +55,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\cvtp.h"
     #include ".\includes\wtp.h"
     // *************************************************************
-    // Saturation function stubs (to be implemented soon)
+    // Saturation function stubs
     // *************************************************************
     #include ".\includes\rhof.h"
     #include ".\includes\rhog.h"
@@ -90,12 +91,19 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\regionph.h"
     #include ".\includes\regionps.h"
     #include ".\includes\h3ab.h"
+    #include ".\includes\h2ab.h"
     #include ".\includes\h2bc.h"
+    #include ".\includes\h13.h"
+    #include ".\includes\hsats.h"
+    #include ".\includes\hmaxs.h"
+    #include ".\includes\hmins.h"
     // *************************************************************
     // Reverse Functions
     // *************************************************************
     #include ".\includes\tph.h"
     #include ".\includes\tps.h"
+    #include ".\includes\phs.h"
+    #include ".\includes\ths.h"
 
     // DLL entry point code.  the _CRT_INIT function is needed
     // if you are using Microsoft's 32 bit compiler
@@ -182,6 +190,11 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_t23 );
                     CreateUserFunction( hDLL, &if97_h2bc );
                     CreateUserFunction( hDLL, &if97_h3ab );
+                    CreateUserFunction( hDLL, &if97_h2ab );
+                    CreateUserFunction( hDLL, &if97_h13s );
+                    CreateUserFunction( hDLL, &if97_hsats );
+                    CreateUserFunction( hDLL, &if97_hmaxs );
+                    CreateUserFunction( hDLL, &if97_hmins );
                     CreateUserFunction( hDLL, &if97_regionph );
                     CreateUserFunction( hDLL, &if97_regionps );
                     // *************************************************************
@@ -189,6 +202,8 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     // *************************************************************
                     CreateUserFunction( hDLL, &if97_tph );
                     CreateUserFunction( hDLL, &if97_tps );
+                    CreateUserFunction( hDLL, &if97_phs );
+                    CreateUserFunction( hDLL, &if97_ths );
                     break;
                     }
 
