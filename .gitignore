@@ -1,5 +1,7 @@
 *~
 
+*.opensdf
+
 /build*
 
 /wrapper/Mathcad/*.sdf
@@ -8,3 +10,4 @@
 /wrapper/Mathcad/Release
 /wrapper/Mathcad/Debug
 /wrapper/Mathcad/ipch
+/wrapper/Mathcad/if97_validation.xmcd

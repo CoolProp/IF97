@@ -7,16 +7,18 @@
 #include <iomanip>      // std::setprecision
 #include <stdexcept>
 
-enum IF97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W};
+enum IF97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W,
+                    // Transport Property enumerations
+                    IF97_MU};
                     
 enum IF97SatState {NONE, LIQUID, VAPOR};   // Saturated Liquid/Vapor state determination
 
-struct RegionIdealElement
+struct RegionIdealElement          // Structure for the single indexed state equation coefficients
 {
     int J; ///< The first index
     double n; ///< The leading numerical constant
 };
-struct RegionResidualElement
+struct RegionResidualElement      // Structure for the double indexed state equation coefficients
 {
     int I, ///< The first index
         J; ///< The second index
@@ -216,6 +218,110 @@ namespace IF97
                 summer += n0[i]*J0[i]*(J0[i]-1)*pow(_TAU, J0[i]-2);
             }
             return summer;
+        }
+    };
+    
+
+    /********************************************************************************/
+    /**************************       Region #0       *******************************/
+    /********************************************************************************/
+    /* NOTE: The IAPWS Viscosity and Thermal Conductivity formulations provide a    */
+    /*       single formulation for the entirety of the IF97 valid (T,P) range      */
+    /*       and, therefore is defined in its own region by class Region0.          */
+    /*       Since the equation is a function of Density (not Pressure) the         */
+    /*       calling function must first determine density from pressure, which     */
+    /*       DOES depend on the IF97 Region determination.                          */
+    /********************************************************************************/
+
+    static RegionResidualElement Hresiddata[] = {       // Residual H for viscosity
+        {0, 0,  5.20094e-1},
+        {1, 0,  8.50895e-2},
+        {2, 0, -1.08374   },
+        {3, 0, -2.89555e-1},
+        {0, 1,  2.22531e-1},
+        {1, 1,  9.99115e-1},
+        {2, 1,  1.88797   },
+        {3, 1,  1.26613   },
+        {5, 1,  1.20573e-1},
+        {0, 2, -2.81378e-1},
+        {1, 2, -9.06851e-1},
+        {2, 2, -7.72479e-1},
+        {3, 2, -4.89837e-1},
+        {4, 2, -2.57040e-1},
+        {0, 3,  1.61913e-1},
+        {1, 3,  2.57399e-1},
+        {0, 4, -3.25372e-2},
+        {3, 4,  6.98452e-2},
+        {4, 5,  8.72102e-3},
+        {3, 6, -4.35673e-3},
+        {5, 6, -5.93264e-4}
+    };
+
+    static RegionIdealElement Hidealdata[] = {          // Ideal H for viscosity
+        {0,  1.67752   },
+        {1,  2.20462   },
+        {2,  0.6366564 },
+        {3, -0.241605  }
+    };
+
+    static std::vector<RegionResidualElement> Hrdata(Hresiddata, Hresiddata + sizeof(Hresiddata)/sizeof(RegionResidualElement));
+    static std::vector<RegionIdealElement> H0data(Hidealdata, Hidealdata + sizeof(Hidealdata)/sizeof(RegionIdealElement));
+
+    class Region0
+    {
+    protected:
+        std::vector<int> J0;
+        std::vector<double> n0;
+        std::vector<int> Ir, Jr;
+        std::vector<double> nr;
+        double T_star, p_star, rho_star, mu_star;
+    public:
+        Region0() : T_star(Tcrit), p_star(Pcrit), rho_star(Rhocrit), mu_star(1.0E-6) { 
+            for (std::size_t i = 0; i < Hrdata.size(); ++i){
+                nr.push_back(Hrdata[i].n);
+                Ir.push_back(Hrdata[i].I);
+                Jr.push_back(Hrdata[i].J);
+            }
+            for (std::size_t i = 0; i < H0data.size(); ++i){
+                n0.push_back(H0data[i].n);
+                J0.push_back(H0data[i].J);
+            }
+        }
+        double visc(double T, double rho){
+            double mu2 = 1.0; // For Industrial Formulation (IF97), mu2 = 1.0
+            return mu_star * mu0(T) * mu1(T,rho) * mu2;
+        }
+        double output(IF97parameters key, double T, double rho){
+            switch(key)                 // return all properties using the new rho value
+            {
+                case IF97_MU: return visc(T,rho);
+                default:
+                    throw std::invalid_argument("Bad key to output");  // JPH: changed this to invalid_argument exception
+            }
+        }
+    protected:
+        double mu0(double T){
+            double T_bar = T/T_star;
+            double summer = 0.0;
+            for (std::size_t i = 0; i < J0.size(); ++i)
+            {
+                summer += n0[i]/pow(T_bar, J0[i]);
+            }
+            return 100.0*pow(T_bar, 0.5)/summer;
+        }
+        double mu1(double T, double rho){
+            double rho_bar = rho/rho_star;
+            double summer = 0.0;
+            for (std::size_t i = 0; i < Jr.size(); ++i){
+                summer += rho_bar * pow(Trterm(T),Ir[i]) * nr[i]*pow(Rhorterm(rho),Jr[i]);
+            }
+            return exp(summer);
+        }
+        double Trterm(double T){
+            return T_star/T - 1.0;
+        }
+        double Rhorterm(double rho){
+            return rho/rho_star - 1.0;
         }
     };
 
@@ -3387,7 +3493,7 @@ namespace IF97
     /**************************      General          *******************************/
     /********************************************************************************/
 
-    enum IF97REGIONS {REGION_1, REGION_2, REGION_3, REGION_4, REGION_5};
+    enum IF97REGIONS {REGION_0, REGION_1, REGION_2, REGION_3, REGION_4, REGION_5};
     enum IF97BACKREGIONS {BACK_1, BACK_2A, BACK_2B, BACK_2C, BACK_3A, BACK_3B, BACK_4};
 
     inline IF97REGIONS RegionDetermination_TP(double T, double p)
@@ -3433,16 +3539,22 @@ namespace IF97
         }
     };
 
-    inline double RegionOutput(IF97parameters outkey, double T, double p, IF97SatState State){
+    double RegionOutput(IF97parameters outkey, double T, double p, IF97SatState State){
+        static Region0 R0;
         static Region1 R1;
         static Region2 R2;
         static Region3 R3;
         static Region4 R4;
         static Region5 R5;
 
-        IF97REGIONS region = RegionDetermination_TP(T, p);
-    
+        IF97REGIONS region;
+        if (outkey == IF97_MU) 
+            region = REGION_0;
+        else
+            region = RegionDetermination_TP(T, p);
+
         switch (region){
+            case REGION_0: return R0.output(outkey,T,p); // Note: p is actually rho (density) for Region 0 transport equations.
             case REGION_1: if (State == VAPOR) 
                                return R2.output(outkey, T, p);  // On saturation curve and need the Vapor phase
                            else
@@ -3775,6 +3887,16 @@ namespace IF97
     inline double cvmass_Tp(double T, double p){ return RegionOutput( IF97_CVMASS, T, p, NONE); };
     /// Get the speed of sound [m/s] as a function of T [K] and p [Pa]
     inline double speed_sound_Tp(double T, double p){ return RegionOutput( IF97_W, T, p, NONE); };
+
+    // ******************************************************************************** //
+    //                            Transport Properties                                  //
+    // ******************************************************************************** //
+
+    /// Get the viscosity [Pa-s] as a function of T [K] and Rho [kg/m³]
+    inline double visc_TRho(double T, double rho) {	return RegionOutput(IF97_MU, T, rho, NONE); };
+    /// Get the viscosity [Pa-s] as a function of T [K] and p [Pa]
+    inline double visc_Tp(double T, double p) { return visc_TRho( T, RegionOutput( IF97_DMASS, T, p, NONE) ); };
+
     // ******************************************************************************** //
     //                             Saturated Vapor/Liquid Functions                     //
     // ******************************************************************************** //
@@ -3812,6 +3934,12 @@ namespace IF97
     inline double speed_soundliq_p(double p){ return RegionOutput( IF97_W, Tsat97(p), p, LIQUID); };
     /// Get the saturated vapor speed of sound [m/s] as a function of T [K] and p [Pa]
     inline double speed_soundvap_p(double p){ return RegionOutput( IF97_W, Tsat97(p), p, VAPOR); };
+    // ******************************************************************************** //
+    /// Get the saturated liquid viscosity [Pa-s] as a function of p [Pa]
+    inline double viscliq_p( double p) { return RegionOutput( IF97_MU, Tsat97(p), rhomass_Tp(Tsat97(p), p), LIQUID); };
+    /// Get the saturated vapor viscosity [Pa-s] as a function of p [Pa]
+    inline double viscvap_p( double p) { return RegionOutput( IF97_MU, Tsat97(p), rhomass_Tp(Tsat97(p), p), VAPOR); };
+
     // ******************************************************************************** //
     //                               2-Phase Functions                                  //
     // ******************************************************************************** //

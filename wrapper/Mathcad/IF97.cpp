@@ -73,16 +73,14 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\cvg.h"
     #include ".\includes\wf.h"
     #include ".\includes\wg.h"
-    /*
     // *************************************************************
     // Transport Property Stubs (to be implemented soon)
     // *************************************************************
-    #include "sigma.h"
-    #include "mutp.h"
-    #include "mutrho.h"  // this function provided for validatation work only
-    #include "muf.h"
-    #include "mug.h"
-    */
+    //#include ".\includes\sigma.h"
+    #include ".\includes\mutp.h"
+    #include ".\includes\mutrho.h"  // this function provided for validation work only
+    #include ".\includes\muf.h"
+    #include ".\includes\mug.h"
     // *************************************************************
     // Test Functions
     // *************************************************************
@@ -170,7 +168,6 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_cvg );
                     CreateUserFunction( hDLL, &if97_wf );
                     CreateUserFunction( hDLL, &if97_wg );
-                    /*
                     // *************************************************************
                     // Transport Property functions
                     // *************************************************************
@@ -181,8 +178,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     // *************************************************************
                     // Additional Property functions
                     // *************************************************************
-                    CreateUserFunction( hDLL, &if97_sigma );
-                    */
+                    // CreateUserFunction( hDLL, &if97_sigma );
                     // *************************************************************
                     // Test functions
                     // *************************************************************
