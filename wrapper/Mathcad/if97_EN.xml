@@ -249,6 +249,13 @@
         <category>if97 (Water Properties)</category>
         <description>Calculates the saturated vapor viscosity [Pa-s] as a function of pressure, p [Pa].</description>
     </function>
+    <function>
+        <name>if97_sigma</name>
+        <local_name>if97_sigma</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the surface tension [N/m] as a function of temperature, T [K].</description>
+    </function>
     <!-- Below are the entries for the backwards if97 functions -->
     <function>
         <name>if97_tph</name>

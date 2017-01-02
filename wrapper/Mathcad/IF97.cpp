@@ -76,7 +76,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     // *************************************************************
     // Transport Property Stubs (to be implemented soon)
     // *************************************************************
-    //#include ".\includes\sigma.h"
+    #include ".\includes\sigma.h"
     #include ".\includes\mutp.h"
     #include ".\includes\mutrho.h"  // this function provided for validation work only
     #include ".\includes\muf.h"
@@ -178,7 +178,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     // *************************************************************
                     // Additional Property functions
                     // *************************************************************
-                    // CreateUserFunction( hDLL, &if97_sigma );
+                    CreateUserFunction( hDLL, &if97_sigma );
                     // *************************************************************
                     // Test functions
                     // *************************************************************

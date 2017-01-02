@@ -2330,6 +2330,17 @@ namespace IF97
             double D = 2*G/(-F-sqrt(F*F-4*E*G));
             return T_star*0.5*(n[10] + D - sqrt(pow(n[10]+D, 2) - 4*(n[9] + n[10]*D)));
         };
+		double sigma_t(double T){
+            // Surface Tension [mN/m] in two-phase region as a function of temperature [K]
+            // Implemented from IAPWS R1-76(2014).
+            // May be extrapolated down to -25C in the super-cooled region.
+			if ( ( T < (Ttrip - 25.0) ) || ( T > Tcrit ) ) throw std::out_of_range("Temperature out of range");
+			double Tau = 1.0 - T/Tcrit;
+			double B = 235.8 / R_fact;  // B value published in mN/m 
+			double b = -0.625;
+			double mu = 1.256;
+			return B*pow(Tau,mu)*(1.0 + b*Tau);
+		}
     };
 
     /********************************************************************************/
@@ -3953,6 +3964,11 @@ namespace IF97
         static Region4 R4;
         return R4.p_T(T);
     };
+    /// Get surface tension [N/m] as a function of T [K]
+	inline double sigma97(double T){
+		static Region4 R4;
+		return R4.sigma_t(T);
+	};
     // ******************************************************************************** //
     //                              Backward Functions                                  //
     // ******************************************************************************** //
