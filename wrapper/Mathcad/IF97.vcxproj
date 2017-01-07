@@ -110,6 +110,7 @@
     <ClInclude Include="includes\cvf.h" />
     <ClInclude Include="includes\cvg.h" />
     <ClInclude Include="includes\cvtp.h" />
+    <ClInclude Include="includes\drhodp.h" />
     <ClInclude Include="includes\h13.h" />
     <ClInclude Include="includes\h2ab.h" />
     <ClInclude Include="includes\h2bc.h" />

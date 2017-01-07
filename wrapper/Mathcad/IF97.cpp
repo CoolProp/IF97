@@ -95,6 +95,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\hsats.h"
     #include ".\includes\hmaxs.h"
     #include ".\includes\hmins.h"
+    #include ".\includes\drhodp.h"
     // *************************************************************
     // Reverse Functions
     // *************************************************************
@@ -193,6 +194,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_hmins );
                     CreateUserFunction( hDLL, &if97_regionph );
                     CreateUserFunction( hDLL, &if97_regionps );
+                    CreateUserFunction( hDLL, &if97_drhodp );
                     // *************************************************************
                     // Reverse functions
                     // *************************************************************
