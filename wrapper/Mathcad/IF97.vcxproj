@@ -121,6 +121,9 @@
     <ClInclude Include="includes\hmins.h" />
     <ClInclude Include="includes\hsats.h" />
     <ClInclude Include="includes\htp.h" />
+    <ClInclude Include="includes\kf.h" />
+    <ClInclude Include="includes\kg.h" />
+    <ClInclude Include="includes\ktp.h" />
     <ClInclude Include="includes\muf.h" />
     <ClInclude Include="includes\mug.h" />
     <ClInclude Include="includes\mutp.h" />

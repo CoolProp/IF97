@@ -81,6 +81,9 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\mutrho.h"  // this function provided for validation work only
     #include ".\includes\muf.h"
     #include ".\includes\mug.h"
+    #include ".\includes\ktp.h"
+    #include ".\includes\kf.h"
+    #include ".\includes\kg.h"
     // *************************************************************
     // Test Functions
     // *************************************************************
@@ -176,6 +179,9 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_mutrho );  // for checking only
                     CreateUserFunction( hDLL, &if97_muf );
                     CreateUserFunction( hDLL, &if97_mug );
+                    CreateUserFunction( hDLL, &if97_ktp );
+                    CreateUserFunction( hDLL, &if97_kf );
+                    CreateUserFunction( hDLL, &if97_kg );
                     // *************************************************************
                     // Additional Property functions
                     // *************************************************************

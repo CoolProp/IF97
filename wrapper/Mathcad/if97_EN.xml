@@ -250,6 +250,27 @@
         <description>Calculates the saturated vapor viscosity [Pa-s] as a function of pressure, p [Pa].</description>
     </function>
     <function>
+        <name>if97_ktp</name>
+        <local_name>if97_ktp</local_name>
+        <params>T,p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the thermal conductivity [W/m-K] as a function of T [K] and p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_kf</name>
+        <local_name>if97_kf</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the saturated liquid thermal conductivity [W/m-K] as a function of pressure, p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_kg</name>
+        <local_name>if97_kg</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the saturated vapor thermal conductivity [W/m-K] as a function of pressure, p [Pa].</description>
+    </function>
+    <function>
         <name>if97_sigma</name>
         <local_name>if97_sigma</local_name>
         <params>p</params>

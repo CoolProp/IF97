@@ -36,7 +36,7 @@ FUNCTIONINFO    if97_mutp =
     "if97_mutp",                     // name by which Mathcad will recognize the function
     "T,p",                           // if97_mutp will be called as if97_mutp(T,p)
     // description of if97_mutp(p)
-    "Obtains the mass viscosity [Pa-s] as a function of T [K] and p [Pa].",
+    "Obtains the viscosity [Pa-s] as a function of T [K] and p [Pa].",
     (LPCFUNCTION)if97_MUTP,          // pointer to executable code
     COMPLEX_SCALAR,                  // the return type is a complex scalar
     2,                               // there are two input parameters

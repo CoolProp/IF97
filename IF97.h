@@ -141,11 +141,20 @@ namespace IF97
     };
 
     static RegionIdealElement Lidealdata[] = {          // Ideal L for thermal conductivity
-        {0,  2.443221e-3},
-        {1,  1.323095e-2},
-        {2,  6.770357e-3},
-        {3, -3.454586e-3},
-        {4,  4.096266e-4}
+        {0,  2.443221E-3},
+        {1,  1.323095E-2},
+        {2,  6.770357E-3},
+        {3, -3.454586E-3},
+        {4,  4.096266E-4}
+    };
+
+    static double A[6][5] = {
+        {  6.53786807199516,  6.52717759281799,   5.35500529896124,   1.55225959906681,   1.11999926419994  },
+        { -5.61149954923348, -6.30816983387575,  -3.96415689925446,   0.464621290821181,  0.595748562571649 },
+        {  3.39624167361325,  8.08379285492595,   8.91990208918795,   8.93237374861479,   9.88952565078920  },
+        { -2.27492629730878, -9.82240510197603, -12.03387295057900, -11.03219600611260, -10.32550511470400  },
+        { 10.26318546627090, 12.13584137913950,   9.19494865194302,   6.16780999933360,   4.66861294457414  },
+        {  1.97815050331519, -5.54349664571295,  -2.16866274479712,  -0.965458722086812, -0.503243546373828 },
     };
 
     static std::vector<RegionResidualElement> Hrdata(Hresiddata, Hresiddata + sizeof(Hresiddata)/sizeof(RegionResidualElement));
@@ -221,11 +230,32 @@ namespace IF97
             double mu2 = 1.0;        // For Industrial Formulation (IF97), mu2 = 1.0
             return mu_star * mu0(T) * mu1(T,rho) * mu2;
         }
+        double tcond(double T, double p, double rho){
+            /// This base region function is valid for all IF97 regions 
+            double lambda_star = 0.001;
+            double lambda_bar = lambda0(T)*lambda1(T,rho) + lambda2(T,p,rho);
+            return lambda_star * lambda_bar;
+        }
         virtual double drhodp(double T, double p){
             /// Only valid for regions 2 and 5.  Will be overridden in Regions 1 and 3.
             /// Derived from IAPWS Revised Advisory Note No. 3 (See Table 2, Section 4.1 & 4.3)
             double PI = p/p_star;
             return (rhomass(T,p)/p) * ( (1.0 - PI*PI*d2gammar_dPI2(T,p)) / (1.0 + PI*dgammar_dPI(T,p)) );
+        }
+        double delTr(double rho){
+            /// This is the IF97 correlation for drhodp at the reducing temperature, Tr
+            double rhobar = rho/Rhocrit, summer = 0;
+            int j;
+            //
+            if      (rhobar <= 0.310559006) j = 0;
+            else if (rhobar <= 0.776397516) j = 1;
+            else if (rhobar <= 1.242236025) j = 2;
+            else if (rhobar <= 1.863354037) j = 3;
+            else                            j = 4;
+            //
+            for (int i=0; i < 6; i++)
+                summer += A[i][j]*pow(rhobar,i);
+            return 1.0/summer;
         }
         virtual double PIrterm(double) = 0;
         virtual double TAUrterm(double) = 0;
@@ -242,6 +272,7 @@ namespace IF97
             case IF97_CVMASS: return cvmass(T, p);
             case IF97_W: return speed_sound(T, p);
             case IF97_MU: return visc(T,rhomass(T,p)); // Viscosity is a function of rho.
+            case IF97_K: return tcond(T,p,rhomass(T,p));
             case IF97_DRHODP: return drhodp(T, p);
             }
             throw std::out_of_range("Unable to match input parameters");
@@ -343,8 +374,7 @@ namespace IF97
         double mu0(double T){
             double T_bar = T/Tcrit;
             double summer = 0.0;
-            for (std::size_t i = 0; i < muJ0.size(); ++i)
-            {
+            for (std::size_t i = 0; i < muJ0.size(); ++i){
                 summer += mun0[i]/pow(T_bar, muJ0[i]);
             }
             return 100.0*pow(T_bar, 0.5)/summer;
@@ -356,6 +386,48 @@ namespace IF97
                 summer += rho_bar * pow(Trterm(T),muIr[i]) * munr[i]*pow(Rhorterm(rho),muJr[i]);
             }
             return exp(summer);
+        }
+        double lambda0(double T){
+            double T_bar = T/Tcrit;
+            double summer = 0.0;
+            for (std::size_t i = 0; i < lamJ0.size(); ++i){
+                summer += lamn0[i]/pow(T_bar, lamJ0[i]);
+            }
+            return pow(T_bar, 0.5)/summer;
+        }
+        double lambda1(double T, double rho){
+            double rho_bar = rho/Rhocrit;
+            double summer = 0.0;
+            for (std::size_t i = 0; i < lamJr.size(); ++i){
+                summer += rho_bar * pow(Trterm(T),lamIr[i]) * lamnr[i]*pow(Rhorterm(rho),lamJr[i]);
+            }
+            return exp(summer);
+        }
+        double lambda2(double T, double p, double rho){
+            double y, Cpbar, mubar, k, Z, delChi;
+            double rhobar = rho/Rhocrit;
+            double LAMBDA = 177.8514;
+            double qD     = 1.0/0.40;
+            double Tr     = 1.5*Tcrit;
+            double xi0    = 0.13;
+            double nu     = 0.630;
+            double gam    = 1.239;
+            double GAMMA0 = 0.06;
+            double PI     = 3.141592654;
+            double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas
+            Cpbar = cpmass(T,p)/Cpstar;
+            k = cpmass(T,p)/cvmass(T,p);
+            mubar = visc(T,rho)/1.0E-6;
+            delChi = rhobar*(Pcrit/Rhocrit*drhodp(T,p) - delTr(rho)*Tr/T);
+            if (delChi > 0)
+                y = qD*xi0*pow(delChi/GAMMA0,nu/gam);
+            else
+                y = 0.0;
+            if (y < 1.2E-7) 
+                Z = 0.0;
+            else
+                Z = 2.0/PI/y*(((1.0-1.0/k)*atan(y)+y/k) - (1.0 - exp(-1.0/(1.0/y + y*y/(3.0*rhobar*rhobar)))));
+            return LAMBDA*rhobar*Cpbar*T/(Tcrit*mubar)*Z;
         }
         double Trterm(double T){
             return Tcrit/T - 1.0;
@@ -2235,6 +2307,49 @@ namespace IF97
             }
             return exp(summer);
         }
+        double lambda0(double T){
+            double T_bar = T/Tcrit;
+            double summer = 0.0;
+            for (std::size_t i = 0; i < lamJ0.size(); ++i){
+                summer += lamn0[i]/pow(T_bar, lamJ0[i]);
+            }
+            return pow(T_bar, 0.5)/summer;
+        }
+        double lambda1(double T, double rho){
+            double rho_bar = rho/Rhocrit;
+            double summer = 0.0;
+            for (std::size_t i = 0; i < lamJr.size(); ++i){
+                summer += rho_bar * pow(Trterm(T),lamIr[i]) * lamnr[i]*pow(Rhorterm(rho),lamJr[i]);
+            }
+            return exp(summer);
+        }
+        double lambda2(double T, double p, double rho){
+            double xi, y, Cpbar, mubar, k, Z, zeta, delChi, Cpcalc;
+            double rhobar = rho/Rhocrit;
+            double LAMBDA = 177.8514;
+            double qD     = 1.0/0.40;
+            double Tr     = 1.5*Tcrit;
+            double xi0    = 0.13;
+            double nu     = 0.630;
+            double gam    = 1.239;
+            double GAMMA0 = 0.06;
+            double PI     = 2*acos(0.0);
+            double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas
+            Cpcalc = cpmass(T,rho);
+            if ((Cpcalc < 0) || (Cpcalc > 1.0E13)) Cpcalc = 1.0E13;
+            Cpbar = Cpcalc/Cpstar;
+            k = Cpcalc/cvmass(T,rho);
+            mubar = visc(T,rho)/1.0E-6;
+            zeta = Pcrit/Rhocrit*drhodp(T,rho);
+            if ((zeta < 0) || (zeta > 1.0E13)) zeta = 1.0E13;
+            delChi = rhobar*(zeta - delTr(rho)*Tr/T);
+            y = qD*xi0*pow(delChi/GAMMA0,nu/gam);
+            if (y < 1.2E-7) 
+                Z = 0.0;
+            else
+                Z = 2.0/(PI*y)*(((1.0-1.0/k)*atan(y)+y/k) - (1.0 - exp(-1.0/(1.0/y + y*y/(3.0*rhobar*rhobar)))));
+            return LAMBDA*rhobar*Cpbar*T/(Tcrit*mubar)*Z;
+        }
         double Trterm(double T){
             return Tcrit/T - 1.0;
         }
@@ -2296,9 +2411,16 @@ namespace IF97
             return sqrt(R*T*RHS);
         }
         double visc(double T, double rho){
+            /// This base region function was not inherited 
             double mu_star = 1.0E-6; // Reference viscosity [Pa-s]
             double mu2 = 1.0;        // For Industrial Formulation (IF97), mu2 = 1.0
             return mu_star * mu0(T) * mu1(T,rho) * mu2;
+        }
+        double tcond(double T, double p, double rho){
+            /// This base region function was not inherited in Region3
+            double lambda_star = 0.001;
+            double lambda_bar = lambda0(T)*lambda1(T,rho) + lambda2(T,p,rho);
+            return lambda_star * lambda_bar;
         }
         double drhodp(double T, double rho)
         /// Derived from IAPWS Revised Advisory Note No. 3 (See Table 2, Section 3.1 & 3.3)
@@ -2308,6 +2430,21 @@ namespace IF97
         ///       function to convert p to rho @ T.
         {
             return (rho/p(T,rho)) / ( 2.0 + delta2_d2phi_ddelta2(T,rho)/delta_dphi_ddelta(T,rho) );
+        }
+        double delTr(double rho){
+            /// This is the IF97 correlation for drhodp at the reducing temperature, Tr
+            double rhobar = rho/Rhocrit, summer = 0;
+            int j;
+            //
+            if      (rhobar <= 0.310559006) j = 0;
+            else if (rhobar <= 0.776397516) j = 1;
+            else if (rhobar <= 1.242236025) j = 2;
+            else if (rhobar <= 1.863354037) j = 3;
+            else                            j = 4;
+            //
+            for (int i=0; i < 6; i++)
+                summer += A[i][j]*pow(rhobar,i);
+            return 1.0/summer;
         }
         char SatSubRegionAdjust(IF97SatState State, double p, char subregion){
             switch(State)      // See if saturated state is requested
@@ -2384,6 +2521,7 @@ namespace IF97
                 case IF97_CVMASS: return cvmass(T, rho);
                 case IF97_W: return speed_sound(T, rho);
                 case IF97_MU: return visc(T,rho);
+                case IF97_K: return tcond(T,p,rho);
                 case IF97_DRHODP: return drhodp(T, rho); 
 
                 default:
@@ -4026,6 +4164,8 @@ namespace IF97
     };
     /// Get the viscosity [Pa-s] as a function of T [K] and p [Pa]
     inline double visc_Tp(double T, double p) { return RegionOutput(IF97_MU, T, p, NONE); };
+    /// Get the thermal conductivity [W/m-K] as a function of T [K] and p [Pa]
+    inline double tcond_Tp(double T, double p) { return RegionOutput(IF97_K, T, p, NONE); };
 
     // ******************************************************************************** //
     //                             Saturated Vapor/Liquid Functions                     //
@@ -4069,6 +4209,11 @@ namespace IF97
     inline double viscliq_p( double p) { return RegionOutput( IF97_MU, Tsat97(p), p, LIQUID); };
     /// Get the saturated vapor viscosity [Pa-s] as a function of p [Pa]
     inline double viscvap_p( double p) { return RegionOutput( IF97_MU, Tsat97(p), p, VAPOR); };
+    // ******************************************************************************** //
+    /// Get the saturated liquid thermal conductivity [W/m-K] as a function of p [Pa]
+    inline double tcondliq_p( double p) { return RegionOutput( IF97_K, Tsat97(p), p, LIQUID); };
+    /// Get the saturated vapor thermal conductivity [W/m-K] as a function of p [Pa]
+    inline double tcondvap_p( double p) { return RegionOutput( IF97_K, Tsat97(p), p, VAPOR); };
 
     // ******************************************************************************** //
     //                               2-Phase Functions                                  //
