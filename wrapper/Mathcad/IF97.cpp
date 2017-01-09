@@ -74,7 +74,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\wf.h"
     #include ".\includes\wg.h"
     // *************************************************************
-    // Transport Property Stubs (to be implemented soon)
+    // Transport Property Stubs
     // *************************************************************
     #include ".\includes\sigma.h"
     #include ".\includes\mutp.h"

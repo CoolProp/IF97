@@ -271,9 +271,9 @@ namespace IF97
             case IF97_CPMASS: return cpmass(T, p);
             case IF97_CVMASS: return cvmass(T, p);
             case IF97_W: return speed_sound(T, p);
-            case IF97_MU: return visc(T,rhomass(T,p)); // Viscosity is a function of rho.
-            case IF97_K: return tcond(T,p,rhomass(T,p));
-            case IF97_DRHODP: return drhodp(T, p);
+            case IF97_MU: return visc(T,rhomass(T,p));   // Viscosity is a function of rho.
+            case IF97_K: return tcond(T,p,rhomass(T,p)); // Conductivity needs p and rho.
+            case IF97_DRHODP: return drhodp(T, p);       // For verification testing.
             }
             throw std::out_of_range("Unable to match input parameters");
         }
@@ -3759,7 +3759,7 @@ namespace IF97
     /**************************      General          *******************************/
     /********************************************************************************/
 
-    enum IF97REGIONS {REGION_0, REGION_1, REGION_2, REGION_3, REGION_4, REGION_5};
+    enum IF97REGIONS {REGION_1, REGION_2, REGION_3, REGION_4, REGION_5};
     enum IF97BACKREGIONS {BACK_1, BACK_2A, BACK_2B, BACK_2C, BACK_3A, BACK_3B, BACK_4};
 
     inline IF97REGIONS RegionDetermination_TP(double T, double p)
