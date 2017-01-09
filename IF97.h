@@ -2623,8 +2623,8 @@ namespace IF97
         Region5() : BaseRegion(reg5rdata, reg50data)  {
             T_star = 1000; p_star = 1e6; 
         };
-        double drhodp(double T, double p){
-            return 5.0E-6;
+        double lambda2(double T, double p, double rho){
+            return 0.0;  // No critical enhancement of thermal conductivity in Region 5
         }
         double TAUrterm(double T){
             return T_star/T;
