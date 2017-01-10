@@ -19,7 +19,7 @@ To Build
 
 * You will need to have Visual Studio 2008 installed (Express version is fine).  Alternatively newer versions of Microsoft Visual Studio C++ should be fine, you'll just have to update the solution and project files
 
-* Build the if97 DLL in Visual Studio.  The project will auotmatically copy the DLL to the appropriate Mathcad installation directory.  You may have to allow user write access to both:
+* Build the if97 DLL in Visual Studio.  The project will automatically copy the DLL to the appropriate Mathcad installation directory.  You may have to allow user write access to both:
 
 	``C:\Program Files (x86)\Mathcad\Mathcad 15\userefi``
 	

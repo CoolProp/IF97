@@ -73,16 +73,17 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\cvg.h"
     #include ".\includes\wf.h"
     #include ".\includes\wg.h"
-    /*
     // *************************************************************
-    // Transport Property Stubs (to be implemented soon)
+    // Transport Property Stubs
     // *************************************************************
-    #include "sigma.h"
-    #include "mutp.h"
-    #include "mutrho.h"  // this function provided for validatation work only
-    #include "muf.h"
-    #include "mug.h"
-    */
+    #include ".\includes\sigma.h"
+    #include ".\includes\mutp.h"
+    #include ".\includes\mutrho.h"  // this function provided for validation work only
+    #include ".\includes\muf.h"
+    #include ".\includes\mug.h"
+    #include ".\includes\ktp.h"
+    #include ".\includes\kf.h"
+    #include ".\includes\kg.h"
     // *************************************************************
     // Test Functions
     // *************************************************************
@@ -97,6 +98,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\hsats.h"
     #include ".\includes\hmaxs.h"
     #include ".\includes\hmins.h"
+    #include ".\includes\drhodp.h"
     // *************************************************************
     // Reverse Functions
     // *************************************************************
@@ -170,7 +172,6 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_cvg );
                     CreateUserFunction( hDLL, &if97_wf );
                     CreateUserFunction( hDLL, &if97_wg );
-                    /*
                     // *************************************************************
                     // Transport Property functions
                     // *************************************************************
@@ -178,11 +179,13 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_mutrho );  // for checking only
                     CreateUserFunction( hDLL, &if97_muf );
                     CreateUserFunction( hDLL, &if97_mug );
+                    CreateUserFunction( hDLL, &if97_ktp );
+                    CreateUserFunction( hDLL, &if97_kf );
+                    CreateUserFunction( hDLL, &if97_kg );
                     // *************************************************************
                     // Additional Property functions
                     // *************************************************************
                     CreateUserFunction( hDLL, &if97_sigma );
-                    */
                     // *************************************************************
                     // Test functions
                     // *************************************************************
@@ -197,6 +200,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_hmins );
                     CreateUserFunction( hDLL, &if97_regionph );
                     CreateUserFunction( hDLL, &if97_regionps );
+                    CreateUserFunction( hDLL, &if97_drhodp );
                     // *************************************************************
                     // Reverse functions
                     // *************************************************************

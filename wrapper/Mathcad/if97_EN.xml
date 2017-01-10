@@ -158,15 +158,15 @@
     <description>Calculates the saturated vapor enthalpy [J/kg] as a function of pressure, p [Pa].</description>
   </function>
   <function>
-    <name>if97_utf</name>
-    <local_name>if97_utf</local_name>
+    <name>if97_uf</name>
+    <local_name>if97_uf</local_name>
     <params>p</params>
     <category>if97 (Water Properties)</category>
     <description>Calculates the saturated liquid internal energy [J/kg] as a function of pressure, p [Pa].</description>
   </function>
   <function>
-    <name>if97_utg</name>
-    <local_name>if97_utg</local_name>
+    <name>if97_ug</name>
+    <local_name>if97_ug</local_name>
     <params>p</params>
     <category>if97 (Water Properties)</category>
     <description>Calculates the saturated vapor internal energy [J/kg] as a function of pressure, p [Pa].</description>
@@ -227,7 +227,57 @@
     <category>if97 (Water Properties)</category>
     <description>Calculates the saturated vapor speed of sound [m/s] as a function of pressure, p [Pa].</description>
   </function>
-  <!-- Below are the entries for the backwards if97 functions -->
+    <!-- Below are the entries for the if97 transport functions -->
+    <function>
+        <name>if97_mutp</name>
+        <local_name>if97_mutp</local_name>
+        <params>T,p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the viscosity [Pa-s] as a function of T [K] and p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_muf</name>
+        <local_name>if97_muf</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the saturated liquid viscosity [Pa-s] as a function of pressure, p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_mug</name>
+        <local_name>if97_mug</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the saturated vapor viscosity [Pa-s] as a function of pressure, p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_ktp</name>
+        <local_name>if97_ktp</local_name>
+        <params>T,p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the thermal conductivity [W/m-K] as a function of T [K] and p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_kf</name>
+        <local_name>if97_kf</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the saturated liquid thermal conductivity [W/m-K] as a function of pressure, p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_kg</name>
+        <local_name>if97_kg</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the saturated vapor thermal conductivity [W/m-K] as a function of pressure, p [Pa].</description>
+    </function>
+    <function>
+        <name>if97_sigma</name>
+        <local_name>if97_sigma</local_name>
+        <params>p</params>
+        <category>if97 (Water Properties)</category>
+        <description>Calculates the surface tension [N/m] as a function of temperature, T [K].</description>
+    </function>
+    <!-- Below are the entries for the backwards if97 functions -->
     <function>
         <name>if97_tph</name>
         <local_name>if97_tph</local_name>

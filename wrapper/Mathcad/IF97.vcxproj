@@ -92,6 +92,12 @@
     <PostBuildEvent>
       <Message>Copy the resulting DLL file to the Mathcad\userefi directory</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy "$(ProjectDir)if97_EN.xml" "C:\Program Files (x86)\Mathcad\Mathcad 15\doc\funcdoc" /rqky</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Copy funcdoc XML file to appropriate installation directory</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="IF97.cpp" />
@@ -104,6 +110,7 @@
     <ClInclude Include="includes\cvf.h" />
     <ClInclude Include="includes\cvg.h" />
     <ClInclude Include="includes\cvtp.h" />
+    <ClInclude Include="includes\drhodp.h" />
     <ClInclude Include="includes\h13.h" />
     <ClInclude Include="includes\h2ab.h" />
     <ClInclude Include="includes\h2bc.h" />
@@ -114,6 +121,13 @@
     <ClInclude Include="includes\hmins.h" />
     <ClInclude Include="includes\hsats.h" />
     <ClInclude Include="includes\htp.h" />
+    <ClInclude Include="includes\kf.h" />
+    <ClInclude Include="includes\kg.h" />
+    <ClInclude Include="includes\ktp.h" />
+    <ClInclude Include="includes\muf.h" />
+    <ClInclude Include="includes\mug.h" />
+    <ClInclude Include="includes\mutp.h" />
+    <ClInclude Include="includes\mutrho.h" />
     <ClInclude Include="includes\p23.h" />
     <ClInclude Include="includes\pcrit.h" />
     <ClInclude Include="includes\phs.h" />
@@ -126,6 +140,7 @@
     <ClInclude Include="includes\rhotp.h" />
     <ClInclude Include="includes\sf.h" />
     <ClInclude Include="includes\sg.h" />
+    <ClInclude Include="includes\sigma.h" />
     <ClInclude Include="includes\stp.h" />
     <ClInclude Include="includes\t23.h" />
     <ClInclude Include="includes\tcrit.h" />
