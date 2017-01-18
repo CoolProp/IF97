@@ -84,6 +84,9 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\ktp.h"
     #include ".\includes\kf.h"
     #include ".\includes\kg.h"
+    #include ".\includes\prtp.h"
+    #include ".\includes\prf.h"
+    #include ".\includes\prg.h"
     // *************************************************************
     // Test Functions
     // *************************************************************
@@ -182,6 +185,9 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_ktp );
                     CreateUserFunction( hDLL, &if97_kf );
                     CreateUserFunction( hDLL, &if97_kg );
+                    CreateUserFunction( hDLL, &if97_prtp );
+                    CreateUserFunction( hDLL, &if97_prf );
+                    CreateUserFunction( hDLL, &if97_prg );
                     // *************************************************************
                     // Additional Property functions
                     // *************************************************************

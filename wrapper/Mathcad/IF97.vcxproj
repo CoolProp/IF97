@@ -131,6 +131,9 @@
     <ClInclude Include="includes\p23.h" />
     <ClInclude Include="includes\pcrit.h" />
     <ClInclude Include="includes\phs.h" />
+    <ClInclude Include="includes\prf.h" />
+    <ClInclude Include="includes\prg.h" />
+    <ClInclude Include="includes\prtp.h" />
     <ClInclude Include="includes\psatt.h" />
     <ClInclude Include="includes\ptrip.h" />
     <ClInclude Include="includes\regionph.h" />
