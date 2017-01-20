@@ -27,6 +27,8 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 
 namespace IF97
 {    
+    // CoolProp-IF97 Version Number
+    static char IF97VERSION [] = "v2.0.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -4289,6 +4291,7 @@ namespace IF97
     inline double get_MW() { return MW; };
     inline double get_Rgas() { return Rgas; };
     inline double get_Acentric() { return -log10(psat97(0.7*Tcrit)/Pcrit) - 1; };
+    inline std::string get_if97_version() { return IF97VERSION; };
 
 }; /* namespace IF97 */
 

@@ -155,6 +155,7 @@
     <ClInclude Include="includes\uf.h" />
     <ClInclude Include="includes\ug.h" />
     <ClInclude Include="includes\utp.h" />
+    <ClInclude Include="includes\version.h" />
     <ClInclude Include="includes\vf.h" />
     <ClInclude Include="includes\vg.h" />
     <ClInclude Include="includes\vtp.h" />
