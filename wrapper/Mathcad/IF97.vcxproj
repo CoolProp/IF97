@@ -131,6 +131,9 @@
     <ClInclude Include="includes\p23.h" />
     <ClInclude Include="includes\pcrit.h" />
     <ClInclude Include="includes\phs.h" />
+    <ClInclude Include="includes\prf.h" />
+    <ClInclude Include="includes\prg.h" />
+    <ClInclude Include="includes\prtp.h" />
     <ClInclude Include="includes\psatt.h" />
     <ClInclude Include="includes\ptrip.h" />
     <ClInclude Include="includes\regionph.h" />
@@ -152,6 +155,7 @@
     <ClInclude Include="includes\uf.h" />
     <ClInclude Include="includes\ug.h" />
     <ClInclude Include="includes\utp.h" />
+    <ClInclude Include="includes\version.h" />
     <ClInclude Include="includes\vf.h" />
     <ClInclude Include="includes\vg.h" />
     <ClInclude Include="includes\vtp.h" />

@@ -28,7 +28,7 @@ cmake ..
 cmake --build .
 ```
 
-This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf .  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%
+This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf and other IAPWS documents as noted in the output.  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%
 
 Usage
 -----
@@ -47,6 +47,9 @@ Transport property functions have been implemented for temperature/pressure stat
 - Viscosity functions: ``visc_Tp(T,p)``, ``viscliq_p(p)``, and ``viscvap_p(p)``
 - Thermal Conductivity functions: ``tcond_Tp(T,p)``, ``tcondliq_p(p)``, and ``tcondvap_p(p)``
 - Surface Tension: ``sigma97(t)``
+- Prandtl Number: ``prandtl_Tp(T,p)``, ``prandtlliq_p(p)``, and ``prandtlvap_p(p)``  
+
+As of IF97 v2.0.0, a utility function ``get_if97_version()`` will return the official version string for this IF97 implementation.
 
 License
 -------
@@ -55,7 +58,7 @@ MIT-style license (see LICENSE)
 
 Basically, you can do anything you like with the code.  The MIT license is a very permissive license, allowing you to modify, distribute, sell, etc. the code.  It is *not* a copy-left license, you can use this in commercial code.  
 
-You are strongly requested, but not required, to cite both this repository and that of coolprop: www.coolprop.org
+You are strongly requested, but not required, to cite both this repository and that of CoolProp: www.coolprop.org
 
 Wrappers
 --------

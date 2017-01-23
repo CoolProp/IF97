@@ -306,5 +306,13 @@
         <category>if97 (Water Properties)</category>
         <description>Calculates the pressure, p [Pa], as a function of mass enthalpy, h [J/kg], and mass entropy, s [J/kg-K].</description>
     </function>
+    <!-- Below are the entries for if97 utility functions -->
+    <function>
+        <name>if97_getvers</name>
+        <local_name>if97_getvers</local_name>
+        <params>dummy</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the version of the IF97 implementation code. Takes a "dummy" parameter that can be (0).</description>
+    </function>
 
 </FUNCTIONS>

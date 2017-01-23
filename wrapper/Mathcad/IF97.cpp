@@ -2,7 +2,15 @@
 //
 
 #include <string>
+
+#ifndef NOMINMAX // Kill windows' horrible min() and max() macros
+#define NOMINMAX
+#endif
 #include "mcadincl.h"
+#undef NOMINMAX 
+
+enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for STRING, use MC_STRING below
+#undef STRING                 // un-define STRING as it may conflict with STRING in other libraries
 
 //  By default, IF97.h uses the supplemental curve fit equations in Region 3 which are less accurate, but faster than iterating
 //  to find the density in terms of T & p.  Defining REGION3_ITERATE will use these equations to find density and then use it 
@@ -84,6 +92,9 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\ktp.h"
     #include ".\includes\kf.h"
     #include ".\includes\kg.h"
+    #include ".\includes\prtp.h"
+    #include ".\includes\prf.h"
+    #include ".\includes\prg.h"
     // *************************************************************
     // Test Functions
     // *************************************************************
@@ -99,6 +110,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\hmaxs.h"
     #include ".\includes\hmins.h"
     #include ".\includes\drhodp.h"
+    #include ".\includes\version.h"
     // *************************************************************
     // Reverse Functions
     // *************************************************************
@@ -182,6 +194,9 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_ktp );
                     CreateUserFunction( hDLL, &if97_kf );
                     CreateUserFunction( hDLL, &if97_kg );
+                    CreateUserFunction( hDLL, &if97_prtp );
+                    CreateUserFunction( hDLL, &if97_prf );
+                    CreateUserFunction( hDLL, &if97_prg );
                     // *************************************************************
                     // Additional Property functions
                     // *************************************************************
@@ -201,6 +216,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_regionph );
                     CreateUserFunction( hDLL, &if97_regionps );
                     CreateUserFunction( hDLL, &if97_drhodp );
+                    CreateUserFunction( hDLL, &if97_getvers );
                     // *************************************************************
                     // Reverse functions
                     // *************************************************************

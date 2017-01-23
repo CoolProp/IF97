@@ -27,6 +27,8 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 
 namespace IF97
 {    
+    // CoolProp-IF97 Version Number
+    static char IF97VERSION [] = "v2.0.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -232,7 +234,7 @@ namespace IF97
         }
         double tcond(double T, double p, double rho){
             /// This base region function is valid for all IF97 regions 
-            double lambda_star = 0.001;
+            double lambda_star = 0.001;  // Reference conductivity [W/m-K]
             double lambda_bar = lambda0(T)*lambda1(T,rho) + lambda2(T,p,rho);
             return lambda_star * lambda_bar;
         }
@@ -419,12 +421,12 @@ namespace IF97
             k = cpmass(T,p)/cvmass(T,p);
             mubar = visc(T,rho)/1.0E-6;
             delChi = rhobar*(Pcrit/Rhocrit*drhodp(T,p) - delTr(rho)*Tr/T);
-            if (delChi > 0)
-                y = qD*xi0*pow(delChi/GAMMA0,nu/gam);
-            else
-                y = 0.0;
-            if (y < 1.2E-7) 
-                Z = 0.0;
+            if (delChi > 0)                            /// At low (T,p), delChi can go negative, causing
+                y = qD*xi0*pow(delChi/GAMMA0,nu/gam);  ///   y to be imaginary from this nth-root equation.
+            else                                       ///   
+                y = 0.0;                               ///   Limit delChi to > 0, values.
+            if (y < 1.2E-7)                            /// Z is not calculated if y < 1.2E-7 since the
+                Z = 0.0;                               ///   critical enhancement becomes insignificant.
             else
                 Z = 2.0/PI/y*(((1.0-1.0/k)*atan(y)+y/k) - (1.0 - exp(-1.0/(1.0/y + y*y/(3.0*rhobar*rhobar)))));
             return LAMBDA*rhobar*Cpbar*T/(Tcrit*mubar)*Z;
@@ -2324,7 +2326,7 @@ namespace IF97
             return exp(summer);
         }
         double lambda2(double T, double p, double rho){
-            double xi, y, Cpbar, mubar, k, Z, zeta, delChi, Cpcalc;
+            double y, Cpbar, mubar, k, Z, zeta, delChi, Cpcalc;
             double rhobar = rho/Rhocrit;
             double LAMBDA = 177.8514;
             double qD     = 1.0/0.40;
@@ -3805,7 +3807,7 @@ namespace IF97
         }
     };
 
-    double RegionOutput(IF97parameters outkey, double T, double p, IF97SatState State){
+    inline double RegionOutput(IF97parameters outkey, double T, double p, IF97SatState State){
         static Region1 R1;
         static Region2 R2;
         static Region3 R3;
@@ -3877,7 +3879,7 @@ namespace IF97
     };  // Region Output backward
 
 
-    inline double BackwardRegion(double p, double X, IF97parameters inkey){
+    inline int BackwardRegion(double p, double X, IF97parameters inkey){
         // This routine is for testing purposes only.  It returns the
         // Region as an integer based on the backward evaluation of either
         // (p,h) or (p,s)
@@ -4166,6 +4168,10 @@ namespace IF97
     inline double visc_Tp(double T, double p) { return RegionOutput(IF97_MU, T, p, NONE); };
     /// Get the thermal conductivity [W/m-K] as a function of T [K] and p [Pa]
     inline double tcond_Tp(double T, double p) { return RegionOutput(IF97_K, T, p, NONE); };
+    /// Calculate the Prandtl number [dimensionless] as a function of T [K] and p [Pa]
+    inline double prandtl_Tp(double T, double p) { 
+        return visc_Tp(T,p) * cpmass_Tp(T,p) / tcond_Tp(T,p);
+    };
 
     // ******************************************************************************** //
     //                             Saturated Vapor/Liquid Functions                     //
@@ -4214,6 +4220,12 @@ namespace IF97
     inline double tcondliq_p( double p) { return RegionOutput( IF97_K, Tsat97(p), p, LIQUID); };
     /// Get the saturated vapor thermal conductivity [W/m-K] as a function of p [Pa]
     inline double tcondvap_p( double p) { return RegionOutput( IF97_K, Tsat97(p), p, VAPOR); };
+    // ******************************************************************************** //
+    /// Calculate the saturated liquid Prandtl number [dimensionless] as a function of p [Pa]
+    inline double prandtlliq_p(double p) { return viscliq_p(p) * cpliq_p(p) / tcondliq_p(p); };
+    /// Calculate the saturated vapor Prandtl number [dimensionless] as a function of p [Pa]
+    inline double prandtlvap_p(double p) { return viscvap_p(p) * cpvap_p(p) / tcondvap_p(p); };
+
 
     // ******************************************************************************** //
     //                               2-Phase Functions                                  //
@@ -4254,10 +4266,10 @@ namespace IF97
     inline double T_hsmass(double h, double s){
         return BackwardOutputHS(IF97_T, h, s);
     };
-    inline double Region_ph(double p, double h){
+    inline int Region_ph(double p, double h){
         return BackwardRegion( p, h, IF97_HMASS);
     };
-    inline double Region_ps(double p, double s){
+    inline int Region_ps(double p, double s){
         return BackwardRegion( p, s, IF97_SMASS);
     };
     // ******************************************************************************** //
@@ -4279,6 +4291,7 @@ namespace IF97
     inline double get_MW() { return MW; };
     inline double get_Rgas() { return Rgas; };
     inline double get_Acentric() { return -log10(psat97(0.7*Tcrit)/Pcrit) - 1; };
+    inline std::string get_if97_version() { return IF97VERSION; };
 
 }; /* namespace IF97 */
 
