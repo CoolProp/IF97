@@ -28,3 +28,8 @@ To Build
 	``C:\Program Files (x86)\Mathcad\Mathcad 15\doc\funcdoc``
 
 * Follow the above instructions for use.
+
+Compiler Flags
+==============
+
+The Mathcad wrapper code uses the ``REGION3_ITERATE`` flag to provide more accurate (but slightly slower) calculation of density in Region 3 (mostly super-critical) and does not use the ``IAPWS_UNITS`` flag, leaving all input/output values in SI units.

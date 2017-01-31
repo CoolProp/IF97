@@ -30,6 +30,16 @@ cmake --build .
 
 This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf and other IAPWS documents as noted in the output.  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%
 
+Compiler Switches
+-----------------
+
+There are two compiler switches that can be used to modify the behavior of the IF97 function library.  
+
+- ``REGION3_ITERATE``: If defined in the main program, will use the supplemental backward equations in Region 3 (mostly the supercritical region) to generate an initial guess for Density as a function of Temperature and Pressure and then use that initial guess for a Newton-Raphson solution of the original IF97 Revised Release for p = f(T,rho) to generate a more accurate solution.  If ``REGION3_ITERATE`` is not defined, the supplemental backward equations in Region 3 are used directly, which an error on the order of 1E-6, but about 2.5 times faster.  
+
+- ``IAPWS_UNITS``: By default, all input and output values of the IF97 functions are in SI Units, including Pa for Pressure and J for Enthalpy, Entropy, etc.  Additionally, surface tension returns units of N/m.  By defining ``IAPWS_UNITS``, Pressure inputs/outputs will use MPA and all thermodynamic properties will use units of kJ (instead of J) as originally defined in the IAPWS IF97 Release documents.  For example the function hmass(T,p) will require units of MPa for pressure and return values in kJ/kg.  All other unit types (kg, m, K) are SI units.  In addition, surface tension will return values in the IAPWS published units of mN/m.  Viscosity is return in the IAPWS units of Pa-s, independent of the condition of the flag.
+
+
 Usage
 -----
 
