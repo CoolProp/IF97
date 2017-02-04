@@ -2,9 +2,9 @@
 CoolProp IF97
 =============
 
-(c) Ian Bell and the CoolProp team
+(c) Ian Bell and the CoolProp team  
 
-This repository implements the IF97 formulation for the properties of pure water substance.
+This repository implements the IF97 formulation for the properties of pure water substance.  
 
 Why?
 ----
@@ -14,7 +14,7 @@ Almost all of the other implementations of IF97 are not free and closed-source. 
 * Entirely free and open-source (see license below)
 * Written in optimized standard C++ code so it will compile anywhere
 * Fast
-* Easy-to-use (just a single header)
+* Easy-to-use (just a single header)  
 
 Try it
 ------
@@ -28,17 +28,16 @@ cmake ..
 cmake --build .
 ```
 
-This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf and other IAPWS documents as noted in the output.  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%
+This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf and other IAPWS documents as noted in the output.  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%.  
 
 Compiler Switches
 -----------------
 
 There are two compiler switches that can be used to modify the behavior of the IF97 function library.  
 
-- ``REGION3_ITERATE``: If defined in the main program, will use the supplemental backward equations in Region 3 (mostly the supercritical region) to generate an initial guess for Density as a function of Temperature and Pressure and then use that initial guess for a Newton-Raphson solution of the original IF97 Revised Release for p = f(T,rho) to generate a more accurate solution.  If ``REGION3_ITERATE`` is not defined, the supplemental backward equations in Region 3 are used directly, which an error on the order of 1E-6, but about 2.5 times faster.  
+- ``REGION3_ITERATE``: If defined in the main program, will use the supplemental backward equations in Region 3 (mostly the supercritical region) to generate an initial guess for Density as a function of Temperature and Pressure and then use that initial guess for a Newton-Raphson solution of the original IF97 Revised Release for p = f(T,rho) to generate a more accurate solution.  If ``REGION3_ITERATE`` is not defined, the supplemental backward equations in Region 3 are used directly, which an error on the order of 1E-6, but about 2.6 times faster.  
 
-- ``IAPWS_UNITS``: By default, all input and output values of the IF97 functions are in SI Units, including Pa for Pressure and J for Enthalpy, Entropy, etc.  Additionally, surface tension returns units of N/m.  By defining ``IAPWS_UNITS``, Pressure inputs/outputs will use MPA and all thermodynamic properties will use units of kJ (instead of J) as originally defined in the IAPWS IF97 Release documents.  For example the function hmass(T,p) will require units of MPa for pressure and return values in kJ/kg.  All other unit types (kg, m, K) are SI units.  In addition, surface tension will return values in the IAPWS published units of mN/m.  Viscosity is return in the IAPWS units of Pa-s, independent of the condition of the flag.
-
+- ``IAPWS_UNITS``: By default, all input and output values of the IF97 functions are in SI Units, including [Pa] for Pressure and [J] (Joule) for Energy (Enthalpy, Entropy, etc.).  By defining ``IAPWS_UNITS``, Pressure inputs/outputs will use [MPa] and all *_thermodynamic_* properties will use units of [kJ] (instead of [J]) as originally defined in the IAPWS IF97 Release documents.  For example the function *_hmass(T,p)_* will require pressure input units of [MPa] and return values in [kJ/kg].  All other unit types (kg, m, K) are SI units.   Transport properties of Viscosity [Pa-s], Thermal Conductivity [W/m-K], and Surface Tension [N/m] always return values in these SI units, independent of the condition of the ``IAPWS_UNITS`` flag, however pressure *_input_* values *_will_* depend on the condition of the ``IAPWS_UNITS`` compiler flag.  
 
 Usage
 -----
@@ -59,7 +58,7 @@ Transport property functions have been implemented for temperature/pressure stat
 - Surface Tension: ``sigma97(t)``
 - Prandtl Number: ``prandtl_Tp(T,p)``, ``prandtlliq_p(p)``, and ``prandtlvap_p(p)``  
 
-As of IF97 v2.0.0, a utility function ``get_if97_version()`` will return the official version string for this IF97 implementation.
+As of IF97 v2.0.0, a utility function ``get_if97_version()`` will return the official version string for this IF97 implementation.  
 
 License
 -------
@@ -68,10 +67,10 @@ MIT-style license (see LICENSE)
 
 Basically, you can do anything you like with the code.  The MIT license is a very permissive license, allowing you to modify, distribute, sell, etc. the code.  It is *not* a copy-left license, you can use this in commercial code.  
 
-You are strongly requested, but not required, to cite both this repository and that of CoolProp: www.coolprop.org
+You are strongly requested, but not required, to cite both this repository and that of CoolProp: www.coolprop.org  
 
 Wrappers
 --------
 
 Wrappers directory started for 3rd Party Apps, including:
-- Mathcad 15 (Jeff Henning main contributor)
+- Mathcad 15 (Jeff Henning main contributor)  

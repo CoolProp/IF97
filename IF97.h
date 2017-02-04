@@ -2596,7 +2596,7 @@ namespace IF97
             // May be extrapolated down to -25C in the super-cooled region.
 			if ( ( T < (Ttrip - 25.0) ) || ( T > Tcrit ) ) throw std::out_of_range("Temperature out of range");
 			double Tau = 1.0 - T/Tcrit;
-			double B = 235.8 / R_fact;  // B value published in mN/m 
+			double B = 235.8 / 1000;  // Published value in [mN/m]; Convert to SI [N/m] in all cases 
 			double b = -0.625;
 			double mu = 1.256;
 			return B*pow(Tau,mu)*(1.0 + b*Tau);
