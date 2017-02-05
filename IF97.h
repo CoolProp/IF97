@@ -35,8 +35,13 @@ namespace IF97
     //     for the Thermodynamic Properties of Water and Steam, August 2007
     // IAPWS G5-01(2016), Guideline on the Use of Fundamental Physical Constants
     //      and Basic Constants of Water
+#ifdef IAPWS_UNITS
+    const double p_fact  = 1.0;                 // Leaves Thermodynamic Properties in IAPWS units of MPa
+    const double R_fact  = 1.0;                 // Leaves Thermodynamic Properties in IAPWS units of kJ
+#else
     const double p_fact  = 1e6;                 // Converts IAPWS MPa units to Pa
     const double R_fact  = 1000;                // Converts IAPWS kJ units to J
+#endif
     // IF97 Constants
     const double Tcrit   = 647.096;             // K
     const double Pcrit   = 22.064*p_fact;       // Pa
@@ -52,7 +57,7 @@ namespace IF97
     const double MW      = 0.018015268;         // kg/mol
     // Bounds for Region Determination
     const double Text    = 2273.15;             // Extended (Region 5) Temperature Limit (Region 5) [K]
-    const double Pext    = 50.0*p_fact;         // Extended (Region 5) Pressure Limit (Region 5) [MPa]
+    const double Pext    = 50.0*p_fact;         // Extended (Region 5) Pressure Limit (Region 5) [Pa]
     const double P23min  = 16.529164252605*p_fact; // Min Pressure on Region23 boundary curve; Max is Pmax
     const double T23min  = 623.15;              // Min Temperature on Region23 boundary curve
     const double T23max  = 863.15;              // Max Temperature on Region23 boundary curve
@@ -62,7 +67,7 @@ namespace IF97
     const double Smin    = 0.0;                         // Min Entropy [kJ/kg-K] for Backward p(h,s)
     const double Smax    = 11.921054825051103*R_fact;   // Max Entropy [kJ/kg-K] for Backward p(h,s)
     const double STPmax  = 6.04048367171238*R_fact;     // S(Tmax,Pmax)
-    const double Sgtrip  = 9.155492076509681*R_fact;     // Sat. Vapor  Entropy [kJ/kg-K] at Triple Point
+    const double Sgtrip  = 9.155492076509681*R_fact;    // Sat. Vapor  Entropy [kJ/kg-K] at Triple Point
     const double Sftrip  = -4.09187776773977E-7*R_fact; // Sat. Liquid Entropy [kJ/kg-K] at Triple Point
     const double Hgtrip  = 2500.9109532932*R_fact;      // Sat. Vapor  Enthalpy [kJ/kg] at Triple Point
     const double Hftrip  = 5.16837786577998E-4*R_fact;  // Sat. Liquid Enthalpy [kJ/kg] at Triple Point
@@ -198,7 +203,7 @@ namespace IF97
         }
         double rhomass(double T, double p){
             double PI = p/p_star;
-            return p/(PI*R*T*(dgamma0_dPI(T,p) + dgammar_dPI(T,p)));
+            return p/(PI*R*T)/(p_fact/1000.0/R_fact)/(dgamma0_dPI(T,p) + dgammar_dPI(T,p));
         }
         double hmass(double T, double p){
             double tau = T_star/T;
@@ -223,7 +228,7 @@ namespace IF97
         virtual double speed_sound(double T, double p){
             double tau = T_star/T, PI = p/p_star;
             double RHS = (1 + 2*PI*dgammar_dPI(T,p) + PI*PI*pow(dgammar_dPI(T,p),2))/((1-PI*PI*d2gammar_dPI2(T,p)) +pow(1 + PI*dgammar_dPI(T,p) - tau*PI*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*(d2gamma0_dTAU2(T,p) + d2gammar_dTAU2(T,p))));
-            return sqrt(R*T*RHS);
+            return sqrt(R*(1000/R_fact)*T*RHS);
         }
         double visc(double T, double rho){
             /// This base region function is valid for all IF97 regions since it is a function
@@ -418,6 +423,7 @@ namespace IF97
             double PI     = 3.141592654;
             double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas
             Cpbar = cpmass(T,p)/Cpstar;
+            if ((Cpbar < 0) || (Cpbar > 1.0E13)) Cpbar = 1.0E13;     /// Unit-less
             k = cpmass(T,p)/cvmass(T,p);
             mubar = visc(T,rho)/1.0E-6;
             delChi = rhobar*(Pcrit/Rhocrit*drhodp(T,p) - delTr(rho)*Tr/T);
@@ -493,7 +499,7 @@ namespace IF97
 			// see Table 3
             double tau = T_star/T;
             double RHS = pow(dgammar_dPI(T,p), 2)/(pow(dgammar_dPI(T,p)-tau*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*d2gammar_dTAU2(T,p)) - d2gammar_dPI2(T, p));
-            return sqrt(R*T*RHS);
+            return sqrt(R*(1000/R_fact)*T*RHS);
         }
         double cvmass(double T, double p) {
             // Evidently this formulation is special for some reason, and cannot be implemented using the base class formulation
@@ -505,7 +511,7 @@ namespace IF97
             double PI = p/p_star;
             /// This one is different as well...
             /// Derived from IAPWS Revised Advisory Note No. 3 (See Table 2, Section 4.1 & 4.2)
-            return -d2gammar_dPI2(T,p)/(pow(dgammar_dPI(T,p),2)*R*T);
+            return -d2gammar_dPI2(T,p)/(pow(dgammar_dPI(T,p),2)*R*T)*(1000*R_fact/p_fact);
         }
         double TAUrterm(double T){
             return T_star/T - 1.222;
@@ -605,12 +611,12 @@ namespace IF97
     static const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
 
     inline double Region23_T(double T){
-        const double p_star = 1e6, T_star = 1, theta = T/T_star;
+        const double p_star = 1*p_fact, T_star = 1, theta = T/T_star;
         double PI = region23_n[0] + region23_n[1]*theta + region23_n[2]*theta*theta;
         return PI*p_star;
     }
     inline double Region23_p(double p){
-        const double p_star = 1e6, T_star = 1, PI = p/p_star;
+        const double p_star = 1*p_fact, T_star = 1, PI = p/p_star;
         double THETA = region23_n[3] + sqrt((PI - region23_n[4])/region23_n[2]);
         return THETA*T_star;
     }
@@ -1598,85 +1604,85 @@ namespace IF97
         class Region3a : public Region3BackwardsRegion{
         public:
             Region3a() : Region3BackwardsRegion(Region3Adata, 30){ 
-                v_star = 0.0024; p_star = 100e6; T_star = 760; a = 0.085; b = 0.817; c = 1; d = 1; e = 1;
+                v_star = 0.0024; p_star = 100*p_fact; T_star = 760; a = 0.085; b = 0.817; c = 1; d = 1; e = 1;
             };
         };
         class Region3b : public Region3BackwardsRegion{
         public:
             Region3b() : Region3BackwardsRegion(Region3Bdata, 32){
-                v_star = 0.0041; p_star = 100e6; T_star = 860; a = 0.280; b = 0.779; c = 1; d = 1; e = 1;
+                v_star = 0.0041; p_star = 100*p_fact; T_star = 860; a = 0.280; b = 0.779; c = 1; d = 1; e = 1;
             };
         };
         class Region3c : public Region3BackwardsRegion{
         public:
             Region3c() : Region3BackwardsRegion(Region3Cdata, 35){
-                v_star = 0.0022; p_star = 40e6; T_star = 690; a = 0.259; b = 0.903; c = 1; d = 1; e = 1;
+                v_star = 0.0022; p_star = 40*p_fact; T_star = 690; a = 0.259; b = 0.903; c = 1; d = 1; e = 1;
             };
         };
         class Region3d : public Region3BackwardsRegion{
         public:
             Region3d() : Region3BackwardsRegion(Region3Ddata, 38){
-                v_star = 0.0029; p_star = 40e6; T_star = 690; a = 0.559; b = 0.939; c = 1; d = 1; e = 4;
+                v_star = 0.0029; p_star = 40*p_fact; T_star = 690; a = 0.559; b = 0.939; c = 1; d = 1; e = 4;
             };
         };
         class Region3e : public Region3BackwardsRegion{
         public:
             Region3e() : Region3BackwardsRegion(Region3Edata, 29){
-                v_star = 0.0032; p_star = 40e6; T_star = 710; a = 0.587; b = 0.918; c = 1; d = 1; e = 1;
+                v_star = 0.0032; p_star = 40*p_fact; T_star = 710; a = 0.587; b = 0.918; c = 1; d = 1; e = 1;
             };
         };
         class Region3f : public Region3BackwardsRegion{
         public:
             Region3f() : Region3BackwardsRegion(Region3Fdata, 42){
-                v_star = 0.0064; p_star = 40e6; T_star = 730; a = 0.587; b = 0.891; c = 0.5; d = 1; e = 4;
+                v_star = 0.0064; p_star = 40*p_fact; T_star = 730; a = 0.587; b = 0.891; c = 0.5; d = 1; e = 4;
             };
         };
         class Region3g : public Region3BackwardsRegion{
         public:
             Region3g() : Region3BackwardsRegion(Region3Gdata, 38){
-                v_star = 0.0027; p_star = 25e6; T_star = 660; a = 0.872; b = 0.971; c = 1; d = 1; e = 4;
+                v_star = 0.0027; p_star = 25*p_fact; T_star = 660; a = 0.872; b = 0.971; c = 1; d = 1; e = 4;
             };
         };
         class Region3h : public Region3BackwardsRegion{
         public:
             Region3h() : Region3BackwardsRegion(Region3Hdata, 29){
-                v_star = 0.0032; p_star = 25e6; T_star = 660; a = 0.898; b = 0.983; c = 1; d = 1; e = 4;
+                v_star = 0.0032; p_star = 25*p_fact; T_star = 660; a = 0.898; b = 0.983; c = 1; d = 1; e = 4;
             };
         };
         class Region3i : public Region3BackwardsRegion{
         public:
             Region3i() : Region3BackwardsRegion(Region3Idata, 42){
-                v_star = 0.0041; p_star = 25e6; T_star = 660; a = 0.910; b = 0.984; c = 0.5; d = 1; e = 4;
+                v_star = 0.0041; p_star = 25*p_fact; T_star = 660; a = 0.910; b = 0.984; c = 0.5; d = 1; e = 4;
             };
         };
         class Region3j : public Region3BackwardsRegion{
         public:
             Region3j() : Region3BackwardsRegion(Region3Jdata, 29){
-                v_star = 0.0054; p_star = 25e6; T_star = 670; a = 0.875; b = 0.964; c = 0.5; d = 1; e = 4;
+                v_star = 0.0054; p_star = 25*p_fact; T_star = 670; a = 0.875; b = 0.964; c = 0.5; d = 1; e = 4;
             };
         };
         class Region3k : public Region3BackwardsRegion{
         public:
             Region3k() : Region3BackwardsRegion(Region3Kdata, 34){
-                v_star = 0.0077; p_star = 25e6; T_star = 680; a = 0.802; b = 0.935; c = 1; d = 1; e = 1;
+                v_star = 0.0077; p_star = 25*p_fact; T_star = 680; a = 0.802; b = 0.935; c = 1; d = 1; e = 1;
             };
         };
         class Region3l : public Region3BackwardsRegion{
         public:
             Region3l() : Region3BackwardsRegion(Region3Ldata, 43){
-                v_star = 0.0026; p_star = 24e6; T_star = 650; a = 0.908; b = 0.989; c = 1; d = 1; e = 4;
+                v_star = 0.0026; p_star = 24*p_fact; T_star = 650; a = 0.908; b = 0.989; c = 1; d = 1; e = 4;
             };
         };
         class Region3m : public Region3BackwardsRegion{
         public:
             Region3m() : Region3BackwardsRegion(Region3Mdata, 40){
-                v_star = 0.0028; p_star = 23e6; T_star = 650; a = 1.0; b = 0.997; c = 1; d = 0.25; e = 1;
+                v_star = 0.0028; p_star = 23*p_fact; T_star = 650; a = 1.0; b = 0.997; c = 1; d = 0.25; e = 1;
             };
         };
         class Region3n : public Region3BackwardsRegion{
         public:
             Region3n() : Region3BackwardsRegion(Region3Ndata, 39){
-                v_star = 0.0031; p_star = 23e6; T_star = 650; a = 0.976; b = 0.997;
+                v_star = 0.0031; p_star = 23*p_fact; T_star = 650; a = 0.976; b = 0.997;
             };
             double v(double T, double p){
                 const double pi = p/p_star, theta = T/T_star;
@@ -1690,73 +1696,73 @@ namespace IF97
         class Region3o : public Region3BackwardsRegion{
         public:
             Region3o() : Region3BackwardsRegion(Region3Odata, 24){
-                v_star = 0.0034; p_star = 23e6; T_star = 650; a = 0.974; b = 0.996; c = 0.5; d = 1; e = 1;
+                v_star = 0.0034; p_star = 23*p_fact; T_star = 650; a = 0.974; b = 0.996; c = 0.5; d = 1; e = 1;
             };
         };
         class Region3p : public Region3BackwardsRegion{
         public:
             Region3p() : Region3BackwardsRegion(Region3Pdata, 27){
-                v_star = 0.0041; p_star = 23e6; T_star = 650; a = 0.972; b = 0.997; c = 0.5; d = 1; e = 1;
+                v_star = 0.0041; p_star = 23*p_fact; T_star = 650; a = 0.972; b = 0.997; c = 0.5; d = 1; e = 1;
             };
         };
         class Region3q : public Region3BackwardsRegion{
         public:
             Region3q() : Region3BackwardsRegion(Region3Qdata, 24){
-                v_star = 0.0022; p_star = 23e6; T_star = 650; a = 0.848; b = 0.983; c = 1; d = 1; e = 4;
+                v_star = 0.0022; p_star = 23*p_fact; T_star = 650; a = 0.848; b = 0.983; c = 1; d = 1; e = 4;
             };
         };
         class Region3r : public Region3BackwardsRegion{
         public:
             Region3r() : Region3BackwardsRegion(Region3Rdata, 27){
-                v_star = 0.0054; p_star = 23e6; T_star = 650; a = 0.874; b = 0.982; c = 1; d = 1; e = 1;
+                v_star = 0.0054; p_star = 23*p_fact; T_star = 650; a = 0.874; b = 0.982; c = 1; d = 1; e = 1;
             };
         };
         class Region3s : public Region3BackwardsRegion{
         public:
             Region3s() : Region3BackwardsRegion(Region3Sdata, 29){
-                v_star = 0.0022; p_star = 21e6; T_star = 640; a = 0.886; b = 0.990; c = 1; d = 1; e = 4;
+                v_star = 0.0022; p_star = 21*p_fact; T_star = 640; a = 0.886; b = 0.990; c = 1; d = 1; e = 4;
             };
         };
         class Region3t : public Region3BackwardsRegion{
         public:
             Region3t() : Region3BackwardsRegion(Region3Tdata, 33){
-                v_star = 0.0088; p_star = 20e6; T_star = 650; a = 0.803; b = 1.02; c = 1; d = 1; e = 1;
+                v_star = 0.0088; p_star = 20*p_fact; T_star = 650; a = 0.803; b = 1.02; c = 1; d = 1; e = 1;
             };
         };
         class Region3u : public Region3BackwardsRegion{
         public:
             Region3u() : Region3BackwardsRegion(Region3Udata, 38){
-                v_star = 0.0026; p_star = 23e6; T_star = 650; a = 0.902; b = 0.988; c = 1; d = 1; e = 1;
+                v_star = 0.0026; p_star = 23*p_fact; T_star = 650; a = 0.902; b = 0.988; c = 1; d = 1; e = 1;
             };
         };
         class Region3v : public Region3BackwardsRegion{
         public:
             Region3v() : Region3BackwardsRegion(Region3Vdata, 39){
-                v_star = 0.0031; p_star = 23e6; T_star = 650; a = 0.960; b = 0.995; c = 1; d = 1; e = 1;
+                v_star = 0.0031; p_star = 23*p_fact; T_star = 650; a = 0.960; b = 0.995; c = 1; d = 1; e = 1;
             };
         };
         class Region3w : public Region3BackwardsRegion{
         public:
             Region3w() : Region3BackwardsRegion(Region3Wdata, 35){
-                v_star = 0.0039; p_star = 23e6; T_star = 650; a = 0.959; b = 0.995; c = 1; d = 1; e = 4;
+                v_star = 0.0039; p_star = 23*p_fact; T_star = 650; a = 0.959; b = 0.995; c = 1; d = 1; e = 4;
             };
         };
         class Region3x : public Region3BackwardsRegion{
         public:
             Region3x() : Region3BackwardsRegion(Region3Xdata, 36){
-                v_star = 0.0049; p_star = 23e6; T_star = 650; a = 0.910; b = 0.988; c = 1; d = 1; e = 1;
+                v_star = 0.0049; p_star = 23*p_fact; T_star = 650; a = 0.910; b = 0.988; c = 1; d = 1; e = 1;
             };
         };
         class Region3y : public Region3BackwardsRegion{
         public:
             Region3y() : Region3BackwardsRegion(Region3Ydata, 20){
-                v_star = 0.0031; p_star = 22e6; T_star = 650; a = 0.996; b = 0.994; c = 1; d = 1; e = 4;
+                v_star = 0.0031; p_star = 22*p_fact; T_star = 650; a = 0.996; b = 0.994; c = 1; d = 1; e = 4;
             };
         };
         class Region3z : public Region3BackwardsRegion{
         public:
             Region3z() : Region3BackwardsRegion(Region3Zdata, 23){
-                v_star = 0.0038; p_star = 22e6; T_star = 650; a = 0.993; b = 0.994; c = 1; d = 1; e = 4;
+                v_star = 0.0038; p_star = 22*p_fact; T_star = 650; a = 0.993; b = 0.994; c = 1; d = 1; e = 4;
             };
         };
 
@@ -1923,31 +1929,31 @@ namespace IF97
                 }
             }
             virtual double T_p(double p){
-                const double pi = p/1e6;
+                const double pi = p/(1.0*p_fact);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
                     summer += n[i]*pow(pi, I[i]);
                 }
-                return summer*1.0;
+                return summer*1.0;  // sum is multiplied by T* = 1.0 [K]
             };
         };
 
         class ABline : public Region3RegionDivision{ 
             public: ABline() : Region3RegionDivision(ABdata, 5){ }; 
             virtual double T_p(double p){
-                const double pi = p/1e6, ln_pi = log(pi);
+                const double pi = p/(1.0*p_fact), ln_pi = log(pi);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
                     summer += n[i]*pow(ln_pi, I[i]);
                 }
-                return summer*1.0;
+                return summer*1.0;  // sum is multiplied by T* = 1.0 [K]
             };
         };
         class CDline : public Region3RegionDivision{ public: CDline() : Region3RegionDivision(CDdata, 4){ }; };
         class EFline { 
         public:
             double T_p(double p){ 
-                const double pi = p/1e6; 
+                const double pi = p/(1.0*p_fact); 
                 return 3.727888004*(pi - 22.064) + 647.096; 
             }; 
         };
@@ -1959,12 +1965,12 @@ namespace IF97
         public: 
             OPline() : Region3RegionDivision(OPdata, 5){ }; 
             virtual double T_p(double p){
-                const double pi = p/1e6, ln_pi = log(pi);
+                const double pi = p/(1.0*p_fact), ln_pi = log(pi);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
                     summer += n[i]*pow(ln_pi, I[i]);
                 }
-                return summer*1.0;
+                return summer*1.0;  // sum is multiplied by T* = 1.0 [K]
             };
         };
         class QUline : public Region3RegionDivision{ public: QUline() : Region3RegionDivision(QUdata, 4){ }; };
@@ -1973,12 +1979,12 @@ namespace IF97
         class WXline : public Region3RegionDivision{ 
             public: WXline() : Region3RegionDivision(WXdata, 5){ }; 
             virtual double T_p(double p){
-                const double pi = p/1e6, ln_pi = log(pi);
+                const double pi = p/(1.0*p_fact), ln_pi = log(pi);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
                     summer += n[i]*pow(ln_pi, I[i]);
                 }
-                return summer*1.0;
+                return summer*1.0;  // sum is multiplied by T* = 1.0 [K]
             };
         };
 
@@ -2018,10 +2024,10 @@ namespace IF97
         // In the very near critical region, its messy
         inline char BackwardsRegion3SubRegionDetermination(double T, double p){
 
-            if (p > 22.5e6){
+            if (p > 22.5*p_fact){
                throw std::out_of_range("Out of range");
             }
-            else if (22.11e6 < p && p <= 22.5e6){
+            else if (22.11*p_fact < p && p <= 22.5*p_fact){
                 // Supercritical
                 if (DividingLine(LINE_QU, p) < T && T <= DividingLine(LINE_UV, p)){ return 'U';}
                 else if (DividingLine(LINE_UV, p) < T && T <= DividingLine(LINE_EF, p)){ return 'V';}
@@ -2029,7 +2035,7 @@ namespace IF97
                 else if (DividingLine(LINE_WX, p) < T && T <= DividingLine(LINE_RX, p)){ return 'X';}
                 else {return '?';}
             }
-            else if (22.064e6 < p && p <= 22.11e6){
+            else if (22.064*p_fact < p && p <= 22.11*p_fact){
                 // Supercritical
                 if (DividingLine(LINE_QU, p) < T && T <= DividingLine(LINE_UV, p)){ return 'U';}
                 else if (DividingLine(LINE_UV, p) < T && T <= DividingLine(LINE_EF, p)){ return 'Y';}
@@ -2038,7 +2044,7 @@ namespace IF97
                 else {return '?';}
             }
             else if (T <= Tsat97(p)){
-                if (21.93161551e6 < p && p <= 22.064e6){
+                if (21.93161551*p_fact < p && p <= 22.064*p_fact){
                     // Sub-critical
                     if (DividingLine(LINE_QU, p) < T && T <= DividingLine(LINE_UV, p)){ return 'U';}
                     else if (DividingLine(LINE_UV, p) < T ){ return 'Y';}
@@ -2049,7 +2055,7 @@ namespace IF97
                 }
             }
             else{
-                if (21.90096265e6 < p && p <= 22.064e6){
+                if (21.90096265*p_fact < p && p <= 22.064*p_fact){
                     // Sub-critical
                     if (T <= DividingLine(LINE_WX, p)){ return 'Z';}
                     else if (DividingLine(LINE_WX, p) < T && T <= DividingLine(LINE_RX, p)){ return 'X';}
@@ -2062,20 +2068,20 @@ namespace IF97
         }
 
         inline char BackwardsRegion3RegionDetermination(double T, double p){
-            if (p > 100e6){
+            if (p > 100*p_fact){
                 throw std::out_of_range("pressure out of range");
             }
-            else if (p > 40e6 && p <= 100e6){
+            else if (p > 40*p_fact && p <= 100*p_fact){
                 if (T <= DividingLine(LINE_AB, p)){ return 'A';}
                 else {return 'B';}
             }
-            else if (p > 25e6 && p <= 40e6){
+            else if (p > 25*p_fact && p <= 40*p_fact){
                 if (T <= DividingLine(LINE_CD, p)){ return 'C';}
                 else if (DividingLine(LINE_CD, p) < T && T <= DividingLine(LINE_AB, p)){ return 'D';}
                 else if (DividingLine(LINE_AB, p) < T && T <= DividingLine(LINE_EF, p)){ return 'E';}
                 else {return 'F';}
             }
-            else if (p > 23.5e6 && p <= 25e6){
+            else if (p > 23.5*p_fact && p <= 25*p_fact){
                 if (T <= DividingLine(LINE_CD, p)){ return 'C';}
                 else if (DividingLine(LINE_CD, p) < T && T <= DividingLine(LINE_GH, p)){ return 'G';}
                 else if (DividingLine(LINE_GH, p) < T && T <= DividingLine(LINE_EF, p)){ return 'H';}
@@ -2083,7 +2089,7 @@ namespace IF97
                 else if (DividingLine(LINE_IJ, p) < T && T <= DividingLine(LINE_JK, p)){ return 'J';}
                 else {return 'K';}
             }
-            else if (p > 23e6 && p <= 23.5e6){
+            else if (p > 23*p_fact && p <= 23.5*p_fact){
                 if (T <= DividingLine(LINE_CD, p)){ return 'C';}
                 else if (DividingLine(LINE_CD, p) < T && T <= DividingLine(LINE_GH, p)){ return 'L';}
                 else if (DividingLine(LINE_GH, p) < T && T <= DividingLine(LINE_EF, p)){ return 'H';}
@@ -2091,7 +2097,7 @@ namespace IF97
                 else if (DividingLine(LINE_IJ, p) < T && T <= DividingLine(LINE_JK, p)){ return 'J';}
                 else {return 'K';}
             }
-            else if (p > 22.5e6 && p <= 23e6){
+            else if (p > 22.5*p_fact && p <= 23*p_fact){
                 if (T <= DividingLine(LINE_CD, p)){ return 'C';}
                 else if (DividingLine(LINE_CD, p) < T && T <= DividingLine(LINE_GH, p)){ return 'L';}
                 else if (DividingLine(LINE_GH, p) < T && T <= DividingLine(LINE_MN, p)){ return 'M';}
@@ -2101,27 +2107,27 @@ namespace IF97
                 else if (DividingLine(LINE_IJ, p) < T && T <= DividingLine(LINE_JK, p)){ return 'J';}
                 else {return 'K';}
             }
-            else if (p > 21.04336732e6 && p <= 22.5e6){
+            else if (p > 21.04336732*p_fact && p <= 22.5*p_fact){
                 if (T <= DividingLine(LINE_CD, p)){ return 'C';}
                 else if (DividingLine(LINE_CD, p) < T && T <= DividingLine(LINE_QU, p)){ return 'Q';}
                 else if (DividingLine(LINE_RX, p) < T && T <= DividingLine(LINE_JK, p)){ return 'R';}
                 else if (T > DividingLine(LINE_JK, p)){ return 'K';}
                 else{ return BackwardsRegion3SubRegionDetermination(T, p);}
             }
-            else if (p > 20.5e6 && p <= 21.04336732e6){
+            else if (p > 20.5*p_fact && p <= 21.04336732*p_fact){
                 if (T <= DividingLine(LINE_CD, p)){ return 'C';}
                 else if (DividingLine(LINE_CD, p) < T && T <= Tsat97(p)){ return 'S';}
                 else if (Tsat97(p) < T && T <= DividingLine(LINE_JK, p)){ return 'R';}
                 else if (T > DividingLine(LINE_JK, p)){ return 'K';}
                 else{ return '?';}
             }
-            else if (p > 19.00881189173929e6 && p <= 20.5e6){
+            else if (p > 19.00881189173929*p_fact && p <= 20.5*p_fact){
                 if (T <= DividingLine(LINE_CD, p)){ return 'C';}
                 else if (DividingLine(LINE_CD, p) < T && T <= Tsat97(p)){ return 'S';}
                 else if (Tsat97(p) < T){ return 'T';}
                 else{ return '?';}
             }
-            else if (p > 16.529164252604481 && p <= 19.00881189173929e6){
+            else if (p > 16.529164252604481*p_fact && p <= 19.00881189173929*p_fact){
                 if (T <= Tsat97(p)){ return 'C';}
                 else{ return 'T';}
             }
@@ -2196,7 +2202,7 @@ namespace IF97
         std::vector<double> lamnr;
         double T_star, p_star, R;
     public:
-        Region3() : T_star(1000), p_star(1e6) {
+        Region3() : T_star(1000), p_star(1*p_fact) {
             for (std::size_t i = 0; i < reg3rdata.size(); ++i){
                 nr.push_back(reg3rdata[i].n);
                 Ir.push_back(reg3rdata[i].I);
@@ -2223,7 +2229,7 @@ namespace IF97
             R = Rgas;
         };
         double phi(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = nr[0]*log(delta);
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
@@ -2235,7 +2241,7 @@ namespace IF97
         // These two extra terms Needed to evaluate Newton-Raphson
         // ****************************************************************************
         double dphi_ddelta(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = nr[0]/delta;
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Ir[i]*pow(delta, Ir[i]-1)*pow(tau, Jr[i]);
@@ -2243,7 +2249,7 @@ namespace IF97
             return summer;
         };
         double d2phi_ddelta2(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = -nr[0]/pow(delta,2);
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Ir[i]*(Ir[i]-1.0)*pow(delta, Ir[i]-2)*pow(tau, Jr[i]);
@@ -2253,7 +2259,7 @@ namespace IF97
         // ****************************************************************************
 #endif
         double delta_dphi_ddelta(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = nr[0];
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Ir[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
@@ -2261,7 +2267,7 @@ namespace IF97
             return summer;
         };
         double tau_dphi_dtau(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = 0;
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Jr[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
@@ -2269,7 +2275,7 @@ namespace IF97
             return summer;
         };
         double delta2_d2phi_ddelta2(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = -nr[0];
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Ir[i]*(Ir[i]-1)*pow(delta, Ir[i])*pow(tau, Jr[i]);
@@ -2277,7 +2283,7 @@ namespace IF97
             return summer;
         };
         double tau2_d2phi_dtau2(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = 0;
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Jr[i]*(Jr[i]-1)*pow(delta, Ir[i])*pow(tau, Jr[i]);
@@ -2285,7 +2291,7 @@ namespace IF97
             return summer;
         };
         double deltatau_d2phi_ddelta_dtau(double T, double rho){
-            const double rho_c = 322, T_c = 647.096, delta = rho/rho_c, tau = T_c/T;
+            const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = 0;
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Jr[i]*Ir[i]*pow(delta, Ir[i])*pow(tau, Jr[i]);
@@ -2327,22 +2333,22 @@ namespace IF97
         }
         double lambda2(double T, double p, double rho){
             double y, Cpbar, mubar, k, Z, zeta, delChi, Cpcalc;
-            double rhobar = rho/Rhocrit;
-            double LAMBDA = 177.8514;
-            double qD     = 1.0/0.40;
-            double Tr     = 1.5*Tcrit;
-            double xi0    = 0.13;
-            double nu     = 0.630;
-            double gam    = 1.239;
-            double GAMMA0 = 0.06;
-            double PI     = 2*acos(0.0);
-            double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas
-            Cpcalc = cpmass(T,rho);
-            if ((Cpcalc < 0) || (Cpcalc > 1.0E13)) Cpcalc = 1.0E13;
-            Cpbar = Cpcalc/Cpstar;
-            k = Cpcalc/cvmass(T,rho);
-            mubar = visc(T,rho)/1.0E-6;
-            zeta = Pcrit/Rhocrit*drhodp(T,rho);
+            double rhobar = rho/Rhocrit;   /// Dimensionless
+            double LAMBDA = 177.8514;      /// Dimensionless
+            double qD     = 1.0/0.40;      /// 1/nm
+            double Tr     = 1.5*Tcrit;     /// Dimensionless
+            double xi0    = 0.13;          /// nm
+            double nu     = 0.630;         /// Dimensionless
+            double gam    = 1.239;         /// Dimensionless
+            double GAMMA0 = 0.06;          /// Dimensionless
+            double PI     = 2*acos(0.0);   /// Have to define this in C++
+            double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas  {J/kg-K}
+            Cpcalc = cpmass(T,rho);                                  /// J/kg-K
+            Cpbar = Cpcalc/Cpstar;                                   /// Unit-less
+            if ((Cpbar < 0) || (Cpbar > 1.0E13)) Cpbar = 1.0E13;     /// Unit-less
+            k = Cpcalc/cvmass(T,rho);                                /// Unit-less
+            mubar = visc(T,rho)/1.0E-6;                              /// Unit-less
+            zeta = Pcrit/Rhocrit*drhodp(T,rho);                      /// 
             if ((zeta < 0) || (zeta > 1.0E13)) zeta = 1.0E13;
             delChi = rhobar*(zeta - delTr(rho)*Tr/T);
             y = qD*xi0*pow(delChi/GAMMA0,nu/gam);
@@ -2359,7 +2365,7 @@ namespace IF97
             return rho/Rhocrit - 1.0;
         }
         double p(double T, double rho){
-            return rho*R*T*delta_dphi_ddelta(T, rho);
+            return rho*R*T*delta_dphi_ddelta(T, rho)*(p_fact/1000/R_fact);
         };
 
 #ifdef REGION3_ITERATE
@@ -2373,11 +2379,11 @@ namespace IF97
         //    additional Taylor functions are defined above.
         //
         double f(double T, double p, double rho0){
-            return 1.0/pow(rho0,2) - R*T*dphi_ddelta(T, rho0)/(p*Rhocrit);
+            return 1.0/pow(rho0,2) - R*T*dphi_ddelta(T, rho0)/(p*Rhocrit)*(p_fact/1000/R_fact);
         };
         double df(double T, double p, double rho0){
             const double rho_c = 322.0;
-            return -2.0/pow(rho0,3) - R*T*d2phi_ddelta2(T, rho0)/(p*pow(rho_c,2));
+            return -2.0/pow(rho0,3) - R*T*d2phi_ddelta2(T, rho0)/(p*pow(rho_c,2))*(p_fact/1000/R_fact);
         };
         double rhomass(double T, double p, double rho0)
         {
@@ -2410,7 +2416,7 @@ namespace IF97
         };
         double speed_sound(double T, double rho){
             double RHS = 2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)-pow(delta_dphi_ddelta(T,rho)-deltatau_d2phi_ddelta_dtau(T,rho),2)/tau2_d2phi_dtau2(T,rho);
-            return sqrt(R*T*RHS);
+            return sqrt(R*(1000/R_fact)*T*RHS);
         }
         double visc(double T, double rho){
             /// This base region function was not inherited 
@@ -2456,14 +2462,14 @@ namespace IF97
                                 if (subregion == 'C') return 'T';
                                 else if (subregion == 'S')
                                 {
-                                    if ( p < 20.5e6 ) 
+                                    if ( p < 20.5*p_fact ) 
                                         return 'T';
                                     else 
                                         return 'R';
                                 }
                                 else if (subregion == 'U')
                                 {
-                                    if ( p < 21.90096265e6 ) 
+                                    if ( p < 21.90096265*p_fact ) 
                                         return 'X';
                                     else 
                                         return 'Z';
@@ -2475,7 +2481,7 @@ namespace IF97
                                   // If looking for Saturated Liquid...
                 case LIQUID:{     // ...force above saturation curve
                                 if (subregion == 'Z') {
-                                    if ( p > 21.93161551e6 )
+                                    if ( p > 21.93161551*p_fact )
                                         return 'Y';
                                     else 
                                         return 'U'; 
@@ -2483,7 +2489,7 @@ namespace IF97
                                 else if (subregion == 'X') return 'U';
                                 else if ((subregion == 'R') || (subregion == 'K')) return 'S';
                                 else if (subregion == 'T'){
-                                    if ( p > 19.00881189173929e6 )
+                                    if ( p > 19.00881189173929*p_fact )
                                         return 'S';
                                     else 
                                         return 'C';
@@ -2559,7 +2565,7 @@ namespace IF97
         std::vector<double> n;
         double p_star, T_star;
 
-        Region4() : p_star(1.0e6), T_star(1.0) {
+        Region4() : p_star(1.0*p_fact), T_star(1.0) {
             n.resize(1); n[0] = 0;
             for (std::size_t i = 0; i < reg4data.size(); ++i){
                 n.push_back(reg4data[i].n);
@@ -2590,7 +2596,7 @@ namespace IF97
             // May be extrapolated down to -25C in the super-cooled region.
 			if ( ( T < (Ttrip - 25.0) ) || ( T > Tcrit ) ) throw std::out_of_range("Temperature out of range");
 			double Tau = 1.0 - T/Tcrit;
-			double B = 235.8 / R_fact;  // B value published in mN/m 
+			double B = 235.8 / 1000;  // Published value in [mN/m]; Convert to SI [N/m] in all cases 
 			double b = -0.625;
 			double mu = 1.256;
 			return B*pow(Tau,mu)*(1.0 + b*Tau);
@@ -2623,7 +2629,7 @@ namespace IF97
     {
     public:
         Region5() : BaseRegion(reg5rdata, reg50data)  {
-            T_star = 1000; p_star = 1e6; 
+            T_star = 1000; p_star = 1*p_fact; 
         };
         double lambda2(double T, double p, double rho){
             return 0.0;  // No critical enhancement of thermal conductivity in Region 5
@@ -3782,7 +3788,7 @@ namespace IF97
             if (p > Pmax){
                 throw std::out_of_range("Pressure out of range");
             }
-            else if (p < 16.5292e6){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
+            else if (p < 16.5292*p_fact){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
                 return REGION_2;
             }
             else if (p > Region23_T(T)){
@@ -4170,7 +4176,7 @@ namespace IF97
     inline double tcond_Tp(double T, double p) { return RegionOutput(IF97_K, T, p, NONE); };
     /// Calculate the Prandtl number [dimensionless] as a function of T [K] and p [Pa]
     inline double prandtl_Tp(double T, double p) { 
-        return visc_Tp(T,p) * cpmass_Tp(T,p) / tcond_Tp(T,p);
+        return visc_Tp(T,p) * cpmass_Tp(T,p) * (1000/R_fact) / tcond_Tp(T,p);
     };
 
     // ******************************************************************************** //
@@ -4222,9 +4228,9 @@ namespace IF97
     inline double tcondvap_p( double p) { return RegionOutput( IF97_K, Tsat97(p), p, VAPOR); };
     // ******************************************************************************** //
     /// Calculate the saturated liquid Prandtl number [dimensionless] as a function of p [Pa]
-    inline double prandtlliq_p(double p) { return viscliq_p(p) * cpliq_p(p) / tcondliq_p(p); };
+    inline double prandtlliq_p(double p) { return viscliq_p(p) * cpliq_p(p) * (1000/R_fact) / tcondliq_p(p); };
     /// Calculate the saturated vapor Prandtl number [dimensionless] as a function of p [Pa]
-    inline double prandtlvap_p(double p) { return viscvap_p(p) * cpvap_p(p) / tcondvap_p(p); };
+    inline double prandtlvap_p(double p) { return viscvap_p(p) * cpvap_p(p) * (1000/R_fact) / tcondvap_p(p); };
 
 
     // ******************************************************************************** //
@@ -4291,7 +4297,15 @@ namespace IF97
     inline double get_MW() { return MW; };
     inline double get_Rgas() { return Rgas; };
     inline double get_Acentric() { return -log10(psat97(0.7*Tcrit)/Pcrit) - 1; };
-    inline std::string get_if97_version() { return IF97VERSION; };
+    inline std::string get_if97_version() { 
+#ifdef IAPWS_UNITS
+        std::string VSTRING(IF97VERSION);
+        VSTRING.append(" (IAPWS Units)");
+        return VSTRING;
+#else
+        return IF97VERSION;
+#endif
+    };
 
 }; /* namespace IF97 */
 

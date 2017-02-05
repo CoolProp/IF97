@@ -1,6 +1,5 @@
 // if97_getvers stub - Interfaces CoolProp IF97 function to Mathcad
 //
-// extern char IF97VERSION[9];
 
 // this code executes the user function if97_getvers(), which is a wrapper for
 // the CoolProp-IF97 function, version(void), used to get the IF97 code version.
