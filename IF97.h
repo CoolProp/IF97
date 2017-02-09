@@ -3977,7 +3977,7 @@ namespace IF97
         static Region2 R2;
         double T = RegionOutputBackward( p, X, inkey);
         double Tsat = Tsat97(p); 
-        if (abs(T-Tsat) < 1.0E-10){                                // If in saturation dome
+        if (std::abs(T-Tsat) < 1.0E-10){                           // If in saturation dome
             double Xliq = R1.output(inkey,Tsat,p);
             double Xvap = R2.output(inkey,Tsat,p);
             double vliq = 1.0/R1.output(IF97_DMASS,Tsat,p);
