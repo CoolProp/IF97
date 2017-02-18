@@ -2,12 +2,12 @@
 //
 
 // this code executes the user function if97_vtp(P), which is a wrapper for
-// the CoolProp-IF97 function, Tsat97(P), used to calculate the saturation
-// temperature along the saturation curve in terms of pressure
+// the CoolProp-IF97 function, Tsat97(P), used to calculate the specific
+// volume at the temperature and pressure state point
 LRESULT  if97_VTP(
     LPCOMPLEXSCALAR c,  // pointer to the result
-    LPCCOMPLEXSCALAR a,
-    LPCCOMPLEXSCALAR b) // pointer to the parameter received from Mathcad
+    LPCCOMPLEXSCALAR a, // pointer to the temperature parameter received from Mathcad
+    LPCCOMPLEXSCALAR b) // pointer to the pressure parameter received from Mathcad
 {  
     // first check to make sure "a" and "b" have no imaginary component
     if ( a->imag != 0.0 )

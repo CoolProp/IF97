@@ -118,6 +118,8 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\tps.h"
     #include ".\includes\phs.h"
     #include ".\includes\ths.h"
+    #include ".\includes\rhoph.h"
+    #include ".\includes\rhops.h"
 
     // DLL entry point code.  the _CRT_INIT function is needed
     // if you are using Microsoft's 32 bit compiler
@@ -224,6 +226,8 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_tps );
                     CreateUserFunction( hDLL, &if97_phs );
                     CreateUserFunction( hDLL, &if97_ths );
+                    CreateUserFunction( hDLL, &if97_rhoph );
+                    CreateUserFunction( hDLL, &if97_rhops );
                     break;
                     }
 
