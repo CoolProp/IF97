@@ -173,85 +173,96 @@ namespace IF97
     {
     public:
         BaseRegion(std::vector<RegionResidualElement> resid, std::vector<RegionIdealElement> ideal) : R(Rgas){
-            for (std::size_t i = 0; i < resid.size(); ++i){
-                nr.push_back(resid[i].n);
-                Ir.push_back(resid[i].I);
-                Jr.push_back(resid[i].J);
+            size_t sz = resid.size();
+            nr.reserve(sz); Ir.reserve(sz); Jr.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                nr.emplace_back(resid[i].n);
+                Ir.emplace_back(resid[i].I);
+                Jr.emplace_back(resid[i].J);
             }
-            for (std::size_t i = 0; i < ideal.size(); ++i){
-                n0.push_back(ideal[i].n);
-                J0.push_back(ideal[i].J);
+            sz = ideal.size();
+            n0.reserve(sz); J0.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                n0.emplace_back(ideal[i].n);
+                J0.emplace_back(ideal[i].J);
             }
-            for (std::size_t i = 0; i < Hrdata.size(); ++i){
-                munr.push_back(Hrdata[i].n);
-                muIr.push_back(Hrdata[i].I);
-                muJr.push_back(Hrdata[i].J);
+            sz = Hrdata.size();
+            munr.reserve(sz); muIr.reserve(sz); muJr.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                munr.emplace_back(Hrdata[i].n);
+                muIr.emplace_back(Hrdata[i].I);
+                muJr.emplace_back(Hrdata[i].J);
             }
-            for (std::size_t i = 0; i < H0data.size(); ++i){
-                mun0.push_back(H0data[i].n);
-                muJ0.push_back(H0data[i].J);
+            sz = H0data.size();
+            mun0.reserve(sz); muJ0.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                mun0.emplace_back(H0data[i].n);
+                muJ0.emplace_back(H0data[i].J);
             }
-            for (std::size_t i = 0; i < Lrdata.size(); ++i){
-                lamnr.push_back(Lrdata[i].n);
-                lamIr.push_back(Lrdata[i].I);
-                lamJr.push_back(Lrdata[i].J);
+            sz = Lrdata.size();
+            lamnr.reserve(sz); lamIr.reserve(sz); lamJr.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                lamnr.emplace_back(Lrdata[i].n);
+                lamIr.emplace_back(Lrdata[i].I);
+                lamJr.emplace_back(Lrdata[i].J);
             }
-            for (std::size_t i = 0; i < L0data.size(); ++i){
-                lamn0.push_back(L0data[i].n);
-                lamJ0.push_back(L0data[i].J);
+            sz = L0data.size();
+            lamn0.reserve(sz); lamJ0.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                lamn0.emplace_back(L0data[i].n);
+                lamJ0.emplace_back(L0data[i].J);
             }
         }
-        double rhomass(double T, double p){
-            double PI = p/p_star;
-            return p/(PI*R*T)/(p_fact/1000.0/R_fact)/(dgamma0_dPI(T,p) + dgammar_dPI(T,p));
+        double rhomass(double T, double p) const{
+            return p_star/(R*T)/(p_fact/1000.0/R_fact)/(dgamma0_dPI(T,p) + dgammar_dPI(T,p));
         }
-        double hmass(double T, double p){
-            double tau = T_star/T;
-            return R*T*tau*(dgamma0_dTAU(T, p) + dgammar_dTAU(T, p));
+        double hmass(double T, double p) const{
+            return R*T_star*(dgamma0_dTAU(T, p) + dgammar_dTAU(T, p));
         }
-        double smass(double T, double p){
-            double tau = T_star/T;
+        double smass(double T, double p) const{
+            const double tau = T_star/T;
             return R*(tau*(dgamma0_dTAU(T, p) + dgammar_dTAU(T, p)) - (gammar(T, p) + gamma0(T, p)));
         }
-        double umass(double T, double p){
-            double tau = T_star/T, PI = p/p_star;
+        double umass(double T, double p) const{
+            const double tau = T_star/T, PI = p/p_star;
             return R*T*(tau*(dgamma0_dTAU(T, p) + dgammar_dTAU(T, p)) - PI*(dgamma0_dPI(T, p) + dgammar_dPI(T, p)));
         }
-        double cpmass(double T, double p){
-            double tau = T_star/T;
+        double cpmass(double T, double p) const{
+            const double tau = T_star/T;
             return -R*tau*tau*(d2gammar_dTAU2(T, p) + d2gamma0_dTAU2(T, p));
         }
-        virtual double cvmass(double T, double p){
-            double tau = T_star/T, PI = p/p_star;
+        virtual double cvmass(double T, double p) const{
+            const double tau = T_star/T, PI = p/p_star;
             return cpmass(T,p)-R*pow(1 + PI*dgammar_dPI(T,p) - tau*PI*d2gammar_dPIdTAU(T,p),2)/(1-PI*PI*d2gammar_dPI2(T, p));
         }
-        virtual double speed_sound(double T, double p){
-            double tau = T_star/T, PI = p/p_star;
-            double RHS = (1 + 2*PI*dgammar_dPI(T,p) + PI*PI*pow(dgammar_dPI(T,p),2))/((1-PI*PI*d2gammar_dPI2(T,p)) +pow(1 + PI*dgammar_dPI(T,p) - tau*PI*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*(d2gamma0_dTAU2(T,p) + d2gammar_dTAU2(T,p))));
+        virtual double speed_sound(double T, double p) const{
+            const double tau = T_star/T, PI = p/p_star;
+            const double RHS = (1 + 2*PI*dgammar_dPI(T,p) + PI*PI*pow(dgammar_dPI(T,p),2))/((1-PI*PI*d2gammar_dPI2(T,p)) +pow(1 + PI*dgammar_dPI(T,p) - tau*PI*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*(d2gamma0_dTAU2(T,p) + d2gammar_dTAU2(T,p))));
             return sqrt(R*(1000/R_fact)*T*RHS);
         }
-        double visc(double T, double rho){
+        double visc(double T, double rho) const{
             /// This base region function is valid for all IF97 regions since it is a function
             /// of density, not pressure, and can be called from any region instance.
-            double mu_star = 1.0E-6; // Reference viscosity [Pa-s]
-            double mu2 = 1.0;        // For Industrial Formulation (IF97), mu2 = 1.0
+            const double mu_star = 1.0E-6; // Reference viscosity [Pa-s]
+            const double mu2 = 1.0;        // For Industrial Formulation (IF97), mu2 = 1.0
             return mu_star * mu0(T) * mu1(T,rho) * mu2;
         }
-        double tcond(double T, double p, double rho){
+        double tcond(double T, double p, double rho) const{
             /// This base region function is valid for all IF97 regions 
-            double lambda_star = 0.001;  // Reference conductivity [W/m-K]
-            double lambda_bar = lambda0(T)*lambda1(T,rho) + lambda2(T,p,rho);
+            const double lambda_star = 0.001;  // Reference conductivity [W/m-K]
+            const double lambda_bar = lambda0(T)*lambda1(T,rho) + lambda2(T,p,rho);
             return lambda_star * lambda_bar;
         }
-        virtual double drhodp(double T, double p){
+        virtual double drhodp(double T, double p) const{
             /// Only valid for regions 2 and 5.  Will be overridden in Regions 1 and 3.
             /// Derived from IAPWS Revised Advisory Note No. 3 (See Table 2, Section 4.1 & 4.3)
-            double PI = p/p_star;
+            const double PI = p/p_star;
             return (rhomass(T,p)/p) * ( (1.0 - PI*PI*d2gammar_dPI2(T,p)) / (1.0 + PI*dgammar_dPI(T,p)) );
         }
-        double delTr(double rho){
+        double delTr(double rho) const{
             /// This is the IF97 correlation for drhodp at the reducing temperature, Tr
-            double rhobar = rho/Rhocrit, summer = 0;
+            const double rhobar = rho/Rhocrit;
+            double summer = 0;
             int j;
             //
             if      (rhobar <= 0.310559006) j = 0;
@@ -264,10 +275,10 @@ namespace IF97
                 summer += A[i][j]*pow(rhobar,i);
             return 1.0/summer;
         }
-        virtual double PIrterm(double) = 0;
-        virtual double TAUrterm(double) = 0;
-        virtual double TAU0term(double) = 0;
-        double output(IF97parameters key, double T, double p){
+        virtual double PIrterm(double) const = 0;
+        virtual double TAUrterm(double) const = 0;
+        virtual double TAU0term(double) const = 0;
+        double output(IF97parameters key, double T, double p) const{
             switch(key){
             case IF97_T: return T;
             case IF97_P: return p;
@@ -303,125 +314,133 @@ namespace IF97
         std::vector<int> lamIr, lamJr;
         std::vector<double> lamnr;
    
-        double gammar(double T, double p){
-            double _PI = PIrterm(p), _TAU = TAUrterm(T), summer = 0;
+        double gammar(double T, double p) const{
+            const double _PI = PIrterm(p), _TAU = TAUrterm(T);
+            double summer = 0;
             for (std::size_t i = 0; i < Jr.size(); ++i){
                 summer += nr[i]*pow(_PI, Ir[i])*pow(_TAU, Jr[i]);
             }
             return summer;
         }
-        double dgammar_dPI(double T, double p){
-            double _PI = PIrterm(p), _TAU = TAUrterm(T), summer = 0;
+        double dgammar_dPI(double T, double p) const{
+            const double _PI = PIrterm(p), _TAU = TAUrterm(T);
+            double summer = 0;
             for (std::size_t i = 0; i < Jr.size(); ++i){
                 summer += nr[i]*Ir[i]*pow(_PI, Ir[i]-1)*pow(_TAU, Jr[i]);
             }
             return summer;
         }
-        double d2gammar_dPI2(double T, double p){
-            double _PI = PIrterm(p), _TAU = TAUrterm(T), summer = 0;
+        double d2gammar_dPI2(double T, double p) const{
+            const double _PI = PIrterm(p), _TAU = TAUrterm(T);
+            double summer = 0;
             for (std::size_t i = 0; i < Jr.size(); ++i){
                 summer += nr[i]*Ir[i]*(Ir[i]-1)*pow(_PI, Ir[i]-2)*pow(_TAU, Jr[i]);
             }
             return summer;
         }
-        double dgammar_dTAU(double T, double p){
-            double _PI = PIrterm(p), _TAU = TAUrterm(T), summer = 0;
+        double dgammar_dTAU(double T, double p) const{
+            const double _PI = PIrterm(p), _TAU = TAUrterm(T);
+            double summer = 0;
             for (std::size_t i = 0; i < Jr.size(); ++i){
                 summer += nr[i]*Jr[i]*pow(_PI, Ir[i])*pow(_TAU, Jr[i]-1);
             }
             return summer;
         }
-        double d2gammar_dPIdTAU(double T, double p){
-            double _PI = PIrterm(p), _TAU = TAUrterm(T), summer = 0;
+        double d2gammar_dPIdTAU(double T, double p) const{
+            const double _PI = PIrterm(p), _TAU = TAUrterm(T);
+            double summer = 0;
             for (std::size_t i = 0; i < Jr.size(); ++i){
                 summer += nr[i]*Jr[i]*Ir[i]*pow(_PI, Ir[i]-1)*pow(_TAU, Jr[i]-1);
             }
             return summer;
         }
-        double d2gammar_dTAU2(double T, double p){
-            double _PI = PIrterm(p), _TAU = TAUrterm(T), summer = 0;
+        double d2gammar_dTAU2(double T, double p) const {
+            const double _PI = PIrterm(p), _TAU = TAUrterm(T);
+            double summer = 0;
             for (std::size_t i = 0; i < Jr.size(); ++i){
                 summer += nr[i]*Jr[i]*(Jr[i]-1)*pow(_PI, Ir[i])*pow(_TAU, Jr[i]-2);
             }
             return summer;
         }
-        double gamma0(double T, double p){
+        double gamma0(double T, double p) const{
             if (J0.size() == 0){ return 0; } // Region 1 has no term
-            double PI = p/p_star, _TAU = TAU0term(T);
+            const double PI = p/p_star, _TAU = TAU0term(T);
             double summer = log(PI);
             for (std::size_t i = 0; i < n0.size(); ++i){
                 summer += n0[i]*pow(_TAU, J0[i]);
             }
             return summer;
         }
-        double dgamma0_dPI(double T, double p){
+        double dgamma0_dPI(double /*T*/, double p) const{
             if (J0.size() == 0){ return 0; } // Region 1 has no term
-            double PI = p/p_star;
-            return 1/PI;
+            const double PI = p/p_star;
+            return 1.0/PI;
         }
-        double d2gamma0_dPI2(double T, double p){
+        double d2gamma0_dPI2(double /*T*/, double p) const{
             if (J0.size() == 0){ return 0; } // Region 1 has no term
-            double PI = p/p_star;
-            return -1/(PI*PI);
+            const double PI = p/p_star;
+            return -1.0/(PI*PI);
         }
-        double dgamma0_dTAU(double T, double p){
-            double _TAU = TAU0term(T), summer = 0;
+        double dgamma0_dTAU(double T, double /*p*/) const{
+            const double _TAU = TAU0term(T);
+            double summer = 0;
             for (std::size_t i = 0; i < J0.size(); ++i){
                 summer += n0[i]*J0[i]*pow(_TAU, J0[i]-1);
             }
             return summer;
         }
-        double d2gamma0_dTAU2(double T, double p){
-            double _TAU = TAU0term(T), summer = 0;
+        double d2gamma0_dTAU2(double T, double /*p*/) const{
+            const double _TAU = TAU0term(T);
+            double summer = 0;
             for (std::size_t i = 0; i < J0.size(); ++i){
                 summer += n0[i]*J0[i]*(J0[i]-1)*pow(_TAU, J0[i]-2);
             }
             return summer;
         }
-        double mu0(double T){
-            double T_bar = T/Tcrit;
+        double mu0(double T) const{
+            const double T_bar = T/Tcrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < muJ0.size(); ++i){
                 summer += mun0[i]/pow(T_bar, muJ0[i]);
             }
-            return 100.0*pow(T_bar, 0.5)/summer;
+            return 100.0*sqrt(T_bar)/summer;
         }
-        double mu1(double T, double rho){
-            double rho_bar = rho/Rhocrit;
+        double mu1(double T, double rho) const{
+            const double rho_bar = rho/Rhocrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < muJr.size(); ++i){
                 summer += rho_bar * pow(Trterm(T),muIr[i]) * munr[i]*pow(Rhorterm(rho),muJr[i]);
             }
             return exp(summer);
         }
-        double lambda0(double T){
-            double T_bar = T/Tcrit;
+        double lambda0(double T) const{
+            const double T_bar = T/Tcrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < lamJ0.size(); ++i){
                 summer += lamn0[i]/pow(T_bar, lamJ0[i]);
             }
-            return pow(T_bar, 0.5)/summer;
+            return sqrt(T_bar)/summer;
         }
-        double lambda1(double T, double rho){
-            double rho_bar = rho/Rhocrit;
+        double lambda1(double T, double rho) const{
+            const double rho_bar = rho/Rhocrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < lamJr.size(); ++i){
                 summer += rho_bar * pow(Trterm(T),lamIr[i]) * lamnr[i]*pow(Rhorterm(rho),lamJr[i]);
             }
             return exp(summer);
         }
-        double lambda2(double T, double p, double rho){
+        double lambda2(double T, double p, double rho) const{
             double y, Cpbar, mubar, k, Z, delChi;
-            double rhobar = rho/Rhocrit;
-            double LAMBDA = 177.8514;
-            double qD     = 1.0/0.40;
-            double Tr     = 1.5*Tcrit;
-            double xi0    = 0.13;
-            double nu     = 0.630;
-            double gam    = 1.239;
-            double GAMMA0 = 0.06;
-            double PI     = 3.141592654;
-            double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas
+            const double rhobar = rho/Rhocrit;
+            const double LAMBDA = 177.8514;
+            const double qD     = 1.0/0.40;
+            const double Tr     = 1.5*Tcrit;
+            const double xi0    = 0.13;
+            const double nu     = 0.630;
+            const double gam    = 1.239;
+            const double GAMMA0 = 0.06;
+            const double PI     = 3.141592654;
+            const double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas
             Cpbar = cpmass(T,p)/Cpstar;
             if ((Cpbar < 0) || (Cpbar > 1.0E13)) Cpbar = 1.0E13;     /// Unit-less
             k = cpmass(T,p)/cvmass(T,p);
@@ -437,10 +456,10 @@ namespace IF97
                 Z = 2.0/PI/y*(((1.0-1.0/k)*atan(y)+y/k) - (1.0 - exp(-1.0/(1.0/y + y*y/(3.0*rhobar*rhobar)))));
             return LAMBDA*rhobar*Cpbar*T/(Tcrit*mubar)*Z;
         }
-        double Trterm(double T){
+        double Trterm(double T) const{
             return Tcrit/T - 1.0;
         }
-        double Rhorterm(double rho){
+        double Rhorterm(double rho) const{
             return rho/Rhocrit - 1.0;
         }
     };
@@ -494,32 +513,34 @@ namespace IF97
         Region1() : BaseRegion(reg1rdata, reg10data)  {
             T_star = 1386; p_star = 16.53*p_fact; 
         };    
-        double speed_sound(double T, double p){
+        double speed_sound(double T, double p) const{
             // Evidently this formulation is special for some reason, and cannot be implemented using the base class formulation
 			// see Table 3
-            double tau = T_star/T;
-            double RHS = pow(dgammar_dPI(T,p), 2)/(pow(dgammar_dPI(T,p)-tau*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*d2gammar_dTAU2(T,p)) - d2gammar_dPI2(T, p));
+            const double tau = T_star/T;
+            const double RHS = pow(dgammar_dPI(T,p), 2)/(pow(dgammar_dPI(T,p)-tau*d2gammar_dPIdTAU(T,p), 2)/(tau*tau*d2gammar_dTAU2(T,p)) - d2gammar_dPI2(T, p));
             return sqrt(R*(1000/R_fact)*T*RHS);
         }
-        double cvmass(double T, double p) {
+        double cvmass(double T, double p) const{
             // Evidently this formulation is special for some reason, and cannot be implemented using the base class formulation
             // see Table 3
-            double tau = T_star / T;
+            const double tau = T_star / T;
             return R*(-tau*tau*d2gammar_dTAU2(T,p) + pow(dgammar_dPI(T, p) - tau*d2gammar_dPIdTAU(T, p), 2) / d2gammar_dPI2(T, p));
         }
-        double drhodp(double T, double p){
-            double PI = p/p_star;
+        double drhodp(double T, double p) const{
+            //double PI = p/p_star;
             /// This one is different as well...
             /// Derived from IAPWS Revised Advisory Note No. 3 (See Table 2, Section 4.1 & 4.2)
             return -d2gammar_dPI2(T,p)/(pow(dgammar_dPI(T,p),2)*R*T)*(1000*R_fact/p_fact);
         }
-        double TAUrterm(double T){
+        double TAUrterm(double T) const{
             return T_star/T - 1.222;
         }
-        double PIrterm(double p){
+        double PIrterm(double p) const{
             return p/p_star - 7.1;
         }
-        double TAU0term(double T){return 0.0;}
+        double TAU0term(double /*T*/) const{
+            return 0.0;
+        }
     };
 
 
@@ -591,13 +612,15 @@ namespace IF97
         Region2() : BaseRegion(reg2rdata, reg20data)  {
             T_star = 540; p_star = 1*p_fact; 
         };
-        double TAUrterm(double T){
+        double TAUrterm(double T) const{
             return T_star/T - 0.5;
         }
-        double PIrterm(double p){
+        double PIrterm(double p) const{
             return p/p_star;
         }
-        double TAU0term(double T){return T_star/T;}
+        double TAU0term(double T) const{
+            return T_star/T;
+        }
     };
 
     static double Region23data[] = {
@@ -612,12 +635,12 @@ namespace IF97
 
     inline double Region23_T(double T){
         const double p_star = 1*p_fact, T_star = 1, theta = T/T_star;
-        double PI = region23_n[0] + region23_n[1]*theta + region23_n[2]*theta*theta;
+        const double PI = region23_n[0] + region23_n[1]*theta + region23_n[2]*theta*theta;
         return PI*p_star;
     }
     inline double Region23_p(double p){
         const double p_star = 1*p_fact, T_star = 1, PI = p/p_star;
-        double THETA = region23_n[3] + sqrt((PI - region23_n[4])/region23_n[2]);
+        const double THETA = region23_n[3] + sqrt((PI - region23_n[4])/region23_n[2]);
         return THETA*T_star;
     }
 
@@ -1569,12 +1592,12 @@ namespace IF97
             std::vector<double> n;
         public:
     
-            Region3BackwardsRegion(RegionResidualElement data[], std::size_t N){
-                this->N = N;
+            Region3BackwardsRegion(RegionResidualElement data[], std::size_t pN):N(pN){
+                n.reserve(N); I.reserve(N); J.reserve(N);
                 for (std::size_t i = 0; i < N; ++i){
-                    n.push_back(data[i].n);
-                    I.push_back(data[i].I);
-                    J.push_back(data[i].J);
+                    n.emplace_back(data[i].n);
+                    I.emplace_back(data[i].I);
+                    J.emplace_back(data[i].J);
                 }
             }
             virtual double v(double T, double p){
@@ -1923,9 +1946,10 @@ namespace IF97
     
             Region3RegionDivision(DivisionElement data[], std::size_t N){
                 this->N = N;
+                I.reserve(N); n.reserve(N);
                 for (std::size_t i = 0; i < N; ++i){
-                    n.push_back(data[i].n);
-                    I.push_back(data[i].I);
+                    n.emplace_back(data[i].n);
+                    I.emplace_back(data[i].I);
                 }
             }
             virtual double T_p(double p){
@@ -2203,32 +2227,42 @@ namespace IF97
         double T_star, p_star, R;
     public:
         Region3() : T_star(1000), p_star(1*p_fact) {
-            for (std::size_t i = 0; i < reg3rdata.size(); ++i){
-                nr.push_back(reg3rdata[i].n);
-                Ir.push_back(reg3rdata[i].I);
-                Jr.push_back(reg3rdata[i].J);
+            size_t sz = reg3rdata.size();
+            nr.reserve(sz); Ir.reserve(sz); Jr.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                nr.emplace_back(reg3rdata[i].n);
+                Ir.emplace_back(reg3rdata[i].I);
+                Jr.emplace_back(reg3rdata[i].J);
             }
-            for (std::size_t i = 0; i < Hrdata.size(); ++i){
-                munr.push_back(Hrdata[i].n);
-                muIr.push_back(Hrdata[i].I);
-                muJr.push_back(Hrdata[i].J);
+            sz = Hrdata.size();
+            munr.reserve(sz); muIr.reserve(sz); muJr.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                munr.emplace_back(Hrdata[i].n);
+                muIr.emplace_back(Hrdata[i].I);
+                muJr.emplace_back(Hrdata[i].J);
             }
-            for (std::size_t i = 0; i < H0data.size(); ++i){
-                mun0.push_back(H0data[i].n);
-                muJ0.push_back(H0data[i].J);
+            sz = H0data.size();
+            mun0.reserve(sz);muJ0.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                mun0.emplace_back(H0data[i].n);
+                muJ0.emplace_back(H0data[i].J);
             }
-            for (std::size_t i = 0; i < Lrdata.size(); ++i){
-                lamnr.push_back(Lrdata[i].n);
-                lamIr.push_back(Lrdata[i].I);
-                lamJr.push_back(Lrdata[i].J);
+            sz = Lrdata.size();
+            lamnr.reserve(sz); lamIr.reserve(sz); lamJr.reserve(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                lamnr.emplace_back(Lrdata[i].n);
+                lamIr.emplace_back(Lrdata[i].I);
+                lamJr.emplace_back(Lrdata[i].J);
             }
-            for (std::size_t i = 0; i < L0data.size(); ++i){
-                lamn0.push_back(L0data[i].n);
-                lamJ0.push_back(L0data[i].J);
+            sz = L0data.size();
+            lamn0.resize(sz); lamJ0.resize(sz);
+            for (std::size_t i = 0; i < sz; ++i){
+                lamn0.emplace_back(L0data[i].n);
+                lamJ0.emplace_back(L0data[i].J);
             }
             R = Rgas;
         };
-        double phi(double T, double rho){
+        double phi(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = nr[0]*log(delta);
             for (std::size_t i = 1; i < 40; ++i){
@@ -2240,7 +2274,7 @@ namespace IF97
         //
         // These two extra terms Needed to evaluate Newton-Raphson
         // ****************************************************************************
-        double dphi_ddelta(double T, double rho){
+        double dphi_ddelta(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = nr[0]/delta;
             for (std::size_t i = 1; i < 40; ++i){
@@ -2248,9 +2282,9 @@ namespace IF97
             }
             return summer;
         };
-        double d2phi_ddelta2(double T, double rho){
+        double d2phi_ddelta2(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
-            double summer = -nr[0]/pow(delta,2);
+            double summer = -nr[0]/(delta*delta);
             for (std::size_t i = 1; i < 40; ++i){
                 summer += nr[i]*Ir[i]*(Ir[i]-1.0)*pow(delta, Ir[i]-2)*pow(tau, Jr[i]);
             }
@@ -2258,7 +2292,7 @@ namespace IF97
         };
         // ****************************************************************************
 #endif
-        double delta_dphi_ddelta(double T, double rho){
+        double delta_dphi_ddelta(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = nr[0];
             for (std::size_t i = 1; i < 40; ++i){
@@ -2266,7 +2300,7 @@ namespace IF97
             }
             return summer;
         };
-        double tau_dphi_dtau(double T, double rho){
+        double tau_dphi_dtau(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = 0;
             for (std::size_t i = 1; i < 40; ++i){
@@ -2274,7 +2308,7 @@ namespace IF97
             }
             return summer;
         };
-        double delta2_d2phi_ddelta2(double T, double rho){
+        double delta2_d2phi_ddelta2(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = -nr[0];
             for (std::size_t i = 1; i < 40; ++i){
@@ -2282,7 +2316,7 @@ namespace IF97
             }
             return summer;
         };
-        double tau2_d2phi_dtau2(double T, double rho){
+        double tau2_d2phi_dtau2(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = 0;
             for (std::size_t i = 1; i < 40; ++i){
@@ -2290,7 +2324,7 @@ namespace IF97
             }
             return summer;
         };
-        double deltatau_d2phi_ddelta_dtau(double T, double rho){
+        double deltatau_d2phi_ddelta_dtau(double T, double rho) const{
             const double delta = rho/Rhocrit, tau = Tcrit/T;
             double summer = 0;
             for (std::size_t i = 1; i < 40; ++i){
@@ -2298,51 +2332,51 @@ namespace IF97
             }
             return summer;
         };
-        double mu0(double T){
-            double T_bar = T/Tcrit;
+        double mu0(double T) const{
+            const double T_bar = T/Tcrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < muJ0.size(); ++i)
             {
                 summer += mun0[i]/pow(T_bar, muJ0[i]);
             }
-            return 100.0*pow(T_bar, 0.5)/summer;
+            return 100.0*sqrt(T_bar)/summer;
         }
-        double mu1(double T, double rho){
-            double rho_bar = rho/Rhocrit;
+        double mu1(double T, double rho) const{
+            const double rho_bar = rho/Rhocrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < muJr.size(); ++i){
                 summer += rho_bar * pow(Trterm(T),muIr[i]) * munr[i]*pow(Rhorterm(rho),muJr[i]);
             }
             return exp(summer);
         }
-        double lambda0(double T){
-            double T_bar = T/Tcrit;
+        double lambda0(double T) const{
+            const double T_bar = T/Tcrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < lamJ0.size(); ++i){
                 summer += lamn0[i]/pow(T_bar, lamJ0[i]);
             }
-            return pow(T_bar, 0.5)/summer;
+            return sqrt(T_bar)/summer;
         }
-        double lambda1(double T, double rho){
-            double rho_bar = rho/Rhocrit;
+        double lambda1(double T, double rho) const{
+            const double rho_bar = rho/Rhocrit;
             double summer = 0.0;
             for (std::size_t i = 0; i < lamJr.size(); ++i){
                 summer += rho_bar * pow(Trterm(T),lamIr[i]) * lamnr[i]*pow(Rhorterm(rho),lamJr[i]);
             }
             return exp(summer);
         }
-        double lambda2(double T, double p, double rho){
+        double lambda2(double T, double /*p*/, double rho) const{
             double y, Cpbar, mubar, k, Z, zeta, delChi, Cpcalc;
-            double rhobar = rho/Rhocrit;   /// Dimensionless
-            double LAMBDA = 177.8514;      /// Dimensionless
-            double qD     = 1.0/0.40;      /// 1/nm
-            double Tr     = 1.5*Tcrit;     /// Dimensionless
-            double xi0    = 0.13;          /// nm
-            double nu     = 0.630;         /// Dimensionless
-            double gam    = 1.239;         /// Dimensionless
-            double GAMMA0 = 0.06;          /// Dimensionless
-            double PI     = 2*acos(0.0);   /// Have to define this in C++
-            double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas  {J/kg-K}
+            const double rhobar = rho/Rhocrit;   /// Dimensionless
+            const double LAMBDA = 177.8514;      /// Dimensionless
+            const double qD     = 1.0/0.40;      /// 1/nm
+            const double Tr     = 1.5*Tcrit;     /// Dimensionless
+            const double xi0    = 0.13;          /// nm
+            const double nu     = 0.630;         /// Dimensionless
+            const double gam    = 1.239;         /// Dimensionless
+            const double GAMMA0 = 0.06;          /// Dimensionless
+            const double PI     = 2*acos(0.0);   /// Have to define this in C++
+            const double Cpstar = 0.46151805*R_fact;  /// Note: Slightly lower than IF97 Rgas  {J/kg-K}
             Cpcalc = cpmass(T,rho);                                  /// J/kg-K
             Cpbar = Cpcalc/Cpstar;                                   /// Unit-less
             if ((Cpbar < 0) || (Cpbar > 1.0E13)) Cpbar = 1.0E13;     /// Unit-less
@@ -2358,13 +2392,13 @@ namespace IF97
                 Z = 2.0/(PI*y)*(((1.0-1.0/k)*atan(y)+y/k) - (1.0 - exp(-1.0/(1.0/y + y*y/(3.0*rhobar*rhobar)))));
             return LAMBDA*rhobar*Cpbar*T/(Tcrit*mubar)*Z;
         }
-        double Trterm(double T){
+        double Trterm(double T) const{
             return Tcrit/T - 1.0;
         }
-        double Rhorterm(double rho){
+        double Rhorterm(double rho) const{
             return rho/Rhocrit - 1.0;
         }
-        double p(double T, double rho){
+        double p(double T, double rho) const{
             return rho*R*T*delta_dphi_ddelta(T, rho)*(p_fact/1000/R_fact);
         };
 
@@ -2378,59 +2412,60 @@ namespace IF97
         //    dphi/ddelta and d²phi/ddelta² were also required.  These
         //    additional Taylor functions are defined above.
         //
-        double f(double T, double p, double rho0){
-            return 1.0/pow(rho0,2) - R*T*dphi_ddelta(T, rho0)/(p*Rhocrit)*(p_fact/1000/R_fact);
+        double f(double T, double p, double rho0) const{
+            return 1.0/(rho0*rho0) - R*T*dphi_ddelta(T, rho0)/(p*Rhocrit)*(p_fact/1000/R_fact);
         };
-        double df(double T, double p, double rho0){
-            const double rho_c = 322.0;
-            return -2.0/pow(rho0,3) - R*T*d2phi_ddelta2(T, rho0)/(p*pow(rho_c,2))*(p_fact/1000/R_fact);
+        double df(double T, double p, double rho0) const{
+            const double rho_c = 322.0, rho_c2 = rho_c*rho_c;
+            return -2.0/(rho0*rho0*rho0) - R*T*d2phi_ddelta2(T, rho0)/(p*rho_c2)*(p_fact/1000/R_fact);
         };
-        double rhomass(double T, double p, double rho0)
-        {
-            int iter = 0;
-            while ( std::abs(f(T,p,rho0)) > 1.0e-14 )
+        double rhomass(double T, double p, double rho0) const {
+            int iter = 100;
+            double f_T_p_rho0 = f(T,p,rho0);
+            while ( std::abs(f_T_p_rho0) > 1.0e-14 )
             {
-                rho0 = rho0 - ( f(T,p,rho0)/df(T,p,rho0) );
+                rho0 -= ( f_T_p_rho0/df(T,p,rho0) );
                 // don't go more than 100 iterations or throw an exception
-                if (iter++ > 100) throw std::logic_error("Failed to converge!");  
+                if (--iter == 0) throw std::logic_error("Failed to converge!"); 
+                f_T_p_rho0 = f(T,p,rho0);
             }
             return rho0;
         }
         // END Newton-Raphson
 #endif
 
-        double umass(double T, double rho){
+        double umass(double T, double rho) const{
             return R*T*tau_dphi_dtau(T, rho);
         };
-        double smass(double T, double rho){
+        double smass(double T, double rho) const{
             return R*(tau_dphi_dtau(T, rho) - phi(T, rho));
         };
-        double hmass(double T, double rho){
+        double hmass(double T, double rho) const{
             return R*T*(tau_dphi_dtau(T, rho) + delta_dphi_ddelta(T, rho));
         };
-        double cpmass(double T, double rho){
+        double cpmass(double T, double rho) const{
             return R*(-tau2_d2phi_dtau2(T, rho) + pow(delta_dphi_ddelta(T, rho) - deltatau_d2phi_ddelta_dtau(T, rho), 2)/(2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)));
         };
-        double cvmass(double T, double rho){
+        double cvmass(double T, double rho) const{
             return R*(-tau2_d2phi_dtau2(T, rho));
         };
-        double speed_sound(double T, double rho){
-            double RHS = 2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)-pow(delta_dphi_ddelta(T,rho)-deltatau_d2phi_ddelta_dtau(T,rho),2)/tau2_d2phi_dtau2(T,rho);
+        double speed_sound(double T, double rho) const{
+            const double RHS = 2*delta_dphi_ddelta(T, rho) + delta2_d2phi_ddelta2(T, rho)-pow(delta_dphi_ddelta(T,rho)-deltatau_d2phi_ddelta_dtau(T,rho),2)/tau2_d2phi_dtau2(T,rho);
             return sqrt(R*(1000/R_fact)*T*RHS);
         }
-        double visc(double T, double rho){
+        double visc(double T, double rho) const{
             /// This base region function was not inherited 
-            double mu_star = 1.0E-6; // Reference viscosity [Pa-s]
-            double mu2 = 1.0;        // For Industrial Formulation (IF97), mu2 = 1.0
+            const double mu_star = 1.0E-6; // Reference viscosity [Pa-s]
+            const double mu2 = 1.0;        // For Industrial Formulation (IF97), mu2 = 1.0
             return mu_star * mu0(T) * mu1(T,rho) * mu2;
         }
-        double tcond(double T, double p, double rho){
+        double tcond(double T, double p, double rho) const{
             /// This base region function was not inherited in Region3
-            double lambda_star = 0.001;
-            double lambda_bar = lambda0(T)*lambda1(T,rho) + lambda2(T,p,rho);
+            const double lambda_star = 0.001;
+            const double lambda_bar = lambda0(T)*lambda1(T,rho) + lambda2(T,p,rho);
             return lambda_star * lambda_bar;
         }
-        double drhodp(double T, double rho)
+        double drhodp(double T, double rho) const
         /// Derived from IAPWS Revised Advisory Note No. 3 (See Table 2, Section 3.1 & 3.3)
         /// NOTE: rho is passed in here, not p as it is in Regions 1, 2, & 5.  This is done
         ///       because p(T,rho) is a simple algebraic in Region 3, the Helmholz functions
@@ -2439,9 +2474,10 @@ namespace IF97
         {
             return (rho/p(T,rho)) / ( 2.0 + delta2_d2phi_ddelta2(T,rho)/delta_dphi_ddelta(T,rho) );
         }
-        double delTr(double rho){
+        double delTr(double rho) const{
             /// This is the IF97 correlation for drhodp at the reducing temperature, Tr
-            double rhobar = rho/Rhocrit, summer = 0;
+            const double rhobar = rho/Rhocrit;
+            double summer = 0;
             int j;
             //
             if      (rhobar <= 0.310559006) j = 0;
@@ -2450,11 +2486,14 @@ namespace IF97
             else if (rhobar <= 1.863354037) j = 3;
             else                            j = 4;
             //
-            for (int i=0; i < 6; i++)
-                summer += A[i][j]*pow(rhobar,i);
+            double pow_rhobar = 1.0;
+            for (int i=0; i < 6; ++i){
+                summer += A[i][j]*pow_rhobar;
+                pow_rhobar *= rhobar;
+            }
             return 1.0/summer;
         }
-        char SatSubRegionAdjust(IF97SatState State, double p, char subregion){
+        char SatSubRegionAdjust(IF97SatState State, double p, char subregion) const{
             switch(State)      // See if saturated state is requested
             {
                                   // If looking for Saturated Vapor...
@@ -2566,39 +2605,90 @@ namespace IF97
         double p_star, T_star;
 
         Region4() : p_star(1.0*p_fact), T_star(1.0) {
-            n.resize(1); n[0] = 0;
-            for (std::size_t i = 0; i < reg4data.size(); ++i){
-                n.push_back(reg4data[i].n);
+            const size_t sz = reg4data.size();
+            n.reserve(sz); n.resize(1); 
+            n[0] = 0;
+            for (std::size_t i = 0; i < sz; ++i){
+                n.emplace_back(reg4data[i].n);
             }
         };
-        double p_T(double T){
+        double p_T(double T) const{
             // Allow extrapolation down to Pmin = P(Tmin=273.15K) = 611.213 Pa
-            if ( ( T < Tmin ) || ( T > Tcrit ) ) throw std::out_of_range("Temperature out of range");
-            double theta = T/T_star+n[9]/(T/T_star-n[10]);
-            double A = theta*theta + n[1] * theta + n[2];
-            double B = n[3]*theta*theta + n[4]*theta + n[5];
-            double C = n[6]*theta*theta + n[7]*theta + n[8];
+            if ( ( T < Tmin ) || ( T > Tcrit ) ){
+                throw std::out_of_range("Temperature out of range");
+            }
+            const double theta = T/T_star+n[9]/(T/T_star-n[10]);
+            const double A =      theta*theta + n[1]*theta + n[2];
+            const double B = n[3]*theta*theta + n[4]*theta + n[5];
+            const double C = n[6]*theta*theta + n[7]*theta + n[8];
             return p_star*pow(2*C/(-B+sqrt(B*B-4*A*C)), 4);
         };
-        double T_p(double p){
+        double T_p(double p) const{
             // Allow extrapolation down to Pmin = P(Tmin=273.15K) = 611.213 Pa
-            if ( ( p < Pmin ) || ( p > Pcrit ) ) throw std::out_of_range("Pressure out of range");
-            double beta = pow(p/p_star, 0.25);
-            double E = beta*beta + n[3]*beta + n[6];
-            double F = n[1]*beta*beta + n[4]*beta + n[7];
-            double G = n[2]*beta*beta + n[5]*beta + n[8];
-            double D = 2*G/(-F-sqrt(F*F-4*E*G));
-            return T_star*0.5*(n[10] + D - sqrt(pow(n[10]+D, 2) - 4*(n[9] + n[10]*D)));
+            if ( ( p < Pmin ) || ( p > Pcrit ) ){
+                throw std::out_of_range("Pressure out of range");
+            }
+            
+
+            /* // Initial formulas
+            const double beta = std::pow(beta, 0.25);
+            const double E =      beta*beta + n[3]*beta + n[6];
+            const double F = n[1]*beta*beta + n[4]*beta + n[7];
+            const double G = n[2]*beta*beta + n[5]*beta + n[8];
+            */
+
+            const double beta2 = std::sqrt(p/p_star);
+            const double beta  = std::sqrt(beta2);
+            /* // First optimization
+            const double E =      beta2 + n[3]*beta + n[6];
+            const double F = n[1]*beta2 + n[4]*beta + n[7];
+            const double G = n[2]*beta2 + n[5]*beta + n[8];
+            */
+
+            static double EFG[3];
+            static double &E = EFG[0];
+            static double &F = EFG[1];
+            static double &G = EFG[2];
+
+            // Each cycle can be vectorized
+            EFG[0] = 1.0; EFG[1] = n[1]; EFG[2] = n[2];
+            for(int i=0; i<3; ++i){
+                EFG[i] *= beta;
+            }
+
+            for(int i=0; i<3; ++i){
+                EFG[i] += n[i+3];
+            }
+
+            for(int i=0; i<3; ++i){
+                EFG[i] *= beta;
+            }
+
+            for(int i=0; i<3; ++i){
+                EFG[i] += n[i+6];
+            }
+
+            /* // Each row can be vectorized
+            //EFG[0]  = beta2;     EFG[1]  = n[1]*beta2; EFG[2]  = n[2]*beta2;
+            //EFG[0] += n[3]*beta; EFG[1] += n[4]*beta;  EFG[2] += n[5]*beta;
+            //EFG[0] += n[6];      EFG[1] += n[7];       EFG[2] += n[8];
+            */
+
+            const double D = 2*G/(-F-std::sqrt(F*F-4*E*G));
+            const double n10pD = n[10]+D;
+            return T_star*0.5*(n10pD - std::sqrt(n10pD*n10pD - 4*(n[9] + n[10]*D)));
         };
-		double sigma_t(double T){
+		double sigma_t(double T) const{
             // Surface Tension [mN/m] in two-phase region as a function of temperature [K]
             // Implemented from IAPWS R1-76(2014).
             // May be extrapolated down to -25C in the super-cooled region.
-			if ( ( T < (Ttrip - 25.0) ) || ( T > Tcrit ) ) throw std::out_of_range("Temperature out of range");
-			double Tau = 1.0 - T/Tcrit;
-			double B = 235.8 / 1000;  // Published value in [mN/m]; Convert to SI [N/m] in all cases 
-			double b = -0.625;
-			double mu = 1.256;
+			if ( ( T < (Ttrip - 25.0) ) || ( T > Tcrit ) ){
+                throw std::out_of_range("Temperature out of range");
+            }
+			const double Tau = 1.0 - T/Tcrit;
+			const double B = 235.8 / 1000;  // Published value in [mN/m]; Convert to SI [N/m] in all cases 
+			const double b = -0.625;
+			const double mu = 1.256;
 			return B*pow(Tau,mu)*(1.0 + b*Tau);
 		}
     };
@@ -2631,16 +2721,18 @@ namespace IF97
         Region5() : BaseRegion(reg5rdata, reg50data)  {
             T_star = 1000; p_star = 1*p_fact; 
         };
-        double lambda2(double T, double p, double rho){
+        double lambda2(double /*T*/, double /*p*/, double /*rho*/) const{
             return 0.0;  // No critical enhancement of thermal conductivity in Region 5
         }
-        double TAUrterm(double T){
+        double TAUrterm(double T) const{
             return T_star/T;
         }
-        double PIrterm(double p){
+        double PIrterm(double p) const{
             return p/p_star;
         }
-        double TAU0term(double T){return T_star/T;}
+        double TAU0term(double T) const{
+            return T_star/T;
+        }
     };
 
     /********************************************************************************/
@@ -3460,12 +3552,12 @@ namespace IF97
             std::vector<double> n;
         public:
     
-            BackwardsRegion(BackwardRegionResidualElement data[], std::size_t N){
-                this->N = N;
+            BackwardsRegion(BackwardRegionResidualElement data[], std::size_t pN): N(pN){
+                n.reserve(N); I.reserve(N); J.reserve(N);
                 for (std::size_t i = 0; i < N; ++i){
-                    n.push_back(data[i].n);
-                    I.push_back(data[i].I);
-                    J.push_back(data[i].J);
+                    n.emplace_back(data[i].n);
+                    I.emplace_back(data[i].I);
+                    J.emplace_back(data[i].J);
                 }
             };
 
@@ -3475,7 +3567,7 @@ namespace IF97
             // v(p,h) [Y=v, X=h] or v(p,s) [Y=v, X=s] in Region 3.  since there are no direct formulas
             // for v(p,h) and v(p,s) in Regions 1 and 2, they have got be evaluated in a two step
             // process by evaluating v(T,p) using T(p,X) and the p value supplied.
-            virtual double T_pX(double p, double X){
+            virtual double T_pX(double p, double X) const{
                 const double pi = p/p_star, eta = X/X_star;
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -3487,7 +3579,7 @@ namespace IF97
             // This function implements the backward boundary formulas for h'(s), h"(s) as defined 
             // in the IAPWS supplementary releases of 2014 for region 3.  It should only be called
             // when the appropriate coefficients are provided for an h(s) instance of this class.
-            virtual double h_s(double s){
+            virtual double h_s(double s) const{
                 const double sigma1 = s/s_star, sigma2 = s/s2_star;
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -3502,7 +3594,7 @@ namespace IF97
             // This function implements the backward formulas for p(h,s) as defined in the IAPWS
             // supplementary releases of 2014 for regions 1, 2, and 3.  It should only be called
             // when the appropriate coefficients are provided for a p(h,s) instance of this class.
-            virtual double p_hs(double h, double s){
+            virtual double p_hs(double h, double s) const{
                 const double eta = h/h_star, sigma = s/s_star;
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -3513,7 +3605,7 @@ namespace IF97
 
 //       Add function for Tb23(h,s) Boundary Line.  There will only be one instance below.
 //       It may double as Tsat(h,s) in Region 4 as well.
-            virtual double t_hs(double h, double s){
+            virtual double t_hs(double h, double s) const{
                 const double eta = h/h_star, sigma = s/s_star;
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -3693,13 +3785,13 @@ namespace IF97
         inline double P2b2c_h(double h){
             // Only called for Region determination and debugging.  No range checking.
             const double p_star = 1*p_fact, h_star = 1*R_fact, eta = h/h_star;
-            double PI = region2b2c_n[0] + region2b2c_n[1]*eta + region2b2c_n[2]*eta*eta;
+            const double PI = region2b2c_n[0] + region2b2c_n[1]*eta + region2b2c_n[2]*eta*eta;
             return PI*p_star;
         }
         inline double H2b2c_p(double p){
             // Only called for Region determination and debugging.  No range checking.
             const double p_star = 1*p_fact, h_star = 1*R_fact, PI = p/p_star;
-            double ETA = region2b2c_n[3] + sqrt((PI - region2b2c_n[4])/region2b2c_n[2]);
+            const double ETA = region2b2c_n[3] + sqrt((PI - region2b2c_n[4])/region2b2c_n[2]);
             return ETA*h_star;
         }
 
@@ -3853,19 +3945,23 @@ namespace IF97
                 throw std::out_of_range("Pressure out of range");
         double Xmin = R1.output(inkey,Tmin,p);
         double Xmax = R2.output(inkey,Tmax,p);
-        if (( X < Xmin ) || (X > (Xmax + 1.0E-10) ))
-            if (inkey == IF97_HMASS)
+        if (( X < Xmin ) || (X > (Xmax + 1.0E-10) )){
+            if (inkey == IF97_HMASS){
                 throw std::out_of_range("Enthalpy out of range");
-            else
+            }
+            else{
                 throw std::out_of_range("Entropy out of range");
+            }
+        }
 
         // Check saturation Dome first
         if (p <= Pcrit) {
             Tsat = Tsat97(p);
             Xliq = R1.output(inkey,Tsat,p);
             Xvap = R2.output(inkey,Tsat,p);
-            if ((Xliq <= X) && (X <= Xvap))    // Within Saturation Dome
+            if ((Xliq <= X) && (X <= Xvap)){    // Within Saturation Dome
                 return REGION_4;               //    Region 4
+            }
         }
         // End Check saturation Dome
 
@@ -3975,16 +4071,16 @@ namespace IF97
         //       equation is needed instead of two in Region 3.
         static Region1 R1;
         static Region2 R2;
-        double T = RegionOutputBackward( p, X, inkey);
-        double Tsat = Tsat97(p); 
+        const double T = RegionOutputBackward( p, X, inkey);
+        const double Tsat = Tsat97(p); 
         if (std::abs(T-Tsat) < 1.0E-10){                           // If in saturation dome
-            double Xliq = R1.output(inkey,Tsat,p);
-            double Xvap = R2.output(inkey,Tsat,p);
-            double vliq = 1.0/R1.output(IF97_DMASS,Tsat,p);
-            double vvap = 1.0/R1.output(IF97_DMASS,Tsat,p);
+            const double Xliq = R1.output(inkey,Tsat,p);
+            const double Xvap = R2.output(inkey,Tsat,p);
+            const double vliq = 1.0/R1.output(IF97_DMASS,Tsat,p);
+            const double vvap = 1.0/R2.output(IF97_DMASS,Tsat,p);
             return 1.0/(vliq + (X-Xliq)*(vvap-vliq)/(Xvap-Xliq));  //    Return Mixture Density
         } else {                                                   // else
-            RegionOutput(IF97_DMASS, T, p, NONE);
+            return RegionOutput(IF97_DMASS, T, p, NONE);
         }
     }
 
