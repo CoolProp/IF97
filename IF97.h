@@ -28,7 +28,7 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 namespace IF97
 {    
     // CoolProp-IF97 Version Number
-    static char IF97VERSION [] = "v2.0.0";
+    static char IF97VERSION [] = "v2.0.1";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -4071,9 +4071,9 @@ namespace IF97
         //       equation is needed instead of two in Region 3.
         static Region1 R1;
         static Region2 R2;
-        const double T = RegionOutputBackward( p, X, inkey);
-        const double Tsat = Tsat97(p); 
-        if (std::abs(T-Tsat) < 1.0E-10){                           // If in saturation dome
+        const double T = RegionOutputBackward( p, X, inkey); 
+        if (RegionDetermination_pX(p, X, inkey) == REGION_4){      // If in saturation dome
+            const double Tsat = Tsat97(p);
             const double Xliq = R1.output(inkey,Tsat,p);
             const double Xvap = R2.output(inkey,Tsat,p);
             const double vliq = 1.0/R1.output(IF97_DMASS,Tsat,p);

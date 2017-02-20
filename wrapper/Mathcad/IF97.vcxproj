@@ -140,6 +140,8 @@
     <ClInclude Include="includes\regionps.h" />
     <ClInclude Include="includes\rhof.h" />
     <ClInclude Include="includes\rhog.h" />
+    <ClInclude Include="includes\rhoph.h" />
+    <ClInclude Include="includes\rhops.h" />
     <ClInclude Include="includes\rhotp.h" />
     <ClInclude Include="includes\sf.h" />
     <ClInclude Include="includes\sg.h" />
