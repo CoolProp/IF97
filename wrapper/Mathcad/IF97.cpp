@@ -23,7 +23,7 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 
 // Mathcad Error Codes
 enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, 
-          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, REGION_NOT_FOUND, NUMBER_OF_ERRORS};
+          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, REGION_NOT_FOUND, UNKNOWN, NUMBER_OF_ERRORS};
 
     // Table of Error Messages
     // These message strings MUST be in the order of the Error Code enumeration above, with the last being a dummy value for error count
@@ -40,6 +40,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
         "Enthalpy out of Range",
         "Entropy out of Range",
         "Region not found",
+        "Exception thrown - Error Unknown",
         "Error Count - Not Used"
     };
 
