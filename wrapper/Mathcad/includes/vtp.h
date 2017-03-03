@@ -22,8 +22,12 @@ LRESULT  if97_VTP(
     catch (const std::out_of_range &e) { 
         if (e.what()[0] == 'T') 
             return MAKELRESULT(T_OUT_OF_RANGE,1);
-        else // (e.what == "P")
+        else if (e.what()[0] == 'P')
             return MAKELRESULT(P_OUT_OF_RANGE,2);
+        else if (e.what()[0] == 'C')
+            return MAKELRESULT(SATURATED,1);
+        else
+            return MAKELRESULT(UNKNOWN,1);
     }
     catch (const std::logic_error& ) {
         return MAKELRESULT(NO_SOLUTION_FOUND,1);

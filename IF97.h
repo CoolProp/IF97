@@ -3919,12 +3919,22 @@ namespace IF97
                                return R2.output(outkey, T, p);  // On saturation curve and need the Vapor phase
                            else
                                return R1.output(outkey, T, p);  // otherwise, use Liquid Region 1
+                           break;
             case REGION_2: if (State == LIQUID)
                                return R1.output(outkey, T, p);  // On saturation curve and need the Liquid phase
                            else
                                return R2.output(outkey, T, p);  // otherwise, use Vapor Region 2
+                           break;
             case REGION_3: return R3.output(outkey, T, p, State);
-            case REGION_4: throw std::invalid_argument("Cannot use Region 4 with T and p as inputs");
+                           break;
+            case REGION_4: if (State == VAPOR) {
+                               return R2.output(outkey, T, p);
+                           } else if (State == LIQUID) {
+                               return R1.output(outkey, T, p);
+                           } else {
+                               throw std::out_of_range("Cannot use Region 4 with T and p as inputs");
+                           }
+                           break;
             case REGION_5: return R5.output(outkey, T, p);
         }
         throw std::out_of_range("Unable to match region");
