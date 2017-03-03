@@ -3927,12 +3927,13 @@ namespace IF97
                            break;
             case REGION_3: return R3.output(outkey, T, p, State);
                            break;
-            case REGION_4: if (State == VAPOR)
+            case REGION_4: if (State == VAPOR) {
                                return R2.output(outkey, T, p);
-                           else if (State == LIQUID)
+                           } else if (State == LIQUID) {
                                return R1.output(outkey, T, p);
-                           else
+                           } else {
                                throw std::out_of_range("Cannot use Region 4 with T and p as inputs");
+                           }
                            break;
             case REGION_5: return R5.output(outkey, T, p);
         }
