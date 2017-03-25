@@ -122,10 +122,14 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include ".\includes\rhoph.h"
     #include ".\includes\rhops.h"
 
-    // DLL entry point code.  the _CRT_INIT function is needed
-    // if you are using Microsoft's 32 bit compiler
- 
+    // ************************************************************************************
+    // DLL entry point code.  
+    // ************************************************************************************
+    // The _CRT_INIT function is needed if you are using Microsoft's 32 bit compiler
+
+#ifdef _WIN32
     extern "C" BOOL WINAPI _CRT_INIT(HINSTANCE hinstDLL, DWORD dwReason, LPVOID lpReserved);
+#endif
 
     extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
     {
