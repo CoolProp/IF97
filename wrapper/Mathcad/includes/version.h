@@ -8,12 +8,13 @@ LRESULT  IF97_Version(
     LPCCOMPLEXSCALAR dummy) // pointer to the dummy parameter received from Mathcad
                             // Unfortunately Mathcad functions have to pass at least
                             // one parameter and it cannot be void.
-{  
+{
+
     // Note: we don't care what gets passed in.
     // call IF97's get_if97_version() routine;
     std::string s = IF97::get_if97_version();
 
-    char * c = MathcadAllocate(s.size()+1); //create a c-string (pointer) with same size as s
+    char * c = MathcadAllocate(static_cast<int>(s.size())+1); //create a c-string (pointer) with same size as s
     // copy s into c, this process avoids the const-cast type which would result
     // from instead converting the string using s.c_str()
     std::copy(s.begin(), s.end(), c);

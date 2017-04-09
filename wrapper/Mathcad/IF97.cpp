@@ -19,11 +19,11 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 #define REGION3_ITERATE
 
 // #define IAPWS_UNITS          // Set to use IAPWS Units of [MPa] and [kJ] (instead of [Pa] and [J] )
-#include "../../IF97.h"
+#include "IF97.h"
 
 // Mathcad Error Codes
 enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, 
-          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, REGION_NOT_FOUND, UNKNOWN, NUMBER_OF_ERRORS};
+          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, Q_OUT_OF_RANGE, REGION_NOT_FOUND, UNKNOWN, NUMBER_OF_ERRORS};
 
     // Table of Error Messages
     // These message strings MUST be in the order of the Error Code enumeration above, with the last being a dummy value for error count
@@ -39,6 +39,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
         "Density out of Range",
         "Enthalpy out of Range",
         "Entropy out of Range",
+        "Quality out of Range",
         "Region not found",
         "Exception thrown - Error Unknown",
         "Error Count - Not Used"
@@ -121,7 +122,19 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include "ths.h"
     #include "rhoph.h"
     #include "rhops.h"
-
+    // *************************************************************
+    // Quality Functions
+    // *************************************************************
+    #include "xph.h"
+    #include "xprho.h"
+    #include "xps.h"
+    #include "xpu.h"
+    #include "xpv.h"
+    #include "hpx.h"
+    #include "rhopx.h"
+    #include "spx.h"
+    #include "upx.h"
+    #include "vpx.h"
     // ************************************************************************************
     // DLL entry point code.  
     // ************************************************************************************
@@ -233,6 +246,19 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_ths );
                     CreateUserFunction( hDLL, &if97_rhoph );
                     CreateUserFunction( hDLL, &if97_rhops );
+                    // *************************************************************
+                    // Quality functions
+                    // *************************************************************
+                    CreateUserFunction( hDLL, &if97_xph );
+                    CreateUserFunction( hDLL, &if97_xprho );
+                    CreateUserFunction( hDLL, &if97_xps );
+                    CreateUserFunction( hDLL, &if97_xpu );
+                    CreateUserFunction( hDLL, &if97_xpv );
+                    CreateUserFunction( hDLL, &if97_hpx );
+                    CreateUserFunction( hDLL, &if97_rhopx );
+                    CreateUserFunction( hDLL, &if97_spx );
+                    CreateUserFunction( hDLL, &if97_upx );
+                    CreateUserFunction( hDLL, &if97_vpx );
                     break;
                     }
 
