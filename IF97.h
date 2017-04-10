@@ -28,7 +28,7 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 namespace IF97
 {    
     // CoolProp-IF97 Version Number
-    static char IF97VERSION [] = "v2.0.1";
+    static char IF97VERSION [] = "v2.1.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -4094,6 +4094,81 @@ namespace IF97
         }
     }
 
+    inline double Q_pX(double p, double X, IF97parameters inkey){
+        double Xliq, Xvap;
+        if ((p<Pmin) || (p>Pmax)) {
+            throw std::out_of_range("Pressure out of range");
+        } else if (p<Ptrip) {
+            return 0;  //Liquid, at all temperatures
+        } else if (p>Pcrit) { 
+            double t;
+            switch (inkey) {
+            case IF97_HMASS:
+            case IF97_SMASS:
+                t = RegionOutputBackward( p, X, inkey); break;
+            case IF97_UMASS:
+            case IF97_DMASS:
+            default:
+                // There are no reverse functions for t(p,U) or t(p,rho)
+                throw std::invalid_argument("Quality cannot be determined for these inputs.");
+            }
+            if (t<Tcrit)
+                return 1.0;  // Vapor, at all pressures above critical point
+            else
+                // Supercritical Region (p>Pcrit) && (t>Tcrit)
+                throw std::invalid_argument("Quality not defined in supercritical region.");
+        } else {
+            switch (inkey) {
+                case IF97_HMASS:
+                case IF97_SMASS:
+                case IF97_UMASS:
+                    Xliq = RegionOutput( inkey, Tsat97(p), p, LIQUID);
+                    Xvap = RegionOutput( inkey, Tsat97(p), p, VAPOR);
+                    return std::min(1.0,std::max(0.0,(X-Xliq)/(Xvap-Xliq)));
+                    break;
+                case IF97_DMASS:
+                    Xliq = 1.0/RegionOutput( IF97_DMASS, Tsat97(p), p, LIQUID);
+                    Xvap = 1.0/RegionOutput( IF97_DMASS, Tsat97(p), p, VAPOR);
+                    X = 1.0/X;
+                    return std::min(1.0,std::max(0.0,(X-Xliq)/(Xvap-Xliq)));
+                    break;
+                default:
+                    throw std::invalid_argument("Quality cannot be determined for these inputs.");
+            };
+        }
+        // If all else fails, which it shouldn't...
+        throw std::invalid_argument("Quality cannot be determined for these inputs.");
+        return -1;  // Should never occur, but eliminates warnings.
+    };
+
+    inline double X_pQ(IF97parameters inkey, double p, double Q){
+        double Xliq, Xvap;
+        if ((p<Ptrip) || (p>Pcrit)) 
+            throw std::out_of_range("Pressure out of range");
+        if ((Q<0.0) || (Q>1.0))
+            throw std::out_of_range("Quality out of range");
+        switch (inkey) {
+            case IF97_HMASS:
+            case IF97_SMASS:
+            case IF97_UMASS:
+                Xliq = RegionOutput( inkey, Tsat97(p), p, LIQUID);
+                Xvap = RegionOutput( inkey, Tsat97(p), p, VAPOR);
+                return Q*Xvap + (1-Q)*Xliq;
+                break;
+            case IF97_DMASS:
+                Xliq = 1.0/RegionOutput( IF97_DMASS, Tsat97(p), p, LIQUID);
+                Xvap = 1.0/RegionOutput( IF97_DMASS, Tsat97(p), p, VAPOR);
+                return 1.0/(Q*Xvap + (1-Q)*Xliq);
+                break;
+            default: 
+                throw std::invalid_argument("Mixture property undefined");
+                return -1;  // Should never occur but eliminates warnings.
+                break;
+        };
+        return -1;  // Should never occur but eliminates warnings.
+    };
+
+
     static double HTmaxdata[] = {
         1.00645619394616E4,
         1.94706669580164E5,
@@ -4131,7 +4206,7 @@ namespace IF97
         static Backwards::Region2cHS R2c;
 
         // Check Overall Boundaries
-        if ( (s < 0.0) || (s > Smax) ) 
+        if ( (s < Smin) || (s > Smax) ) 
             throw std::out_of_range("Entropy out of range");
         if ( (h > Hmax(s)) || (h < Hmin(s)) )
             throw std::out_of_range("Enthalpy out of range");
@@ -4242,8 +4317,6 @@ namespace IF97
             else                                                 //
                 return RegionOutputBackward(Pval,h,IF97_HMASS);  // Not REGION 4 Calc from Backward T(p,h)
     }  // Region Output backward
-
-
 
     // ******************************************************************************** //
     //                                     API                                          //
@@ -4403,6 +4476,9 @@ namespace IF97
     inline double get_MW() { return MW; };
     inline double get_Rgas() { return Rgas; };
     inline double get_Acentric() { return -log10(psat97(0.7*Tcrit)/Pcrit) - 1; };
+    // ******************************************************************************** //
+    //                              Utility Functions                                   //
+    // ******************************************************************************** //
     inline std::string get_if97_version() { 
 #ifdef IAPWS_UNITS
         std::string VSTRING(IF97VERSION);
@@ -4412,6 +4488,65 @@ namespace IF97
         return IF97VERSION;
 #endif
     };
+    inline double hmass_pQ(double p,double Q){
+        return X_pQ(IF97_HMASS, p, Q);
+    };
+    inline double umass_pQ(double p,double Q){
+        return X_pQ(IF97_UMASS, p, Q);
+    };
+    inline double smass_pQ(double p,double Q){
+        return X_pQ(IF97_SMASS, p, Q);
+    };
+    inline double v_pQ(double p,double Q){
+        return 1.0/X_pQ(IF97_DMASS, p, Q);
+    };
+    inline double rhomass_pQ(double p,double Q){
+        return X_pQ(IF97_DMASS, p, Q);
+    };
+    inline double Q_phmass(double p,double h){
+        return Q_pX(p, h, IF97_HMASS);
+    };
+    inline double Q_pumass(double p,double u){
+        return Q_pX(p, u, IF97_UMASS);
+    };
+    inline double Q_psmass(double p,double s){
+        return Q_pX(p, s, IF97_SMASS);
+    };
+    inline double Q_prhomass(double p,double rho){
+        return Q_pX(p, rho, IF97_DMASS);
+    };
+    inline double Q_pv(double p,double v){
+        return Q_pX(p, 1.0/v, IF97_DMASS);
+    };
+/*************************************************************************/
+/* Vapor Quality as a function of H and S cannot be implemented at this  */
+/* time as there IAPWS has not released a backward formula that covers   */
+/* the entire vapor dome.  T(H,S) is only currently defined for the      */
+/* range of s > s"(T23sat).  Leaving this code here in case IAPWS        */
+/* releases a fit for the entire vapor dome.                             */
+/*************************************************************************/
+/*  inline double Q_hsmass(double h, double s){
+        double hliq, hvap;
+        if ((s < Smin) || (s > Smax)) {
+            throw std::out_of_range("Entropy out of range");
+        } else if ((h < Hmin(s)) || (h > Hmax(s))) {
+            throw std::out_of_range("Enthalpy out of range");
+        }
+        double p = BackwardOutputHS(IF97_P, h, s);
+        double t = RegionOutputBackward( p, h, IF97_HMASS);
+        if ((p > Pcrit) && (t > Tcrit)) {
+            throw std::out_of_range("Temperature out of range");
+        } else if (BackwardRegion(p, h, IF97_HMASS) == 4) {
+            hliq = RegionOutput( IF97_HMASS, Tsat97(p), p, LIQUID);
+            hvap = RegionOutput( IF97_HMASS, Tsat97(p), p, VAPOR);
+            return std::min(1.0,std::max(0.0,(h-hliq)/(hvap-hliq)));
+        } else if (p > Pcrit) {
+            return 0.0;
+        } else {
+            return 1.0;
+        }
+    };                                                                   */
+/*************************************************************************/
 
 }; /* namespace IF97 */
 

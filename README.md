@@ -1,4 +1,3 @@
-=============
 CoolProp IF97
 =============
 
@@ -58,6 +57,10 @@ Transport property functions have been implemented for temperature/pressure stat
 - Surface Tension: ``sigma97(t)``
 - Prandtl Number: ``prandtl_Tp(T,p)``, ``prandtlliq_p(p)``, and ``prandtlvap_p(p)``  
 
+Utility functions provide forward and backward evaluations using vapor quality in the steam dome.  These include:
+- Forward functions: ``Q_phmass(p,h)``, ``Q_pumass(p,u)``, ``Q_psmass(p,s)``, ``Q_prhomass(p,rho)``, ``Q_pv(p,v)``
+- Backward functions: ``hmass_pQ(p,Q)``, ``umass_pQ(p,Q)``, ``smass_pQ(p,Q)``, ``rhomass_pQ(p,Q)``, ``vmass_pQ(p,Q)``
+
 As of IF97 v2.0.0, a utility function ``get_if97_version()`` will return the official version string for this IF97 implementation.  
 
 License
@@ -72,5 +75,5 @@ You are strongly requested, but not required, to cite both this repository and t
 Wrappers
 --------
 
-Wrappers directory started for 3rd Party Apps, including:
-- Mathcad 15 (Jeff Henning main contributor)  
+Wrappers directory for 3rd Party Apps, including:
+- Mathcad 15 and Prime (Jeff Henning main contributor)  

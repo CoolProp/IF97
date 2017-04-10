@@ -314,5 +314,75 @@
         <category>if97 (Water Properties)</category>
         <description>Returns the version of the IF97 implementation code. Takes a "dummy" parameter that can be (0).</description>
     </function>
+    <function>
+        <name>if97_xph</name>
+        <local_name>if97_xph</local_name>
+        <params>p,h</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the steam quality, x, as a function of pressure, p [Pa], and mass enthalpy, h [J/kg].</description>
+    </function>
+    <function>
+        <name>if97_xps</name>
+        <local_name>if97_xps</local_name>
+        <params>p,s</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the steam quality, x, as a function of pressure, p [Pa], and mass entropy, s [J/kg-K].</description>
+    </function>
+    <function>
+        <name>if97_xpu</name>
+        <local_name>if97_xpu</local_name>
+        <params>p,u</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the steam quality, x, as a function of pressure, p [Pa], and mass internal energy, u [J/kg].</description>
+    </function>
+    <function>
+        <name>if97_xpv</name>
+        <local_name>if97_xpv</local_name>
+        <params>p,v</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the steam quality, x, as a function of pressure, p [Pa], and specific volume, v [m³/kg].</description>
+    </function>
+    <function>
+        <name>if97_xprho</name>
+        <local_name>if97_xprho</local_name>
+        <params>p,rho</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the steam quality, x, as a function of pressure, p [Pa], and mass density, rho [kg/m³].</description>
+    </function>
+    <function>
+        <name>if97_hpx</name>
+        <local_name>if97_hpx</local_name>
+        <params>p,x</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the mass enthalpy, h [J/kg], as a function of pressure, p [Pa], and steam quality, x, within the vapor dome.</description>
+    </function>
+    <function>
+        <name>if97_spx</name>
+        <local_name>if97_spx</local_name>
+        <params>p,x</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the mass entropy, s [J/kg-K], as a function of pressure, p [Pa], and steam quality, x, within the vapor dome.</description>
+    </function>
+    <function>
+        <name>if97_upx</name>
+        <local_name>if97_upx</local_name>
+        <params>p,x</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the mass internal engergy, u [J/kg], as a function of pressure, p [Pa], and steam quality, x, within the vapor dome.</description>
+    </function>
+    <function>
+        <name>if97_vpx</name>
+        <local_name>if97_vpx</local_name>
+        <params>p,x</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the specific volume, v [m³/kg], as a function of pressure, p [Pa], and steam quality, x, within the vapor dome.</description>
+    </function>
+    <function>
+        <name>if97_rhopx</name>
+        <local_name>if97_rhopx</local_name>
+        <params>p,x</params>
+        <category>if97 (Water Properties)</category>
+        <description>Returns the mass density, rho [kg/m³], as a function of pressure, p [Pa], and steam quality, x, within the vapor dome.</description>
+    </function>
 
 </FUNCTIONS>

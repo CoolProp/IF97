@@ -19,11 +19,11 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 #define REGION3_ITERATE
 
 // #define IAPWS_UNITS          // Set to use IAPWS Units of [MPa] and [kJ] (instead of [Pa] and [J] )
-#include "../../IF97.h"
+#include "IF97.h"
 
 // Mathcad Error Codes
 enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_OUT_OF_RANGE, SATURATED, NO_SOLUTION_FOUND, 
-          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, REGION_NOT_FOUND, UNKNOWN, NUMBER_OF_ERRORS};
+          D_OUT_OF_RANGE, H_OUT_OF_RANGE, S_OUT_OF_RANGE, Q_OUT_OF_RANGE, REGION_NOT_FOUND, UNKNOWN, NUMBER_OF_ERRORS};
 
     // Table of Error Messages
     // These message strings MUST be in the order of the Error Code enumeration above, with the last being a dummy value for error count
@@ -39,6 +39,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
         "Density out of Range",
         "Enthalpy out of Range",
         "Entropy out of Range",
+        "Quality out of Range",
         "Region not found",
         "Exception thrown - Error Unknown",
         "Error Count - Not Used"
@@ -49,83 +50,99 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     // *************************************************************
     // Basic function stubs
     // *************************************************************
-    #include ".\includes\tsatp.h"
-    #include ".\includes\ttrip.h"
-    #include ".\includes\tcrit.h"
-    #include ".\includes\psatt.h"
-    #include ".\includes\ptrip.h"
-    #include ".\includes\pcrit.h"
-    #include ".\includes\rhotp.h"
-    #include ".\includes\vtp.h"
-    #include ".\includes\htp.h"
-    #include ".\includes\utp.h"
-    #include ".\includes\stp.h"
-    #include ".\includes\cptp.h"
-    #include ".\includes\cvtp.h"
-    #include ".\includes\wtp.h"
+    #include "tsatp.h"
+    #include "ttrip.h"
+    #include "tcrit.h"
+    #include "psatt.h"
+    #include "ptrip.h"
+    #include "pcrit.h"
+    #include "rhotp.h"
+    #include "vtp.h"
+    #include "htp.h"
+    #include "utp.h"
+    #include "stp.h"
+    #include "cptp.h"
+    #include "cvtp.h"
+    #include "wtp.h"
     // *************************************************************
     // Saturation function stubs
     // *************************************************************
-    #include ".\includes\rhof.h"
-    #include ".\includes\rhog.h"
-    #include ".\includes\vf.h"
-    #include ".\includes\vg.h"
-    #include ".\includes\hf.h"
-    #include ".\includes\hg.h"
-    #include ".\includes\uf.h"
-    #include ".\includes\ug.h"
-    #include ".\includes\sf.h"
-    #include ".\includes\sg.h"
-    #include ".\includes\cpf.h"
-    #include ".\includes\cpg.h"
-    #include ".\includes\cvf.h"
-    #include ".\includes\cvg.h"
-    #include ".\includes\wf.h"
-    #include ".\includes\wg.h"
+    #include "rhof.h"
+    #include "rhog.h"
+    #include "vf.h"
+    #include "vg.h"
+    #include "hf.h"
+    #include "hg.h"
+    #include "uf.h"
+    #include "ug.h"
+    #include "sf.h"
+    #include "sg.h"
+    #include "cpf.h"
+    #include "cpg.h"
+    #include "cvf.h"
+    #include "cvg.h"
+    #include "wf.h"
+    #include "wg.h"
     // *************************************************************
     // Transport Property Stubs
     // *************************************************************
-    #include ".\includes\sigma.h"
-    #include ".\includes\mutp.h"
-    #include ".\includes\mutrho.h"  // this function provided for validation work only
-    #include ".\includes\muf.h"
-    #include ".\includes\mug.h"
-    #include ".\includes\ktp.h"
-    #include ".\includes\kf.h"
-    #include ".\includes\kg.h"
-    #include ".\includes\prtp.h"
-    #include ".\includes\prf.h"
-    #include ".\includes\prg.h"
+    #include "sigma.h"
+    #include "mutp.h"
+    #include "mutrho.h"  // this function provided for validation work only
+    #include "muf.h"
+    #include "mug.h"
+    #include "ktp.h"
+    #include "kf.h"
+    #include "kg.h"
+    #include "prtp.h"
+    #include "prf.h"
+    #include "prg.h"
     // *************************************************************
     // Test Functions
     // *************************************************************
-    #include ".\includes\p23.h"
-    #include ".\includes\t23.h"
-    #include ".\includes\regionph.h"
-    #include ".\includes\regionps.h"
-    #include ".\includes\h3ab.h"
-    #include ".\includes\h2ab.h"
-    #include ".\includes\h2bc.h"
-    #include ".\includes\h13.h"
-    #include ".\includes\hsats.h"
-    #include ".\includes\hmaxs.h"
-    #include ".\includes\hmins.h"
-    #include ".\includes\drhodp.h"
-    #include ".\includes\version.h"
+    #include "p23.h"
+    #include "t23.h"
+    #include "regionph.h"
+    #include "regionps.h"
+    #include "h3ab.h"
+    #include "h2ab.h"
+    #include "h2bc.h"
+    #include "h13.h"
+    #include "hsats.h"
+    #include "hmaxs.h"
+    #include "hmins.h"
+    #include "drhodp.h"
+    #include "version.h"
     // *************************************************************
     // Reverse Functions
     // *************************************************************
-    #include ".\includes\tph.h"
-    #include ".\includes\tps.h"
-    #include ".\includes\phs.h"
-    #include ".\includes\ths.h"
-    #include ".\includes\rhoph.h"
-    #include ".\includes\rhops.h"
+    #include "tph.h"
+    #include "tps.h"
+    #include "phs.h"
+    #include "ths.h"
+    #include "rhoph.h"
+    #include "rhops.h"
+    // *************************************************************
+    // Quality Functions
+    // *************************************************************
+    #include "xph.h"
+    #include "xprho.h"
+    #include "xps.h"
+    #include "xpu.h"
+    #include "xpv.h"
+    #include "hpx.h"
+    #include "rhopx.h"
+    #include "spx.h"
+    #include "upx.h"
+    #include "vpx.h"
+    // ************************************************************************************
+    // DLL entry point code.  
+    // ************************************************************************************
+    // The _CRT_INIT function is needed if you are using Microsoft's 32 bit compiler
 
-    // DLL entry point code.  the _CRT_INIT function is needed
-    // if you are using Microsoft's 32 bit compiler
- 
+#ifdef _WIN32
     extern "C" BOOL WINAPI _CRT_INIT(HINSTANCE hinstDLL, DWORD dwReason, LPVOID lpReserved);
+#endif
 
     extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
     {
@@ -229,6 +246,19 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_ths );
                     CreateUserFunction( hDLL, &if97_rhoph );
                     CreateUserFunction( hDLL, &if97_rhops );
+                    // *************************************************************
+                    // Quality functions
+                    // *************************************************************
+                    CreateUserFunction( hDLL, &if97_xph );
+                    CreateUserFunction( hDLL, &if97_xprho );
+                    CreateUserFunction( hDLL, &if97_xps );
+                    CreateUserFunction( hDLL, &if97_xpu );
+                    CreateUserFunction( hDLL, &if97_xpv );
+                    CreateUserFunction( hDLL, &if97_hpx );
+                    CreateUserFunction( hDLL, &if97_rhopx );
+                    CreateUserFunction( hDLL, &if97_spx );
+                    CreateUserFunction( hDLL, &if97_upx );
+                    CreateUserFunction( hDLL, &if97_vpx );
                     break;
                     }
 
