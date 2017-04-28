@@ -173,44 +173,32 @@ namespace IF97
     {
     public:
         BaseRegion(std::vector<RegionResidualElement> resid, std::vector<RegionIdealElement> ideal) : R(Rgas){
-            size_t sz = resid.size();
-            nr.reserve(sz); Ir.reserve(sz); Jr.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                nr.emplace_back(resid[i].n);
-                Ir.emplace_back(resid[i].I);
-                Jr.emplace_back(resid[i].J);
+            for (std::size_t i = 0; i < resid.size(); ++i){
+                nr.push_back(resid[i].n);
+                Ir.push_back(resid[i].I);
+                Jr.push_back(resid[i].J);
             }
-            sz = ideal.size();
-            n0.reserve(sz); J0.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                n0.emplace_back(ideal[i].n);
-                J0.emplace_back(ideal[i].J);
+            for (std::size_t i = 0; i < ideal.size(); ++i){
+                n0.push_back(ideal[i].n);
+                J0.push_back(ideal[i].J);
             }
-            sz = Hrdata.size();
-            munr.reserve(sz); muIr.reserve(sz); muJr.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                munr.emplace_back(Hrdata[i].n);
-                muIr.emplace_back(Hrdata[i].I);
-                muJr.emplace_back(Hrdata[i].J);
+            for (std::size_t i = 0; i < Hrdata.size(); ++i){
+                munr.push_back(Hrdata[i].n);
+                muIr.push_back(Hrdata[i].I);
+                muJr.push_back(Hrdata[i].J);
             }
-            sz = H0data.size();
-            mun0.reserve(sz); muJ0.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                mun0.emplace_back(H0data[i].n);
-                muJ0.emplace_back(H0data[i].J);
+            for (std::size_t i = 0; i < H0data.size(); ++i){
+                mun0.push_back(H0data[i].n);
+                muJ0.push_back(H0data[i].J);
             }
-            sz = Lrdata.size();
-            lamnr.reserve(sz); lamIr.reserve(sz); lamJr.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                lamnr.emplace_back(Lrdata[i].n);
-                lamIr.emplace_back(Lrdata[i].I);
-                lamJr.emplace_back(Lrdata[i].J);
+            for (std::size_t i = 0; i < Lrdata.size(); ++i){
+                lamnr.push_back(Lrdata[i].n);
+                lamIr.push_back(Lrdata[i].I);
+                lamJr.push_back(Lrdata[i].J);
             }
-            sz = L0data.size();
-            lamn0.reserve(sz); lamJ0.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                lamn0.emplace_back(L0data[i].n);
-                lamJ0.emplace_back(L0data[i].J);
+            for (std::size_t i = 0; i < L0data.size(); ++i){
+                lamn0.push_back(L0data[i].n);
+                lamJ0.push_back(L0data[i].J);
             }
         }
         double rhomass(double T, double p) const{
@@ -1592,12 +1580,12 @@ namespace IF97
             std::vector<double> n;
         public:
     
-            Region3BackwardsRegion(RegionResidualElement data[], std::size_t pN):N(pN){
-                n.reserve(N); I.reserve(N); J.reserve(N);
+            Region3BackwardsRegion(RegionResidualElement data[], std::size_t N){
+                this->N = N;
                 for (std::size_t i = 0; i < N; ++i){
-                    n.emplace_back(data[i].n);
-                    I.emplace_back(data[i].I);
-                    J.emplace_back(data[i].J);
+                    n.push_back(data[i].n);
+                    I.push_back(data[i].I);
+                    J.push_back(data[i].J);
                 }
             }
             virtual double v(double T, double p){
@@ -1946,10 +1934,9 @@ namespace IF97
     
             Region3RegionDivision(DivisionElement data[], std::size_t N){
                 this->N = N;
-                I.reserve(N); n.reserve(N);
                 for (std::size_t i = 0; i < N; ++i){
-                    n.emplace_back(data[i].n);
-                    I.emplace_back(data[i].I);
+                    n.push_back(data[i].n);
+                    I.push_back(data[i].I);
                 }
             }
             virtual double T_p(double p){
@@ -2227,38 +2214,28 @@ namespace IF97
         double T_star, p_star, R;
     public:
         Region3() : T_star(1000), p_star(1*p_fact) {
-            size_t sz = reg3rdata.size();
-            nr.reserve(sz); Ir.reserve(sz); Jr.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                nr.emplace_back(reg3rdata[i].n);
-                Ir.emplace_back(reg3rdata[i].I);
-                Jr.emplace_back(reg3rdata[i].J);
+            for (std::size_t i = 0; i < reg3rdata.size(); ++i){
+                nr.push_back(reg3rdata[i].n);
+                Ir.push_back(reg3rdata[i].I);
+                Jr.push_back(reg3rdata[i].J);
             }
-            sz = Hrdata.size();
-            munr.reserve(sz); muIr.reserve(sz); muJr.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                munr.emplace_back(Hrdata[i].n);
-                muIr.emplace_back(Hrdata[i].I);
-                muJr.emplace_back(Hrdata[i].J);
+            for (std::size_t i = 0; i < Hrdata.size(); ++i){
+                munr.push_back(Hrdata[i].n);
+                muIr.push_back(Hrdata[i].I);
+                muJr.push_back(Hrdata[i].J);
             }
-            sz = H0data.size();
-            mun0.reserve(sz);muJ0.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                mun0.emplace_back(H0data[i].n);
-                muJ0.emplace_back(H0data[i].J);
+            for (std::size_t i = 0; i < H0data.size(); ++i){
+                mun0.push_back(H0data[i].n);
+                muJ0.push_back(H0data[i].J);
             }
-            sz = Lrdata.size();
-            lamnr.reserve(sz); lamIr.reserve(sz); lamJr.reserve(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                lamnr.emplace_back(Lrdata[i].n);
-                lamIr.emplace_back(Lrdata[i].I);
-                lamJr.emplace_back(Lrdata[i].J);
+            for (std::size_t i = 0; i < Lrdata.size(); ++i){
+                lamnr.push_back(Lrdata[i].n);
+                lamIr.push_back(Lrdata[i].I);
+                lamJr.push_back(Lrdata[i].J);
             }
-            sz = L0data.size();
-            lamn0.resize(sz); lamJ0.resize(sz);
-            for (std::size_t i = 0; i < sz; ++i){
-                lamn0.emplace_back(L0data[i].n);
-                lamJ0.emplace_back(L0data[i].J);
+            for (std::size_t i = 0; i < L0data.size(); ++i){
+                lamn0.push_back(L0data[i].n);
+                lamJ0.push_back(L0data[i].J);
             }
             R = Rgas;
         };
@@ -2605,11 +2582,9 @@ namespace IF97
         double p_star, T_star;
 
         Region4() : p_star(1.0*p_fact), T_star(1.0) {
-            const size_t sz = reg4data.size();
-            n.reserve(sz); n.resize(1); 
-            n[0] = 0;
-            for (std::size_t i = 0; i < sz; ++i){
-                n.emplace_back(reg4data[i].n);
+            n.resize(1); n[0] = 0;
+            for (std::size_t i = 0; i < reg4data.size(); ++i){
+                n.push_back(reg4data[i].n);
             }
         };
         double p_T(double T) const{
@@ -3552,12 +3527,12 @@ namespace IF97
             std::vector<double> n;
         public:
     
-            BackwardsRegion(BackwardRegionResidualElement data[], std::size_t pN): N(pN){
-                n.reserve(N); I.reserve(N); J.reserve(N);
+            BackwardsRegion(BackwardRegionResidualElement data[], std::size_t N){
+                this->N = N;
                 for (std::size_t i = 0; i < N; ++i){
-                    n.emplace_back(data[i].n);
-                    I.emplace_back(data[i].I);
-                    J.emplace_back(data[i].J);
+                    n.push_back(data[i].n);
+                    I.push_back(data[i].I);
+                    J.push_back(data[i].J);
                 }
             };
 
