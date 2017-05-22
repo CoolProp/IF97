@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>      // std::setprecision
 #include <stdexcept>
+#include <stdio.h>
 
 enum IF97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W, IF97_DRHODP,
                     // Transport Property enumerations
