@@ -16,7 +16,21 @@ set(project_name "IF97")
 set(app_name ${project_name})
 project(${project_name})
 
-SET(CMAKE_BUILD_TYPE Release)
+if(IF97_BUILD_TARGETS)
+    add_library(IF97 IF97.cpp)
+
+    install(TARGETS IF97
+	RUNTIME DESTINATION bin
+	ARCHIVE DESTINATION lib
+	LIBRARY DESTINATION lib
+    )
+    
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        install(FILES IF97.h DESTINATION include)
+    endif()
+else()
+    SET(CMAKE_BUILD_TYPE Release)
+endif()
 
 #########################################################################
 #                              WRAPPER MODULES                          #
