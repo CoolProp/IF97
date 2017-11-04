@@ -7,6 +7,7 @@
 #include <iomanip>      // std::setprecision
 #include <stdexcept>
 #include <stdio.h>
+#include <algorithm>
 
 enum IF97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W, IF97_DRHODP,
                     // Transport Property enumerations
@@ -46,7 +47,7 @@ namespace IF97
     // IF97 Constants
     const double Tcrit   = 647.096;             // K
     const double Pcrit   = 22.064*p_fact;       // Pa
-    const double Rhocrit = 322.0;               // kg/m³
+    const double Rhocrit = 322.0;               // kg/mÂ³
     const double Scrit   = 4.41202148223476*R_fact; // J/kg-K (needed for backward eqn. in Region 3(a)(b)
     const double Ttrip   = 273.16;              // K
     const double Ptrip   = 0.000611656*p_fact;  // Pa
@@ -2387,7 +2388,7 @@ namespace IF97
         //    The equation is rearranged to solve for rho and turned
         //    into functions f(T,P,rho0) and f'(T,P,rho0) for the
         //    Newton-Raphson technique.  Functions for
-        //    dphi/ddelta and d²phi/ddelta² were also required.  These
+        //    dphi/ddelta and dÂ²phi/ddeltaÂ² were also required.  These
         //    additional Taylor functions are defined above.
         //
         double f(double T, double p, double rho0) const{
@@ -4161,7 +4162,7 @@ namespace IF97
             return RegionOutput( IF97_HMASS,RegionOutputBackward(Pmax,s,IF97_SMASS),Pmax, NONE);
         else { 
         // Determining H(s) along Tmax is difficult because there is no direct p(T,s) formulation.
-        // This linear combination fit h(s)=a*ln(s)+b/s+c/s²+d is not perfect, but it's close
+        // This linear combination fit h(s)=a*ln(s)+b/s+c/sÂ²+d is not perfect, but it's close
         // and can serve as a limit along that Tmax boundary. Coefficients in HTmaxdata above.
         // There is a better way to do this using Newton-Raphson on Tmax = T(p,s), but it is iterative and slow.
             double ETA = Hmax_n[0]*log(sigma) + Hmax_n[1]/sigma + Hmax_n[2]/pow(sigma,2) +Hmax_n[3];
@@ -4312,14 +4313,14 @@ namespace IF97
     inline double cvmass_Tp(double T, double p){ return RegionOutput( IF97_CVMASS, T, p, NONE); };
     /// Get the speed of sound [m/s] as a function of T [K] and p [Pa]
     inline double speed_sound_Tp(double T, double p){ return RegionOutput( IF97_W, T, p, NONE); };
-    /// Get the [d(rho)/d(p)]T [kg/m³/Pa] as a function of T [K] and p [Pa]
+    /// Get the [d(rho)/d(p)]T [kg/mÂ³/Pa] as a function of T [K] and p [Pa]
     inline double drhodp_Tp(double T, double p){ return RegionOutput( IF97_DRHODP, T, p, NONE); };
 
     // ******************************************************************************** //
     //                            Transport Properties                                  //
     // ******************************************************************************** //
 
-    /// Get the viscosity [Pa-s] as a function of T [K] and Rho [kg/m³]
+    /// Get the viscosity [Pa-s] as a function of T [K] and Rho [kg/mÂ³]
     inline double visc_TRho(double T, double rho) {	
         // Since we have density, we don't need to determine the region for viscosity.
         static Region1 R1;  // All regions use base region equations for visc(T,rho).
