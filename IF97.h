@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+#include <algorithm>
 #include <iostream>
 #include <iomanip>      // std::setprecision
 #include <stdexcept>
@@ -29,7 +30,7 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 namespace IF97
 {    
     // CoolProp-IF97 Version Number
-    static char IF97VERSION [] = "v2.1.0";
+    static char IF97VERSION [] = "v2.1.1";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
