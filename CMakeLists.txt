@@ -16,8 +16,6 @@ set(project_name "IF97")
 set(app_name ${project_name})
 project(${project_name})
 
-SET(CMAKE_BUILD_TYPE Release)
-
 #########################################################################
 #                              WRAPPER MODULES                          #
 #-----------------------------------------------------------------------#
@@ -30,8 +28,9 @@ SET(CMAKE_BUILD_TYPE Release)
 #########################
 #  MATHCAD PRIME MODULE #
 #########################
-	
+option(IF97_PRIME_MODULE "Build MathCAD Prime wrapper" OFF)
 if (IF97_PRIME_MODULE)
+    set(CMAKE_BUILD_TYPE Release CACHE)
     set(IF97_FLAG ON)
     if(NOT WIN32)
       message(FATAL_ERROR "IF97_PRIME_MODULE can only be used on windows host")
@@ -41,7 +40,7 @@ if (IF97_PRIME_MODULE)
     else()
         message(STATUS "IF97_PRIME_ROOT: ${IF97_PRIME_ROOT}")
     endif()
-	FILE(GLOB_RECURSE IF97_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes/*.h")
+    FILE(GLOB_RECURSE IF97_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes/*.h")
     include_directories("${IF97_PRIME_ROOT}/Custom Functions" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes")
     add_library(IF97 SHARED ${IF97_HEADERS} "${CMAKE_CURRENT_SOURCE_DIR}/IF97.h" "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/MathCAD/IF97.cpp")
     target_link_libraries(IF97 "${IF97_PRIME_ROOT}/Custom Functions/mcaduser.lib")
@@ -54,8 +53,9 @@ endif()
 #########################
 #   MATHCAD 15 MODULE   #
 #########################
-
+option(IF97_MATHCAD15_MODULE "Build MathCAD 15 wrapper" OFF)
 if (IF97_MATHCAD15_MODULE)
+    set(CMAKE_BUILD_TYPE Release CACHE)
     set(IF97_FLAG ON)
     if(NOT WIN32)
       message(FATAL_ERROR "IF97_MATHCAD15_MODULE can only be used on windows host")
@@ -65,7 +65,7 @@ if (IF97_MATHCAD15_MODULE)
     else()
         message(STATUS "IF97_MATHCAD15_ROOT: ${IF97_MATHCAD15_ROOT}")
     endif()
-	FILE(GLOB_RECURSE IF97_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes/*.h")
+    FILE(GLOB_RECURSE IF97_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes/*.h")
     include_directories("${IF97_MATHCAD15_ROOT}/userefi/microsft/include" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes")
     add_library(IF97 SHARED ${IF97_HEADERS} "${CMAKE_CURRENT_SOURCE_DIR}/IF97.h" "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/MathCAD/IF97.cpp")
     target_link_libraries(IF97 "${IF97_MATHCAD15_ROOT}/userefi/microsft/lib/mcaduser.lib")
@@ -76,12 +76,34 @@ if (IF97_MATHCAD15_MODULE)
  #   install (FILES "${CMAKE_CURRENT_SOURCE_DIR}/wrappers/MathCAD/if97_EN.xml" DESTINATION MathCAD15)
 endif()
 
+###########################
+# CMAKE INTERFACE LIBRARY #
+###########################
+option(IF97_CMAKE_MODULE "Build CMake interface library" OFF)
+if(IF97_CMAKE_MODULE)
+    set(CMAKE_BUILD_TYPE Release CACHE)
+    set(IF97_FLAG ON)
+    message(STATUS "Building IF97 CMake interface library")
+    #add_library(IF97 STATIC "${CMAKE_CURRENT_SOURCE_DIR}/IF97.h")
+    #set_target_properties(IF97 PROPERTIES LINKER_LANGUAGE CXX)
+    add_library(IF97 INTERFACE)
+    #target_include_directories(IF97 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_include_directories(IF97 INTERFACE  
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/IF97>  
+        $<INSTALL_INTERFACE:include/IF97>  # <prefix>/include/IF97
+    )
+    install(
+        FILES IF97.h
+        DESTINATION "include"
+    )
+endif()
+
 #########################
 # TEST MODULE (DEFAULT) #
 #########################
-
+option(IF97_FLAG "Skip IF97 test executable" OFF)
 if (NOT IF97_FLAG)
     message(STATUS "Stand-alone IF97 Test.")
-	add_executable(IF97 "${CMAKE_CURRENT_SOURCE_DIR}/IF97.cpp")
+    add_executable(IF97 "${CMAKE_CURRENT_SOURCE_DIR}/IF97.cpp")
 endif()
 
