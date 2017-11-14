@@ -37,7 +37,7 @@ option(IF97_HEADER_MODULE "Install header file only" OFF)
 option(IF97_CMAKE_MODULE "Install CMake interface library" OFF)
 option(IF97_FLAG "Skip IF97 test executable" OFF)
 
-list(APPEND options ${IF97_PRIME_MODULE} ${IF97_MATHCAD15_MODULE} ${IF97_CMAKE_MODULE} ${IF97_FLAG})
+list(APPEND options ${IF97_PRIME_MODULE} ${IF97_MATHCAD15_MODULE} ${IF97_HEADER_MODULE} ${IF97_CMAKE_MODULE} ${IF97_FLAG})
 set(options_count 0)
 foreach(option_value ${options})
   if(option_value)
