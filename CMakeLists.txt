@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.0.0)
-option(HUNTER_ENABLED "Enable Hunter package manager" NO)
 
 #######################################
 #         PROJECT INFORMATION         #
@@ -34,7 +33,8 @@ message(STATUS "[${PROJECT_NAME}] - Building v${PROJECT_VERSION} of ${PROJECT_NA
 
 option(IF97_PRIME_MODULE "Build MathCAD Prime wrapper" OFF)
 option(IF97_MATHCAD15_MODULE "Build MathCAD 15 wrapper" OFF)
-option(IF97_CMAKE_MODULE "Build CMake interface library" OFF)
+option(IF97_HEADER_MODULE "Install header file only" OFF)
+option(IF97_CMAKE_MODULE "Install CMake interface library" OFF)
 option(IF97_FLAG "Skip IF97 test executable" OFF)
 
 list(APPEND options ${IF97_PRIME_MODULE} ${IF97_MATHCAD15_MODULE} ${IF97_CMAKE_MODULE} ${IF97_FLAG})
@@ -116,72 +116,77 @@ if(IF97_MATHCAD15_MODULE)
  #   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/wrappers/MathCAD/if97_EN.xml" DESTINATION MathCAD15)
 endif()
 
+#######################
+# HEADER FILE LIBRARY #
+#######################
+if(IF97_HEADER_MODULE)
+    message(STATUS "[${PROJECT_NAME}] - Building IF97 header library")
+    add_library(IF97 INTERFACE)
+    target_include_directories(IF97 INTERFACE  
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    )
+    install(FILES IF97.h DESTINATION "include")
+endif()
+
 ###########################
 # CMAKE INTERFACE LIBRARY #
 ###########################
 if(IF97_CMAKE_MODULE)
     message(STATUS "[${PROJECT_NAME}] - Building IF97 CMake interface library")
-    #add_library(IF97 STATIC "${CMAKE_CURRENT_SOURCE_DIR}/IF97.h")
-    #set_target_properties(IF97 PROPERTIES LINKER_LANGUAGE CXX)
     add_library(IF97 INTERFACE)
-    #target_include_directories(IF97 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
     target_include_directories(IF97 INTERFACE  
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>  # <prefix>/include
+        $<INSTALL_INTERFACE:include>
     )
     set(include_install_dir "include")
-    install(FILES IF97.h DESTINATION "${include_install_dir}")
+    set(config_install_dir "lib/cmake/${PROJECT_NAME}")
+    set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+    set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+    set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
+    set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
+    set(namespace "${PROJECT_NAME}::")
+    include(CMakePackageConfigHelpers)
 
-    if(HUNTER_ENABLED)
-        set(config_install_dir "lib/cmake/${PROJECT_NAME}")
-        set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
-        set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
-        set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
-        set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
-        set(namespace "${PROJECT_NAME}::")
-        include(CMakePackageConfigHelpers)
+    # Use:
+    #   * PROJECT_VERSION
+    write_basic_package_version_file(
+        "${version_config}" COMPATIBILITY SameMajorVersion
+    )
 
-        # Use:
-        #   * PROJECT_VERSION
-        write_basic_package_version_file(
-            "${version_config}" COMPATIBILITY SameMajorVersion
-        )
+    # Use:
+    #   * TARGETS_EXPORT_NAME
+    #   * PROJECT_NAME
+    configure_package_config_file(
+        "cmake/Config.cmake.in"
+        "${project_config}"
+        INSTALL_DESTINATION "${config_install_dir}"
+    )
 
-        # Use:
-        #   * TARGETS_EXPORT_NAME
-        #   * PROJECT_NAME
-        configure_package_config_file(
-            "cmake/Config.cmake.in"
-            "${project_config}"
-            INSTALL_DESTINATION "${config_install_dir}"
-        )
+    install(
+        TARGETS IF97
+        EXPORT "${TARGETS_EXPORT_NAME}"
+        LIBRARY DESTINATION "lib"
+        ARCHIVE DESTINATION "lib"
+        RUNTIME DESTINATION "bin"
+        INCLUDES DESTINATION "${include_install_dir}"
+    )
 
-        install(
-            TARGETS IF97
-            EXPORT "${TARGETS_EXPORT_NAME}"
-            LIBRARY DESTINATION "lib"
-            ARCHIVE DESTINATION "lib"
-            RUNTIME DESTINATION "bin"
-            INCLUDES DESTINATION "${include_install_dir}"
-        )
+    install(
+        FILES IF97.h
+        DESTINATION "${include_install_dir}"
+    )
 
-        #install(
-        #    FILES IF97.h
-        #    DESTINATION "${include_install_dir}"
-        #)
+    install(
+        FILES "${project_config}" "${version_config}"
+        DESTINATION "${config_install_dir}"
+    )
 
-        install(
-            FILES "${project_config}" "${version_config}"
-            DESTINATION "${config_install_dir}"
-        )
-
-        install(
-            EXPORT "${TARGETS_EXPORT_NAME}"
-            NAMESPACE "${namespace}"
-            DESTINATION "${config_install_dir}"
-        )
-    endif()
-    
+    install(
+        EXPORT "${TARGETS_EXPORT_NAME}"
+        NAMESPACE "${namespace}"
+        DESTINATION "${config_install_dir}"
+    )
 endif()
 
 #########################
