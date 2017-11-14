@@ -1,5 +1,3 @@
-#define ENABLE_CATCH
-
 // This compiler flag causes input/output units on the Thermodynamic Properties in IF97.h
 // to take pressure units of [MPa] and Energy units of [kJ] for comparison with IAPWS
 // table values.  If not set, the default behavior of IF97.h is to use straight SI units
