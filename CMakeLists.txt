@@ -126,8 +126,8 @@ if(IF97_CMAKE_MODULE)
     add_library(IF97 INTERFACE)
     #target_include_directories(IF97 INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
     target_include_directories(IF97 INTERFACE  
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/IF97>  
-        $<INSTALL_INTERFACE:include/IF97>  # <prefix>/include/IF97
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>  # <prefix>/include
     )
     set(include_install_dir "include")
     install(FILES IF97.h DESTINATION "${include_install_dir}")
