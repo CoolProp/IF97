@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/CoolProp/IF97.svg?branch=master)](https://travis-ci.org/CoolProp/IF97)
+
 CoolProp IF97
 =============
 
@@ -18,7 +20,7 @@ Almost all of the other implementations of IF97 are not free and closed-source. 
 Try it
 ------
 
-Build the cmake project doing something like 
+Build the stand-alone CMake project doing something like 
     
 ```
 mkdir build
@@ -28,6 +30,18 @@ cmake --build .
 ```
 
 This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf and other IAPWS documents as noted in the output.  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%.  
+
+Accessing IF97 from your software
+---------------------------------
+
+There is a `wrapper` directory for 3rd party applications, including:
+- [Mathcad 15](wrapper/Mathcad) (Jeff Henning main contributor)
+- [Mathcad Prime](wrapper/Mathcad) (Jeff Henning main contributor)
+
+See the README in each wrapper directory for instructions on building and installing each.
+
+Furthermore, there is an interface library target that installs the header file. This target can also be digested by other CMake-based projects using the `add_subdirectory` command. Enable it with the CMake option `cmake .. -DIF97_CMAKE_MODULE=ON`.
+
 
 Compiler Switches
 -----------------
@@ -71,9 +85,3 @@ MIT-style license (see LICENSE)
 Basically, you can do anything you like with the code.  The MIT license is a very permissive license, allowing you to modify, distribute, sell, etc. the code.  It is *not* a copy-left license, you can use this in commercial code.  
 
 You are strongly requested, but not required, to cite both this repository and that of CoolProp: www.coolprop.org  
-
-Wrappers
---------
-
-Wrappers directory for 3rd Party Apps, including:
-- Mathcad 15 and Prime (Jeff Henning main contributor)  
