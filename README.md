@@ -34,11 +34,12 @@ This will spit out the values for the computer-program verification, they should
 Accessing IF97 from your software
 ---------------------------------
 
-The simplest way to include IF97 in your project is o simply copy the header file. If you are looking for an installation command, you can use `cmake .. -DIF97_HEADER_MODULE=ON; cmake --build . --target install`.
+The simplest way to include IF97 in your C++ project is to simply copy and use the header file. If you are looking for an installation command, you can use `cmake .. -DIF97_HEADER_MODULE=ON; cmake --build . --target install`.
 
 There is a `wrapper` directory for 3rd party applications, including:
 - [Mathcad 15](wrapper/Mathcad) (Jeff Henning main contributor)
 - [Mathcad Prime](wrapper/Mathcad) (Jeff Henning main contributor)
+- [postgreSQL](wrapper/Postgresql) (Martin Mouterde main contributor)
 
 See the README in each wrapper directory for instructions on building and installing each.
 
