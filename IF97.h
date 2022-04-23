@@ -30,7 +30,7 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 namespace IF97
 {    
     // CoolProp-IF97 Version Number
-    static char IF97VERSION [] = "v2.1.2";
+    static char IF97VERSION [] = "v2.1.3";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -63,6 +63,7 @@ namespace IF97
     const double P23min  = 16.529164252605*p_fact; // Min Pressure on Region23 boundary curve; Max is Pmax
     const double T23min  = 623.15;              // Min Temperature on Region23 boundary curve
     const double T23max  = 863.15;              // Max Temperature on Region23 boundary curve
+    const double P2amax  = 4.0*p_fact;          // Max Pressure on upper H2a2b boundary (straight line)
     const double P2bcmin = 6.54670*p_fact;      // Min Pressure [MPa] on H2b2c boundary curve; Max is Pmax
     const double S2bc    = 5.85*R_fact;         // Min Pressure [MPa] on H2b2c boundary curve; Max is Pmax
     // Bounds for Backward p(h,s), t(h,s) Determination
@@ -4019,20 +4020,24 @@ namespace IF97
                        else
                            return B1S.T_pX(p,X);
                        break;
-        case REGION_2: if (inkey == IF97_HMASS){
-                           if (p <= 4.0*p_fact)
-                               return B2aH.T_pX(p,X);
-                           else if (X >= Backwards::H2b2c_p(p))
-                               return B2bH.T_pX(p,X);
-                           else
-                               return B2cH.T_pX(p,X);
-                       } else {
-                           if (p <= 4.0*p_fact)
-                               return B2aS.T_pX(p,X);
-                           else if (X >= S2bc)
-                               return B2bS.T_pX(p,X);
-                           else 
-                               return B2cS.T_pX(p,X);
+        case REGION_2: if (inkey == IF97_HMASS){                 // See where we are in Region 2 (H)...
+                           if (p <= P2amax)                        // If p below max pressure in reverse subregion 2a,
+                               return B2aH.T_pX(p,X);              //     then use sub-Region 2a formulation
+                           else if (p <= P2bcmin)                  // ELSE If p below min end of 2b/2c curve,           
+                               return B2bH.T_pX(p,X);              //     use sub-Region 2b formulation by default
+                           else if (X >= Backwards::H2b2c_p(p))    // ELSE If h to the right of the 2b/2c curve,
+                               return B2bH.T_pX(p,X);              //     use sub-Region 2b formulation
+                           else                                    // ELSE we're left of the 2b/2c curve, so
+                               return B2cH.T_pX(p,X);              //     use sub-Region 2c formulation
+                       } else {                                  // See where we are in Region 2 (S)...
+                           if (p <= P2amax)                        // If p below max pressure in reverse subregion 2a,
+                               return B2aS.T_pX(p,X);              //     then use sub-Region 2a formulation
+                           else if (p <= P2bcmin)                  // ELSE If p below min end of 2b/2c curve,           
+                               return B2bS.T_pX(p, X);             //     use sub-Region 2b formulation by default
+                           else if (X >= S2bc)                     // ELSE If s to the right of S2bc boundary,
+                               return B2bS.T_pX(p,X);              //     use sub-Region 2b formulation
+                           else                                    // ELSE we're left of S2bc boundary, so
+                               return B2cS.T_pX(p,X);              //     use sub-Region 2c formulation
                        }; break;
         case REGION_3: if (inkey == IF97_HMASS){
                            if (X <= Backwards::H3ab_p(p))
