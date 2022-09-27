@@ -3928,6 +3928,7 @@ namespace IF97
         // Setup needed Region Equations for region determination
         static Region1 R1;
         static Region2 R2;
+        static Region5 R5;
         // Saturation Region Limit Variables
         double Tsat = 0;
         double Xliq = 0;
@@ -3937,7 +3938,7 @@ namespace IF97
         if ((p < Pmin) || (p > Pmax))
                 throw std::out_of_range("Pressure out of range");
         double Xmin = R1.output(inkey,Tmin,p);
-        double Xmax = R2.output(inkey,Tmax,p);
+        double Xmax = p > Pext ? R2.output(inkey,Tmax,p) : R5.output(inkey,Text,p);
         if (( X < Xmin ) || (X > (Xmax + 1.0E-10) )){
             if (inkey == IF97_HMASS){
                 throw std::out_of_range("Enthalpy out of range");
