@@ -29,6 +29,20 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 
 namespace IF97
 {    
+    inline double pow(double x, int i)
+    {
+        double ans = 1.0;
+        if (i < 0) {
+            x = 1.0 / x;
+            i = -i;
+        }
+        for (; i > 0; i >>= 1) {
+            if (i & 1) ans *= x;
+            x *= x;
+        }
+        return ans;
+    }
+
     // CoolProp-IF97 Version Number
     static char IF97VERSION [] = "v2.1.3";
     // Setup Water Constants for Trivial Functions and use in Region Classes
