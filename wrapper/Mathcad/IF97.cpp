@@ -92,6 +92,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     #include "muf.h"
     #include "mug.h"
     #include "ktp.h"
+    #include "ktprho.h"  // this function provided for validation work only
     #include "kf.h"
     #include "kg.h"
     #include "prtp.h"
@@ -211,8 +212,9 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     CreateUserFunction( hDLL, &if97_mutrho );  // for checking only
                     CreateUserFunction( hDLL, &if97_muf );
                     CreateUserFunction( hDLL, &if97_mug );
-                    CreateUserFunction( hDLL, &if97_ktp );
-                    CreateUserFunction( hDLL, &if97_kf );
+                    CreateUserFunction( hDLL, &if97_ktp);
+                    CreateUserFunction( hDLL, &if97_ktprho);   // for checking only
+                    CreateUserFunction( hDLL, &if97_kf);
                     CreateUserFunction( hDLL, &if97_kg );
                     CreateUserFunction( hDLL, &if97_prtp );
                     CreateUserFunction( hDLL, &if97_prf );
@@ -276,4 +278,3 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
         return TRUE;
     }
 
-  
