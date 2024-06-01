@@ -49,7 +49,7 @@ namespace IF97
     }
 
     // CoolProp-IF97 Version Number
-    static char IF97VERSION [] = "v2.1.3";
+    static char IF97VERSION [] = "v2.1.4";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -3866,6 +3866,10 @@ namespace IF97
     inline IF97REGIONS RegionDetermination_TP(double T, double p)
     {
         static Region4 R4;
+        // Check overall IF97 boundary limits for Pressure
+        if ((p < Pmin) || (p > Pmax)) throw std::out_of_range("Pressure out of range");
+
+        // Now Check Temperature Range
         if (T > Text){
             throw std::out_of_range("Temperature out of range");
         }
@@ -3878,10 +3882,7 @@ namespace IF97
             }
         }
         else if (T > T23min && T <= Tmax){
-            if (p > Pmax){
-                throw std::out_of_range("Pressure out of range");
-            }
-            else if (p < 16.5292*p_fact){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
+            if (p < 16.5292*p_fact){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
                 return REGION_2;
             }
             else if (p > Region23_T(T)){
@@ -3892,9 +3893,7 @@ namespace IF97
             }
         }
         else if (T >= Tmin && T <= T23min){
-            if (p > Pmax)
-                throw std::out_of_range("Pressure out of range");
-            else if(p > R4.p_T(T))
+            if(p > R4.p_T(T))
                 return REGION_1;
             else if(p < R4.p_T(T))
                 return REGION_2;
