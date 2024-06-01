@@ -462,7 +462,7 @@ namespace IF97
             mubar = visc(T,rho)/1.0E-6;
             delChi = rhobar*(Pcrit/Rhocrit*drhodp(T,p) - delTr(rho)*Tr/T);
             if (delChi > 0)                            /// At low (T,p), delChi can go negative, causing
-                y = qD*xi0*std::pow(delChi/GAMMA0,nu/gam);  ///   y to be imaginary from this nth-root equation.   FIX
+                y = qD*xi0*std::pow(delChi/GAMMA0,nu/gam);  ///   y to be imaginary from this nth-root equation.
             else                                       ///   
                 y = 0.0;                               ///   Limit delChi to > 0, values.
             if (y < 1.2E-7)                            /// Z is not calculated if y < 1.2E-7 since the
@@ -2389,7 +2389,7 @@ namespace IF97
             zeta = Pcrit/Rhocrit*drhodp(T,rho);                      /// 
             if ((zeta < 0) || (zeta > 1.0E13)) zeta = 1.0E13;
             delChi = rhobar*(zeta - delTr(rho)*Tr/T);
-            y = qD*xi0*std::pow(delChi/GAMMA0,nu/gam);                    /// FIX
+            y = qD*xi0*std::pow(delChi/GAMMA0,nu/gam);
             if (y < 1.2E-7) 
                 Z = 0.0;
             else
@@ -2620,17 +2620,16 @@ namespace IF97
                 throw std::out_of_range("Temperature out of range");
             }
             const double theta = T/T_star+n[9]/(T/T_star-n[10]);
-            const double A =      theta*theta + n[1]*theta + n[2];
-            const double B = n[3]*theta*theta + n[4]*theta + n[5];
-            const double C = n[6]*theta*theta + n[7]*theta + n[8];
-            return p_star*powi(2*C/(-B+sqrt(B*B-4*A*C)), 4);
+            const double AA =      theta*theta + n[1]*theta + n[2];
+            const double BB = n[3]*theta*theta + n[4]*theta + n[5];
+            const double CC = n[6]*theta*theta + n[7]*theta + n[8];
+            return p_star*powi(2*CC/(-BB+sqrt(BB*BB-4*AA*CC)), 4);
         };
         double T_p(double p) const{
             // Allow extrapolation down to Pmin = P(Tmin=273.15K) = 611.213 Pa
             if ( ( p < Pmin ) || ( p > Pcrit ) ){
                 throw std::out_of_range("Pressure out of range");
             }
-            
 
             /* // Initial formulas
             const double beta = std::pow(beta, 0.25);
@@ -2691,7 +2690,7 @@ namespace IF97
 			const double B = 235.8 / 1000;  // Published value in [mN/m]; Convert to SI [N/m] in all cases 
 			const double b = -0.625;
 			const double mu = 1.256;
-			return B*std::pow(Tau,mu)*(1.0 + b*Tau);       /// FIX
+			return B*std::pow(Tau,mu)*(1.0 + b*Tau);
 		}
     };
 
