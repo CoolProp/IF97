@@ -55,10 +55,11 @@ Make the Build for Mathcad Prime (any version above 3.0)
 
     cmake .. -DIF97_PRIME_MODULE=ON 
              -DIF97_PRIME_ROOT="C:/Program Files/PTC/Mathcad 7.0.0.0"  
-             -G "Visual Studio 14 2015 Win64" 
+             -G "Visual Studio 17 2022" -A x64 
              -DCMAKE_VERBOSE_MAKEFILE=ON 
 	     
 	     (Insert your version of Visual Studio for the -G option.)
+         (Prior to VS 2017, use something like -G "Visual Studio 14 2015 Win64)
 	     (Note that Prime is 64-bit and requires the Win64 switch on this command)
 
 Make the Build for Legacy Mathcad 15 (Discontinued by PTC)
