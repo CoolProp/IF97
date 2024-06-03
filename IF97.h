@@ -3882,7 +3882,7 @@ namespace IF97
             }
         }
         else if (T > T23min && T <= Tmax){
-            if (p < 16.5292*p_fact){ // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
+            if (p < P23min){  // Check this one first to avoid the call to 2-3 boundary curve (a little bit faster)
                 return REGION_2;
             }
             else if (p > Region23_T(T)){
@@ -3945,12 +3945,12 @@ namespace IF97
         // Setup needed Region Equations for region determination
         static Region1 R1;
         static Region2 R2;
-        // Saturation Region Limit Variables
+        // Saturation Region Limit Variables (initialized outside of the if statements below)
         double Tsat = 0;
         double Xliq = 0;
         double Xvap = 0;
 
-        // Check overall boundary limits
+        // Check overall boundary limits - Throw errors if not met
         if ((p < Pmin) || (p > Pmax))
                 throw std::out_of_range("Pressure out of range");
         double Xmin = R1.output(inkey,Tmin,p);
@@ -3964,31 +3964,37 @@ namespace IF97
             }
         }
 
-        // Check saturation Dome first
-        if (p <= Pcrit) {
+        if (p <= Pcrit) {  // Check saturation Dome first
+
             Tsat = Tsat97(p);
-            Xliq = R1.output(inkey,Tsat,p);
-            Xvap = R2.output(inkey,Tsat,p);
-            if ((Xliq <= X) && (X <= Xvap)){    // Within Saturation Dome
+            Xliq = RegionOutput(inkey, Tsat, p, LIQUID);  // Makes determination between Regions 1 & 3.
+            Xvap = RegionOutput(inkey, Tsat, p, VAPOR);   // Makes determination between Regions 2 & 3.
+
+            if ((Xliq <= X) && (X <= Xvap)) {  // Within Saturation Dome (inclusive)
                 return REGION_4;               //    Region 4
             }
         }
-        // End Check saturation Dome
+        // End Check of saturation Dome
 
-        // Check values below 16.529 MPa
-        if (p <= P23min) {                        // p <= P23min (saturation dome)
-            if (X <= Xliq) return REGION_1;
-            else if (X >= Xvap) return REGION_2;
-            else return REGION_4;
-        } 
-        // Check values above 16.529 MPa
-        else if (X <= R1.output(inkey,T23min,p))
+        // Check values below min pressure on B23 line (16.529 MPa)
+        if (p <= P23min) {  // p <= P23min (saturation dome)
+            if (X < Xliq) {
                 return REGION_1;
-        else if (X >= R2.output(inkey,Region23_p(p),p))
+            } else if (X > Xvap) {
                 return REGION_2;
+            } else {
+                return REGION_4;  // This should already be handled and returned above.
+            }
+        }
+        // Check values above P23min
+        else if (X <= R1.output(inkey, T23min, p))         // T23min is also the Temp between R1 & R3a
+            return REGION_1;                               // ...otherwise R3a (fallthrough)
+        else if (X >= R2.output(inkey, Region23_p(p), p))  // compare with X along B23 curve
+            return REGION_2;                               // ...othersise R3b (fallthrough)
         else
-                return REGION_3;
-    };  // Region Output backward
+            return REGION_3;                               // Return R3 since R4 has already been accounted for above.
+
+    };  // RegionDetermination_pX
 
 
     inline int BackwardRegion(double p, double X, IF97parameters inkey){
