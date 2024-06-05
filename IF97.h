@@ -4034,49 +4034,70 @@ namespace IF97
         static Backwards::Region3aS B3aS;
         static Backwards::Region3bS B3bS;
 
+        // NOTE: Uncertainty in these reverse functions are ±25 mK, as documented in
+        //       IAPWS R7-97(2012) and IAPWS SR3-03(2014). This can result in temperatures
+        //       that are very slightly (within 25 mK) on the opposite side of the
+        //       saturation curve from S/H values that are very near saturation.  Use of these
+        //       temperatures (with specified pressure) to calculate other properties can 
+        //       result in wildly inacurate properties returned from the wrong side of the  
+        //       saturation curve. Code is added here to limit T to the correct side of the 
+        //       saturation curve based on the (p,S) or (p,H) deternmined Region.
+        //
+        double tmin = 0, tmax = 0;  // Initialize tmin, tmax as clipping limits on sat. curve
+        if (p <= Pcrit)             // If below Pcrit (where Tsat is available),
+        {
+            tmin = Tsat97(p);       //     Only calculate Tsat once and
+            tmax = tmin;            //     set tmin & tmax at saturation
+        }
+        else                        // otherwise (above Pcrit),
+        {
+            tmax = Tmax;            //     Use pre-defined Region 2 maximum
+            tmin = Tmin;            //     Use pre-defined Region 1 minimum
+        }
+
         // Make sure input and output keys are valid for Backward formulas
         if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
             throw std::invalid_argument("Backward Formulas take variable inputs of Enthalpy or Entropy only.");
 
-        // Get Saturation Parameters
+        // Determine IF97 Region for reverse calculation of temperature
 
         IF97REGIONS region = RegionDetermination_pX(p, X, inkey);
 
         switch (region){
-        case REGION_1: if (inkey == IF97_HMASS) 
-                           return B1H.T_pX(p,X);
-                       else
-                           return B1S.T_pX(p,X);
+        case REGION_1: if (inkey == IF97_HMASS)                       // Enthalpy
+                          return std::min(tmax, B1H.T_pX(p,X));       //   Limit T(p,h) from Region 1 to below Tsat
+                       else                                           // Entropy
+                          return std::min(tmax, B1S.T_pX(p, X));      //   Limit T(p,s) from Region 1 to below Tsat
                        break;
-        case REGION_2: if (inkey == IF97_HMASS){                 // See where we are in Region 2 (H)...
-                           if (p <= P2amax)                        // If p below max pressure in reverse subregion 2a,
-                               return B2aH.T_pX(p,X);              //     then use sub-Region 2a formulation
-                           else if (p <= P2bcmin)                  // ELSE If p below min end of 2b/2c curve,           
-                               return B2bH.T_pX(p,X);              //     use sub-Region 2b formulation by default
-                           else if (X >= Backwards::H2b2c_p(p))    // ELSE If h to the right of the 2b/2c curve,
-                               return B2bH.T_pX(p,X);              //     use sub-Region 2b formulation
-                           else                                    // ELSE we're left of the 2b/2c curve, so
-                               return B2cH.T_pX(p,X);              //     use sub-Region 2c formulation
-                       } else {                                  // See where we are in Region 2 (S)...
-                           if (p <= P2amax)                        // If p below max pressure in reverse subregion 2a,
-                               return B2aS.T_pX(p,X);              //     then use sub-Region 2a formulation
-                           else if (p <= P2bcmin)                  // ELSE If p below min end of 2b/2c curve,           
-                               return B2bS.T_pX(p, X);             //     use sub-Region 2b formulation by default
-                           else if (X >= S2bc)                     // ELSE If s to the right of S2bc boundary,
-                               return B2bS.T_pX(p,X);              //     use sub-Region 2b formulation
-                           else                                    // ELSE we're left of S2bc boundary, so
-                               return B2cS.T_pX(p,X);              //     use sub-Region 2c formulation
+        case REGION_2: if (inkey == IF97_HMASS){                   // See where we are in Region 2 (H)...
+                           if (p <= P2amax)                           // If p below max pressure in reverse subregion 2a,
+                               return std::max(tmin, B2aH.T_pX(p,X)); //     then use sub-Region 2a formulation
+                           else if (p <= P2bcmin)                     // ELSE If p below min end of 2b/2c curve,           
+                               return std::max(tmin, B2bH.T_pX(p,X)); //     use sub-Region 2b formulation by default
+                           else if (X >= Backwards::H2b2c_p(p))       // ELSE If h to the right of the 2b/2c curve,
+                               return std::max(tmin, B2bH.T_pX(p,X)); //     use sub-Region 2b formulation
+                           else                                       // ELSE we're left of the 2b/2c curve, so
+                               return std::max(tmin, B2cH.T_pX(p,X)); //     use sub-Region 2c formulation
+                       } else {                                    // See where we are in Region 2 (S)...
+                           if (p <= P2amax)                           // If p below max pressure in reverse subregion 2a,
+                               return std::max(tmin, B2aS.T_pX(p,X)); //     then use sub-Region 2a formulation
+                           else if (p <= P2bcmin)                     // ELSE If p below min end of 2b/2c curve,           
+                               return std::max(tmin, B2bS.T_pX(p,X)); //     use sub-Region 2b formulation by default
+                           else if (X >= S2bc)                        // ELSE If s to the right of S2bc boundary,
+                               return std::max(tmin, B2bS.T_pX(p,X)); //     use sub-Region 2b formulation
+                           else                                       // ELSE we're left of S2bc boundary, so
+                               return std::max(tmin, B2cS.T_pX(p,X)); //     use sub-Region 2c formulation
                        }; break;
-        case REGION_3: if (inkey == IF97_HMASS){
-                           if (X <= Backwards::H3ab_p(p))
-                               return B3aH.T_pX(p,X);
-                           else
-                               return B3bH.T_pX(p,X);
-                       } else {
-                           if (X <= Scrit)
-                               return B3aS.T_pX(p,X);
-                           else
-                               return B3bS.T_pX(p,X);
+        case REGION_3: if (inkey == IF97_HMASS){                      // Enthalpy
+                           if (X <= Backwards::H3ab_p(p))             //   IF h <= h3ab curve north of critical point, Region 3a
+                               return std::min(tmax, B3aH.T_pX(p,X)); //      Limit T(p,h) from Region 3a to below Tsat
+                           else                                       //   otherwise, Region 3b
+                               return std::max(tmin, B3bH.T_pX(p,X)); //      Limit T(p,h) from Region 3b to above Tsat
+                       } else {                                       // Entropy
+                           if (X <= Scrit)                            //   IF S <= Critical Entropy Point, Region 3a
+                               return std::min(tmax, B3aS.T_pX(p,X)); //      Limit T(p,s) from Region 3a to below Tsat
+                           else                                       //   otherwise Region 3b
+                               return std::max(tmin, B3bS.T_pX(p,X)); //      Limit T(p,s) from Region 3b to above Tsat
                        }; break;
         case REGION_4: return Tsat97(p); break;
         default: throw std::out_of_range("Unable to match region");
