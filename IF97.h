@@ -11,9 +11,13 @@
 
 enum IF97parameters {IF97_DMASS, IF97_HMASS, IF97_T, IF97_P, IF97_SMASS, IF97_UMASS, IF97_CPMASS, IF97_CVMASS, IF97_W, IF97_DRHODP,
                     // Transport Property enumerations
-                    IF97_MU, IF97_K };
+                    IF97_MU, IF97_K,
+                    // Quality
+                    IF97_Q };
                     
 enum IF97SatState {NONE, LIQUID, VAPOR};   // Saturated Liquid/Vapor state determination
+
+enum IF97RevCase {SMOOTH, RAMP, STEP};
 
 struct RegionIdealElement          // Structure for the single indexed state equation coefficients
 {
@@ -49,7 +53,7 @@ namespace IF97
     }
 
     // CoolProp-IF97 Version Number
-    static char IF97VERSION [] = "v2.1.4";
+    static char IF97VERSION [] = "v2.2.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -74,7 +78,7 @@ namespace IF97
     const double Rhocrit = 322.0;               // kg/m³
     const double Scrit   = 4.41202148223476*R_fact; // kJ*/kg-K (needed for backward eqn. in Region 3(a)(b)
     const double Ttrip   = 273.16;              // K
-    const double Ptrip   = 0.000611656*p_fact;  // MPa*
+    const double Ptrip   = 0.000611657*p_fact;  // MPa*   [Change per IAPWS R7-97(2012), p. 7, Eq. 9]
     const double Tmin    = 273.15;              // K
     const double Tmax    = 1073.15;             // K
     const double Pmin    = 0.000611213*p_fact;  // MPa*
@@ -4017,7 +4021,7 @@ namespace IF97
         }
     }
 
-    inline double RegionOutputBackward(double p, double X, IF97parameters inkey){
+    inline double RegionOutputBackward(double p, double X, IF97parameters inkey, bool Clip, IF97SatState State) {
         // Note that this routine returns only temperature (IF97_T).  All other values should be
         // calculated from this temperature and the known pressure using forward equations.
         // Setup Backward Regions for output
@@ -4038,92 +4042,255 @@ namespace IF97
         //       IAPWS R7-97(2012) and IAPWS SR3-03(2014). This can result in temperatures
         //       that are very slightly (within 25 mK) on the opposite side of the
         //       saturation curve from S/H values that are very near saturation.  Use of these
-        //       temperatures (with specified pressure) to calculate other properties can 
-        //       result in wildly inacurate properties returned from the wrong side of the  
-        //       saturation curve. Code is added here to limit T to the correct side of the 
-        //       saturation curve based on the (p,S) or (p,H) deternmined Region.
+        //       temperatures (with specified pressure) to calculate other properties can
+        //       result in wildly inacurate properties returned from the wrong side of the
+        //       saturation curve. Code is added here in 2024 to limit T to the correct side 
+        //       of the saturation curve based on the (p,S) or (p,H) deternmined Region.
         //
-        double tmin = 0, tmax = 0;  // Initialize tmin, tmax as clipping limits on sat. curve
-        if (p <= Pcrit)             // If below Pcrit (where Tsat is available),
-        {
-            tmin = Tsat97(p);       //     Only calculate Tsat once and
-            tmax = tmin;            //     set tmin & tmax at saturation
-        }
-        else                        // otherwise (above Pcrit),
-        {
-            tmax = Tmax;            //     Use pre-defined Region 2 maximum
-            tmin = Tmin;            //     Use pre-defined Region 1 minimum
-        }
-
+        //       There are times, however, when we don't want to adjust the return temp,
+        //       like when directly calcualating other properties in Region 4.  The
+        //       boolean parameter Clip is provided to make that choice.  If Clip is false,
+        //       this function limiits to IF97's Tmin and Tmax; aka, no clipping.
+        //
         // Make sure input and output keys are valid for Backward formulas
         if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
-            throw std::invalid_argument("Backward Formulas take variable inputs of Enthalpy or Entropy only.");
+        throw std::invalid_argument("Backward Formulas take variable inputs of Enthalpy or Entropy only.");
+
+        double tmin = Tmin, tmax = Tmax;  // Initialize tmin, tmax as clipping limits on sat. curve
+        const double eps = 1.0E-6;        // Saturation temperature offset of .001 mK
+                                          // When limiting to Tsat, this will keep
+                                          // temperature in Region 1 or Region 2.
+        if ((p < Pcrit) && Clip) {        // If below Pcrit (where Tsat is available),
+            double Tsat = Tsat97(p);      //     Only calculate Tsat ± eps once and 
+            tmin = Tsat + eps;            //     set tmin just above and
+            tmax = Tsat - eps;            //     tmax just below saturation.
+        }
+        else if (p == Pcrit) {            // Handle cases directly on the Critical Point
+            switch (inkey) {
+                case IF97_HMASS:
+                    if (X == Backwards::H3ab_p(Pcrit)) return Tcrit;
+                    break;
+                case IF97_SMASS:
+                    if (X == Scrit) return Tcrit;
+                    break;
+                default:
+                    break;
+            }
+        }
 
         // Determine IF97 Region for reverse calculation of temperature
-
         IF97REGIONS region = RegionDetermination_pX(p, X, inkey);
 
-        switch (region){
-        case REGION_1: if (inkey == IF97_HMASS)                       // Enthalpy
-                          return std::min(tmax, B1H.T_pX(p,X));       //   Limit T(p,h) from Region 1 to below Tsat
-                       else                                           // Entropy
-                          return std::min(tmax, B1S.T_pX(p, X));      //   Limit T(p,s) from Region 1 to below Tsat
-                       break;
-        case REGION_2: if (inkey == IF97_HMASS){                   // See where we are in Region 2 (H)...
-                           if (p <= P2amax)                           // If p below max pressure in reverse subregion 2a,
-                               return std::max(tmin, B2aH.T_pX(p,X)); //     then use sub-Region 2a formulation
-                           else if (p <= P2bcmin)                     // ELSE If p below min end of 2b/2c curve,           
-                               return std::max(tmin, B2bH.T_pX(p,X)); //     use sub-Region 2b formulation by default
-                           else if (X >= Backwards::H2b2c_p(p))       // ELSE If h to the right of the 2b/2c curve,
-                               return std::max(tmin, B2bH.T_pX(p,X)); //     use sub-Region 2b formulation
-                           else                                       // ELSE we're left of the 2b/2c curve, so
-                               return std::max(tmin, B2cH.T_pX(p,X)); //     use sub-Region 2c formulation
-                       } else {                                    // See where we are in Region 2 (S)...
-                           if (p <= P2amax)                           // If p below max pressure in reverse subregion 2a,
-                               return std::max(tmin, B2aS.T_pX(p,X)); //     then use sub-Region 2a formulation
-                           else if (p <= P2bcmin)                     // ELSE If p below min end of 2b/2c curve,           
-                               return std::max(tmin, B2bS.T_pX(p,X)); //     use sub-Region 2b formulation by default
-                           else if (X >= S2bc)                        // ELSE If s to the right of S2bc boundary,
-                               return std::max(tmin, B2bS.T_pX(p,X)); //     use sub-Region 2b formulation
-                           else                                       // ELSE we're left of S2bc boundary, so
-                               return std::max(tmin, B2cS.T_pX(p,X)); //     use sub-Region 2c formulation
-                       }; break;
-        case REGION_3: if (inkey == IF97_HMASS){                      // Enthalpy
-                           if (X <= Backwards::H3ab_p(p))             //   IF h <= h3ab curve north of critical point, Region 3a
-                               return std::min(tmax, B3aH.T_pX(p,X)); //      Limit T(p,h) from Region 3a to below Tsat
-                           else                                       //   otherwise, Region 3b
-                               return std::max(tmin, B3bH.T_pX(p,X)); //      Limit T(p,h) from Region 3b to above Tsat
-                       } else {                                       // Entropy
-                           if (X <= Scrit)                            //   IF S <= Critical Entropy Point, Region 3a
-                               return std::min(tmax, B3aS.T_pX(p,X)); //      Limit T(p,s) from Region 3a to below Tsat
-                           else                                       //   otherwise Region 3b
-                               return std::max(tmin, B3bS.T_pX(p,X)); //      Limit T(p,s) from Region 3b to above Tsat
-                       }; break;
-        case REGION_4: return Tsat97(p); break;
-        default: throw std::out_of_range("Unable to match region");
+        // Override Region if State specified other than NONE in call parameter
+        if (State == LIQUID) {
+            if (p <= P23min)
+                    region = REGION_1;
+            else
+                    region = REGION_3;
+        } else if (State == VAPOR) {
+            if (p <= P23min)
+                    region = REGION_2;
+            else
+                    region = REGION_3;
+        }
+
+        switch (region) {
+        case REGION_1:
+            if (inkey == IF97_HMASS)                          // Enthalpy
+                return std::min(tmax, B1H.T_pX(p, X));        //   Limit T(p,h) from Region 1 to below Tsat
+            else                                              // Entropy
+                return std::min(tmax, B1S.T_pX(p, X));        //   Limit T(p,s) from Region 1 to below Tsat
+            break;
+        case REGION_2:
+            if (inkey == IF97_HMASS) {                      // See where we are in Region 2 (H)...
+                if (p <= P2amax)                              // If p below max pressure in reverse subregion 2a,
+                    return std::max(tmin, B2aH.T_pX(p, X));   //     then use sub-Region 2a formulation
+                else if (p <= P2bcmin)                        // ELSE If p below min end of 2b/2c curve,
+                    return std::max(tmin, B2bH.T_pX(p, X));   //     use sub-Region 2b formulation by default
+                else if (X >= Backwards::H2b2c_p(p))          // ELSE If h to the right of the 2b/2c curve,
+                    return std::max(tmin, B2bH.T_pX(p, X));   //     use sub-Region 2b formulation
+                else                                          // ELSE we're left of the 2b/2c curve, so
+                    return std::max(tmin, B2cH.T_pX(p, X));   //     use sub-Region 2c formulation
+            } else {                                        // See where we are in Region 2 (S)...
+                if (p <= P2amax)                              // If p below max pressure in reverse subregion 2a,
+                    return std::max(tmin, B2aS.T_pX(p, X));   //     then use sub-Region 2a formulation
+                else if (p <= P2bcmin)                        // ELSE If p below min end of 2b/2c curve,
+                    return std::max(tmin, B2bS.T_pX(p, X));   //     use sub-Region 2b formulation by default
+                else if (X >= S2bc)                           // ELSE If s to the right of S2bc boundary,
+                    return std::max(tmin, B2bS.T_pX(p, X));   //     use sub-Region 2b formulation
+                else                                          // ELSE we're left of S2bc boundary, so
+                    return std::max(tmin, B2cS.T_pX(p, X));   //     use sub-Region 2c formulation
+            };
+            break;
+        case REGION_3:
+            if (inkey == IF97_HMASS) {                        // Enthalpy
+                if (X <= Backwards::H3ab_p(p))                //   IF h <= h3ab curve north of critical point, Region 3a
+                    return std::min(tmax, B3aH.T_pX(p, X));   //      Limit T(p,h) from Region 3a to below Tsat
+                else                                          //   otherwise, Region 3b
+                    return std::max(tmin, B3bH.T_pX(p, X));   //      Limit T(p,h) from Region 3b to above Tsat
+            } else {                                          // Entropy
+                if (X <= Scrit)                               //   IF S <= Critical Entropy Point, Region 3a
+                    return std::min(tmax, B3aS.T_pX(p, X));   //      Limit T(p,s) from Region 3a to below Tsat
+                else                                          //   otherwise Region 3b
+                    return std::max(tmin, B3bS.T_pX(p, X));   //      Limit T(p,s) from Region 3b to above Tsat
+            };
+            break;
+        case REGION_4:
+                return Tsat97(p);                             // Just return Tsat in 2-phase region
+                break;
+//      case REGION_5: return 0; break;                       // No backward formulation for Region 5
+        default:
+                throw std::out_of_range("Unable to match region");
         }
     }  // Region Output backward
 
     inline double rho_pX(double p, double X, IF97parameters inkey){
-        // NOTE: This implementation works, and with the 2016 Supplementary Release
-        //       for v(p,T) for Region 3 implemented, it is no longer iterative.  
-        //       However, the 2014 Supplementary Release for v(p,h) and v(p,s) are 
+        // NOTE: This implementation does not work. While with the 2016 Supplementary Release
+        //       for v(p,T) for Region 3 implemented it is no longer iterative, it is not
+        //       as robust as Y_pX and is not used or callable from the API.
+        //       TODO: the 2014 Supplementary Release for v(p,h) and v(p,s) are 
         //       more direct and may be slightly faster, since only one algebraic 
         //       equation is needed instead of two in Region 3.
         static Region1 R1;
         static Region2 R2;
-        const double T = RegionOutputBackward( p, X, inkey); 
+        const double T = RegionOutputBackward( p, X, inkey,true,NONE);  // Get Adjusted value of T
         if (RegionDetermination_pX(p, X, inkey) == REGION_4){      // If in saturation dome
             const double Tsat = Tsat97(p);
-            const double Xliq = R1.output(inkey,Tsat,p);
-            const double Xvap = R2.output(inkey,Tsat,p);
-            const double vliq = 1.0/R1.output(IF97_DMASS,Tsat,p);
-            const double vvap = 1.0/R2.output(IF97_DMASS,Tsat,p);
-            return 1.0/(vliq + (X-Xliq)*(vvap-vliq)/(Xvap-Xliq));  //    Return Mixture Density
-        } else {                                                   // else
+            const double Xliq = RegionOutput(inkey, Tsat, p, LIQUID);  // Makes determination between Regions 1 & 3.
+            const double Xvap = RegionOutput(inkey, Tsat, p, VAPOR);   // Makes determination between Regions 2 & 3.
+            const double vliq = 1.0 / RegionOutput(IF97_DMASS, Tsat, p, LIQUID);  // Get Liquid density
+            const double vvap = 1.0 / RegionOutput(IF97_DMASS, Tsat, p, VAPOR);   // Get Vaopr density
+            return 1.0/(vliq + (X-Xliq)*(vvap-vliq)/(Xvap-Xliq));      //    Return Mixture Density
+        } else {                                                       // else
             return RegionOutput(IF97_DMASS, T, p, NONE);
         }
     }
+
+    inline double Y_pX(IF97parameters outkey, double p, double X, IF97parameters inkey) {
+        // This function implements h(p,s) and s(p,h).  These are not officially implemented
+        // in the IF97 releases.  However, it is a trivial matter to use the IF97 reverse
+        // functions T(p,s) and T(p,h) to get temperature first, and then call the
+        // implemented forward functions h(t,p) and s(t,p) with the resulting temperature.
+        // The only caveat is handling the 2-phase region, which will always return Tsat
+        // for the same pressure under the vapor dome.  This case, the void fraction can
+        // be calculated from the input (s or h) and used to scale the output result under
+        // the vapor dome.
+        // 
+        // NOTE: rho(p,S) and rho(p,H) are duplicatively defined by this generic routine.
+        //
+        // NOTE: Calling all regions manually in this routine since the forward region
+        //       determination routines can't be relied upon for this case.
+
+        if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
+            // There are no reverse functions for other than (p,H) or (p,S)
+            throw std::invalid_argument("Reverse state cannot be determined for these inputs.");
+
+        static Region1 R1;
+        static Region2 R2;
+        static Region3 R3;
+
+        double Xliq = 0.0, Xvap = 0.0, Yliq = 0.0, Yvap = 0.0;
+        double TL = 0.0, TV = 0.0;
+
+        const double T = RegionOutputBackward(p, X, inkey, false, NONE);  // no clipping, no state specified
+
+        if (inkey == outkey) return X;  // trivial result
+
+        switch (RegionDetermination_pX(p, X, inkey)) {
+            case REGION_4: {                            // If in saturation dome (p <= Pcrit, Region 4)
+                                                        // Get Sat. Liquid & Vapor values direclty from region eqs.
+                const double Tsat = Tsat97(p);
+                if (p > P23min) {                              // Pressure in Region 3
+                    Xliq = R3.output(inkey, Tsat, p, LIQUID);  //   RegionOutput(inkey, T, p, LIQUID);
+                    Xvap = R3.output(inkey, Tsat, p, VAPOR);   //   RegionOutput(inkey, T, p, VAPOR);
+                } else {                                    // Pressure in Region 1/2
+                    Xliq = R1.output(inkey, Tsat, p);          //   Sat. Liquid; RegionOutput(inkey, T, p, LIQUID);
+                    Xvap = R2.output(inkey, Tsat, p);          //   Sat. Vapor;  RegionOutput(inkey, T, p, VAPOR);
+                }
+                const double Q4 = std::min(1.0, std::max(0.0, (X - Xliq) / (Xvap - Xliq)  ));
+                switch (outkey) {
+                    case IF97_DMASS:
+                        // Get saturation values directly from region equations using un-clipped temperature
+                        TL = RegionOutputBackward(p, Xliq, inkey, false, LIQUID);
+                        TV = RegionOutputBackward(p, Xvap, inkey, false, VAPOR);
+                        if (p > P23min) {                                      // Pressure in Region 3
+                                Yliq = 1.0 / R3.output(outkey, TL, p, LIQUID); //   Region 3 Saturated Liquid
+                                Yvap = 1.0 / R3.output(outkey, TV, p, VAPOR);  //   Region 3 Saturated Vapor
+                        } else {                                               // Pressure in Region 1/2
+                                Yliq = 1.0 / R1.output(outkey, TL, p);         //   Region 1 Saturated Liquid
+                                Yvap = 1.0 / R2.output(outkey, TV, p);         //   Region 2 Saturated Vapor
+                        }
+                        return 1.0 / (Yliq * (1 - Q4) + Q4 * Yvap);  //    Return Mixture Density
+                        break;
+
+                    case IF97_T:
+                        return Tsat;  //    Return Saturation Temperature for testing purposes only
+                        break;
+
+                    case IF97_Q:
+                        return Q4;    //    Vapor Quality for testing purposes only.
+                        break;
+
+
+                    case IF97_HMASS:
+                    case IF97_SMASS:
+                        // Get saturation values directly from region equations using un-clipped temperature
+                        TL = RegionOutputBackward(p, Xliq, inkey, false, LIQUID);
+                        TV = RegionOutputBackward(p, Xvap, inkey, false, VAPOR);
+                        if (p > P23min) {                              // Pressure in Region 3
+                            Yliq = R3.output(outkey, TL, p, LIQUID);   //   RegionOutput(inkey, T, p, LIQUID);
+                            Yvap = R3.output(outkey, TV, p, VAPOR);    //   RegionOutput(inkey, T, p, VAPOR);
+                        } else {                                       // Pressure in Region 1/2
+                            Yliq = R1.output(outkey, TL, p);           //   Sat. Liquid; RegionOutput(inkey, T, p, LIQUID);
+                            Yvap = R2.output(outkey, TV, p);           //   Sat. Vapor;  RegionOutput(inkey, T, p, VAPOR);
+                        }
+                        return Yliq * (1 - Q4) + Q4 * Yvap;            // Return Mixture Everything else
+                        break;
+
+                    default:
+                        throw std::invalid_argument("2-Phase: Requested output undefined in two-phase region.");
+                        break;
+                }
+
+            }; break; // Region 4 (saturation)
+
+            case REGION_1:
+                if (outkey == IF97_Q)
+                    return 0.0;
+                else
+                    return R1.output(outkey, T, p);  // Use Liquid Region 1
+                break;
+
+            case REGION_2:
+                if (outkey == IF97_Q)
+                    return 1.0;
+                else
+                    return R2.output(outkey, T, p);  // Use Liquid Region 2
+                break;
+
+            case REGION_3:
+                if (inkey == IF97_HMASS) {                            // Enthalpy
+                    if (X <= Backwards::H3ab_p(p))                    //   IF h <= h3ab curve north of critical point, Region 3a
+                        if (outkey == IF97_Q) return 0.0;             //      Special case for Q
+                        else return R3.output(outkey, T, p, LIQUID);  //      All other outputs
+                    else                                              //   otherwise, Region 3b
+                        if (outkey == IF97_Q) return 1.0;             //      Special case for Q
+                        else return R3.output(outkey, T, p, VAPOR);   //      All other outputs
+                } else {                                              // Entropy
+                    if (X <= Scrit)                                   //   IF S <= Critical Entropy Point, Region 3a
+                        if (outkey == IF97_Q) return 0.0;             //      Special case for Q
+                        else return R3.output(outkey, T, p, LIQUID);  //      All other outputs
+                    else                                              //   otherwise Region 3b
+                        if (outkey == IF97_Q) return 1.0;             //      Special case for Q
+                        else return R3.output(outkey, T, p, VAPOR);   //      All other outputs
+                };
+                break;
+            default:  // all other regions
+                throw std::invalid_argument("Reverse state functions not defined in REGION 5");
+                break;
+        };
+    }
+
 
     inline double Q_pX(double p, double X, IF97parameters inkey){
         double Xliq, Xvap;
@@ -4134,32 +4301,33 @@ namespace IF97
         } else if (p>Pcrit) { 
             double t;
             switch (inkey) {
-            case IF97_HMASS:
-            case IF97_SMASS:
-                t = RegionOutputBackward( p, X, inkey); break;
-            case IF97_UMASS:
-            case IF97_DMASS:
-            default:
-                // There are no reverse functions for t(p,U) or t(p,rho)
-                throw std::invalid_argument("Quality cannot be determined for these inputs.");
+                case IF97_HMASS:
+                case IF97_SMASS:
+                    t = RegionOutputBackward( p, X, inkey,false,NONE); break;
+                case IF97_UMASS:
+                case IF97_DMASS:
+                default:
+                    // There are no reverse functions for t(p,U) or t(p,rho)
+                    throw std::invalid_argument("Quality cannot be determined for these inputs.");
             }
             if (t<Tcrit)
-                return 1.0;  // Vapor, at all pressures above critical point
+                return 0.0;  // Liquid, at all pressures above critical point
             else
                 // Supercritical Region (p>Pcrit) && (t>Tcrit)
                 throw std::invalid_argument("Quality not defined in supercritical region.");
-        } else {
+        } else {                                                                    // p <= Pcrit
+            double Tsat = Tsat97(p);
             switch (inkey) {
                 case IF97_HMASS:
                 case IF97_SMASS:
                 case IF97_UMASS:
-                    Xliq = RegionOutput( inkey, Tsat97(p), p, LIQUID);
-                    Xvap = RegionOutput( inkey, Tsat97(p), p, VAPOR);
+                    Xliq = RegionOutput( inkey, Tsat, p, LIQUID);
+                    Xvap = RegionOutput( inkey, Tsat, p, VAPOR);
                     return std::min(1.0,std::max(0.0,(X-Xliq)/(Xvap-Xliq)));
                     break;
                 case IF97_DMASS:
-                    Xliq = 1.0/RegionOutput( IF97_DMASS, Tsat97(p), p, LIQUID);
-                    Xvap = 1.0/RegionOutput( IF97_DMASS, Tsat97(p), p, VAPOR);
+                    Xliq = 1.0/RegionOutput( IF97_DMASS, Tsat, p, LIQUID);
+                    Xvap = 1.0/RegionOutput( IF97_DMASS, Tsat, p, VAPOR);
                     X = 1.0/X;
                     return std::min(1.0,std::max(0.0,(X-Xliq)/(Xvap-Xliq)));
                     break;
@@ -4213,7 +4381,7 @@ namespace IF97
     // This function covers the top and right domain boundaries of constant Pmax and Tmax
         const double s_star = 1*R_fact, h_star = 1*R_fact, sigma = s/s_star;
         if (s < STPmax)  // Use forward equation along Pmax using T(Pmax,s) as Temperature
-            return RegionOutput( IF97_HMASS,RegionOutputBackward(Pmax,s,IF97_SMASS),Pmax, NONE);
+            return RegionOutput( IF97_HMASS,RegionOutputBackward(Pmax,s,IF97_SMASS,false,NONE),Pmax, NONE);
         else { 
         // Determining H(s) along Tmax is difficult because there is no direct p(T,s) formulation.
         // This linear combination fit h(s)=a*ln(s)+b/s+c/s²+d is not perfect, but it's close
@@ -4230,7 +4398,7 @@ namespace IF97
         else             // Use forward equation along Pmin using T(Pmin,s) as Temperature
         {
             double Tpmins;
-            Tpmins = RegionOutputBackward(Pmin, s, IF97_SMASS);
+            Tpmins = RegionOutputBackward(Pmin, s, IF97_SMASS,false,NONE);
             return RegionOutput( IF97_HMASS, Tpmins, Pmin, NONE);
         }
     };
@@ -4350,7 +4518,7 @@ namespace IF97
             if (region == BACK_4)        //
                 return Tval;                                     // REGION 4, already have Temperature
             else                                                 //
-                return RegionOutputBackward(Pval,h,IF97_HMASS);  // Not REGION 4 Calc from Backward T(p,h)
+                return RegionOutputBackward(Pval,h,IF97_HMASS,false,NONE);  // Not REGION 4 Calc from Backward T(p,h)
     }  // Region Output backward
 
     // ******************************************************************************** //
@@ -4480,16 +4648,18 @@ namespace IF97
     //                              Backward Functions                                  //
     // ******************************************************************************** //
     inline double T_phmass(double p,double h){
-        return RegionOutputBackward( p, h, IF97_HMASS);
+        return RegionOutputBackward( p, h, IF97_HMASS,true,NONE);
     };
     inline double rhomass_phmass(double p,double h){
-        return rho_pX( p, h, IF97_HMASS);
+//        return rho_pX( p, h, IF97_HMASS); << Replace with the IF97 Suppliment Backward formula
+        return Y_pX(IF97_DMASS, p, h, IF97_HMASS);  // Use this one for now.
     };
     inline double T_psmass(double p,double s){
-        return RegionOutputBackward( p, s, IF97_SMASS);
+        return RegionOutputBackward( p, s, IF97_SMASS,true,NONE);
     };
     inline double rhomass_psmass(double p,double s){
-        return rho_pX( p, s, IF97_SMASS);
+//        return rho_pX( p, s, IF97_SMASS); << Replace with the IF97 Suppliment Backward formula
+        return Y_pX(IF97_DMASS, p, s, IF97_SMASS);  // Use this one for now.
     };
     inline double p_hsmass(double h, double s){
         return BackwardOutputHS(IF97_P, h, s);
@@ -4497,7 +4667,13 @@ namespace IF97
     inline double T_hsmass(double h, double s){
         return BackwardOutputHS(IF97_T, h, s);
     };
-    inline int Region_ph(double p, double h){
+    inline double hmass_psmass(double p, double s) {
+        return Y_pX(IF97_HMASS, p, s, IF97_SMASS);
+    };
+    inline double smass_phmass(double p, double h) {
+        return Y_pX(IF97_SMASS, p, h, IF97_HMASS);
+    };
+    inline int Region_ph(double p, double h) {
         return BackwardRegion( p, h, IF97_HMASS);
     };
     inline int Region_ps(double p, double s){
