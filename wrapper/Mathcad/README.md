@@ -59,7 +59,7 @@ Make the Build for Mathcad Prime (any version above 3.0)
              -DCMAKE_VERBOSE_MAKEFILE=ON 
 	     
 	> Insert your version of Visual Studio for the -G option.  
-	> Note that Mathcad Prime is 64-bit and requires the `-A x64` switch on this command
+	> Note that Mathcad Prime is 64-bit and requires the `-A x64` switch on this command.  
     > Prior to VS 2017, use something like: `-G "Visual Studio 14 2015 Win64`
 
 Make the Build for Legacy Mathcad 15 (Discontinued by PTC)
