@@ -1,4 +1,4 @@
-Wrapper of IF97 for PTC Mathcad Prime
+IF97 Add-in (Wrapper) for PTC Mathcad Prime
 =====================================
 
 This wrapper will provide Custom Functions (user defined) in Mathcad Prime that provide the thermodynamic and transport properties for water/steam at specified state points based on the [IAPWS Industrial Formulation 1997 for the Properties of Water and Steam (IF97)](http://www.iapws.org/relguide/IF97-Rev.html).  While these properties can also be accessed through the [CoolProp add-in](https://github.com/CoolProp/CoolProp/tree/master/wrappers/MathCAD), this wrapper provides **_only_** these steam/water properties without the overhead of CoolProp.
@@ -15,6 +15,12 @@ To Use (Overview)
 * Install the Add-in files by copying them to the appropriate Mathcad Prime (or Legacy Mathcad) Installation directories as indicated below.  
 
 * View ``if97_verification.pdf`` or ``if97_verification_IAPWS.pdf`` for examples of using the functions.
+
+**Optional for Usability**
+
+* Copy the `.\Units\if97_Units_SI.mcdx` file to a local or shared filesystem folder.  Include this file in any worksheet to provide wrapper functions for the raw IF97 functions that handle unit conversion on input parameters and return values with Mathcad units applied.  This file is only provided here for Mathcad Prime v10 or later.
+
+* Use the Custom Functions add-in at https://github.com/henningjp/CustFunc to provide a Custom Function pop-up (by pressing `<F3>`) that gives descriptions and allows easy insertion of the raw if97_ functions as well as the unit aware wrapper functions in the `if97_Units_SI.mcdx` include file (discussed above).  This add-in greatly facilitates use of the IF97 add-in for Mathcad Prime by restoring the Insert Functions panel from Legacy Mathcad for Custom Functions.
 
 ------
 
@@ -54,11 +60,12 @@ Make the Build for Mathcad Prime (any version above 3.0)
 * Build the makefile using CMake (Note: Mathcad Prime is 64-bit):
 
     cmake .. -DIF97_PRIME_MODULE=ON 
-             -DIF97_PRIME_ROOT="C:/Program Files/PTC/Mathcad 7.0.0.0"  
+             -DIF97_PRIME_ROOT="C:/Program Files/PTC/Mathcad Prime 10.0.0.0"  
              -G "Visual Studio 17 2022" -A x64 
              -DCMAKE_VERBOSE_MAKEFILE=ON 
 	     
-	> Insert your version of Visual Studio for the -G option.  
+	> Insert your version of Mathcad Prime in place of "10.0.0.0".  
+    > Insert your version of Visual Studio for the -G option.  
 	> Note that Mathcad Prime is 64-bit and requires the `-A x64` switch on this command.  
     > Prior to VS 2017, use something like: `-G "Visual Studio 14 2015 Win64`
 
@@ -84,7 +91,9 @@ Make the Build for Legacy Mathcad 15 (Discontinued by PTC)
 Build the Project
 -----------------
 
-* Open the resulting IF97.sln file in Visual Studio and build the IF97 project, making sure that ``Release`` configuration is selected in the VS menu toolbar and that the platform is set to ``x64`` for use with Mathcad Prime (64-bit).  Alternatively, you can build the dynamic library (DLL) from the command line using cmake::
+* Open the resulting IF97.sln file in Visual Studio and build the IF97 project, making sure that ``Release`` configuration is selected in the VS menu toolbar and that the platform is set to ``x64`` for use with Mathcad Prime (64-bit).  
+
+   Alternatively, you can build the dynamic library (DLL) from the command line using cmake::
 
     cmake --build . --config Release
   
@@ -93,7 +102,7 @@ Build the Project
 Installing
 ==========
 
-* Build the IF97 DLL as indicated above and then copy the wrapper files to the appropriate Mathcad 15 or Prime directories as follows.
+* Build the IF97 DLL as indicated above and then copy the wrapper files to the appropriate Mathcad Prime (or Mathcad 15) directories as follows.
 
 Mathcad Prime (v3.0 or higher)
 ----------
@@ -101,16 +110,23 @@ Mathcad Prime (v3.0 or higher)
 
 Optional:
 
-* For legacty **_Insert Custom Function_** capability in Mathcad Prime, download and install the [CustFunc add-in DLL](https://github.com/henningjp/CustFunc), which will provide a pop-up panel for inserting the custom functions into your worksheet at the cursor location.
-* For CustFunc to work, copy the ``IF97_EN.xml`` to ``C:\Program Files\PTC\Mathcad Prime 10.0.0.0\Custom Functions\docs``; switch out `10.0.0.0` for your working version of Mathcad Prime.  Functions and descriptions will then be available in the Mathcad Mathcad interface via **_hot-key_** `<Shift><F2>`.  See the README for the [CustFunc add-in DLL](https://github.com/henningjp/CustFunc) for further installation and usage instructions.
+* Copy the `.\Units\if97_Units_SI.mcdx` file to a local or shared filesystem folder.  Include this file in any worksheet to provide unit-handling wrapper functions for the raw IF97 functions.  These Mathcad user functions will handle unit conversion on input parameters and return values with the correct Mathcad units applied.  This file is only provided here for Mathcad Prime v10 or later.  IF97 **_must_** be compiled with the default SI units enabled (`IAPWS_UNITS` **_not_** _defined_) for this include file to be accurate.
+
+* For legacy **_Insert Custom Function_** capability in Mathcad Prime, download and install the [CustFunc add-in DLL](https://github.com/henningjp/CustFunc), which will provide a pop-up panel on pressing `<F3>` for inserting the custom functions into your worksheet at the cursor location.  
+
+* For CustFunc to work with IF97, copy the `.\docs\IF97_SI_EN.xml` file found at [CustFunc add-in DLL](https://github.com/henningjp/CustFunc) to ``C:\Program Files\PTC\Mathcad Prime 10.0.0.0\Custom Functions\docs``; _switch out `10.0.0.0` for your working version of Mathcad Prime_.  Functions and descriptions will then be available in the Mathcad Mathcad interface via **_hot-key_** `<F3>`.  See the README for the [CustFunc add-in DLL](https://github.com/henningjp/CustFunc) for further installation and usage instructions.  IF97 **_must_** be compiled with the default SI units enabled (`IAPWS_UNITS` not defined) for this XML file to be accurate.  
+
+   > NOTE: If compiling the IF97 Add-in with `IAPWS_UNITS` defined, use the `.\Units\if97_Units_IAPWS.mcdx` file from this repository and the `.\docs\IF97_IAPWS_EN.xml` file from the [CustFunc add-in DLL](https://github.com/henningjp/CustFunc) repository.
   
 Legacy Mathcad 15 (Discontinued)
 ----------
 * Copy the ``Release\IF97.dll`` file to ``C:\Program Files (x86)\Mathcad\Mathcad 15\userefi`` or equivalent for your version of Mathcad.    
-* **Legacy Mathcad Only:** Copy the ``IF97_EN.xml`` to ``C:\Program Files (x86)\Mathcad\Mathcad 15\doc\funcdoc``.  Functions and descriptions will then be available in the Mathcad 15 interface under Insert|Function or the Functions button on the toolbar.  This functionality is **_still_** not available in Mathcad Prime as of version 8.0.
+
+* **Legacy Mathcad Only:** Copy the ``.\docs\IF97_Legacy_EN.xml`` to ``C:\Program Files (x86)\Mathcad\Mathcad 15\doc\funcdoc``.  Functions and descriptions will then be available in the Mathcad 15 interface under Insert|Function or the Functions button on the toolbar.  
+  
 
 ------
-  
+------
 Compiler Flags
 ==============
 The Mathcad wrapper code uses the ``REGION3_ITERATE`` flag to provide more accurate (but slightly slower) calculation of density in Region 3 (mostly super-critical), but does **_not_** use the ``IAPWS_UNITS`` flag by default, leaving all input/output values in SI units.
