@@ -311,6 +311,7 @@ namespace IF97
             case IF97_MU: return visc(T,rhomass(T,p));   // Viscosity is a function of rho.
             case IF97_K: return tcond(T,p,rhomass(T,p)); // Conductivity needs p and rho.
             case IF97_DRHODP: return drhodp(T, p);       // For verification testing.
+            case IF97_Q: throw std::invalid_argument("Can't determine Q from T & P");  // just in case
             }
             throw std::out_of_range("Unable to match input parameters");
         }
