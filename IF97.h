@@ -53,7 +53,7 @@ namespace IF97
     }
 
     // CoolProp-IF97 Version Number
-    static char IF97VERSION [] = "v2.2.0";
+    static const char IF97VERSION [] = "v2.2.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -75,7 +75,7 @@ namespace IF97
     // IF97 Constants
     const double Tcrit   = 647.096;             // K
     const double Pcrit   = 22.064*p_fact;       // MPa*
-    const double Rhocrit = 322.0;               // kg/mÂ³
+    const double Rhocrit = 322.0;               // kg/m³
     const double Scrit   = 4.41202148223476*R_fact; // kJ*/kg-K (needed for backward eqn. in Region 3(a)(b)
     const double Ttrip   = 273.16;              // K
     const double Ptrip   = 0.000611657*p_fact;  // MPa*   [Change per IAPWS R7-97(2012), p. 7, Eq. 9]
@@ -114,7 +114,7 @@ namespace IF97
     double psat97(double T);  // Forward declaration of psat97 required for calls below.
     //
 
-    static RegionResidualElement Hresiddata[] = {       // Residual H for viscosity
+    static const RegionResidualElement Hresiddata[] = {       // Residual H for viscosity
         {0, 0,  5.20094e-1},
         {1, 0,  8.50895e-2},
         {2, 0, -1.08374   },
@@ -138,14 +138,14 @@ namespace IF97
         {5, 6, -5.93264e-4}
     };
 
-    static RegionIdealElement Hidealdata[] = {          // Ideal H for viscosity
+    static const RegionIdealElement Hidealdata[] = {          // Ideal H for viscosity
         {0,  1.67752   },
         {1,  2.20462   },
         {2,  0.6366564 },
         {3, -0.241605  }
     };
 
-    static RegionResidualElement Lresiddata[] = {       // Residual L for Thermal Conductivity
+    static const RegionResidualElement Lresiddata[] = {       // Residual L for Thermal Conductivity
         { 0, 0,  1.60397357000 },
         { 1, 0,  2.33771842000 },
         { 2, 0,  2.19650529000 },
@@ -178,7 +178,7 @@ namespace IF97
         { 4, 5,  0.01291384200 }
     };
 
-    static RegionIdealElement Lidealdata[] = {          // Ideal L for thermal conductivity
+    static const RegionIdealElement Lidealdata[] = {          // Ideal L for thermal conductivity
         {0,  2.443221E-3},
         {1,  1.323095E-2},
         {2,  6.770357E-3},
@@ -186,7 +186,7 @@ namespace IF97
         {4,  4.096266E-4}
     };
 
-    static double A[6][5] = {
+    static const double A[6][5] = {
         {  6.53786807199516,  6.52717759281799,   5.35500529896124,   1.55225959906681,   1.11999926419994  },
         { -5.61149954923348, -6.30816983387575,  -3.96415689925446,   0.464621290821181,  0.595748562571649 },
         {  3.39624167361325,  8.08379285492595,   8.91990208918795,   8.93237374861479,   9.88952565078920  },
@@ -195,10 +195,10 @@ namespace IF97
         {  1.97815050331519, -5.54349664571295,  -2.16866274479712,  -0.965458722086812, -0.503243546373828 },
     };
 
-    static std::vector<RegionResidualElement> Hrdata(Hresiddata, Hresiddata + sizeof(Hresiddata)/sizeof(RegionResidualElement));
-    static std::vector<RegionIdealElement> H0data(Hidealdata, Hidealdata + sizeof(Hidealdata)/sizeof(RegionIdealElement));
-    static std::vector<RegionResidualElement> Lrdata(Lresiddata, Lresiddata + sizeof(Lresiddata)/sizeof(RegionResidualElement));
-    static std::vector<RegionIdealElement> L0data(Lidealdata, Lidealdata + sizeof(Lidealdata)/sizeof(RegionIdealElement));
+    static const std::vector<RegionResidualElement> Hrdata(Hresiddata, Hresiddata + sizeof(Hresiddata)/sizeof(RegionResidualElement));
+    static const std::vector<RegionIdealElement> H0data(Hidealdata, Hidealdata + sizeof(Hidealdata)/sizeof(RegionIdealElement));
+    static const std::vector<RegionResidualElement> Lrdata(Lresiddata, Lresiddata + sizeof(Lresiddata)/sizeof(RegionResidualElement));
+    static const std::vector<RegionIdealElement> L0data(Lidealdata, Lidealdata + sizeof(Lidealdata)/sizeof(RegionIdealElement));
 
     class BaseRegion
     {
@@ -488,7 +488,7 @@ namespace IF97
     /********************************************************************************/
     /**************************       Region #1       *******************************/
     /********************************************************************************/
-    static RegionResidualElement Region1residdata[] = {
+    static const RegionResidualElement Region1residdata[] = {
         // Note: the coefficients of n_i have been multiplied by -1**I_i such that all Gibbs terms are of the form (PI-7.1)**(I_i) rather than (7.1-PI)**(I_i)
         {0, -2, 0.14632971213167},
         {0, -1, -0.84548187169114},
@@ -525,8 +525,8 @@ namespace IF97
         {31, -40, -1.8228094581404E-24},
         {32, -41, -9.3537087292458E-26}
     };
-    static std::vector<RegionResidualElement> reg1rdata(Region1residdata, Region1residdata + sizeof(Region1residdata)/sizeof(RegionResidualElement));
-    static std::vector<RegionIdealElement> reg10data;
+    static const std::vector<RegionResidualElement> reg1rdata(Region1residdata, Region1residdata + sizeof(Region1residdata)/sizeof(RegionResidualElement));
+    static const std::vector<RegionIdealElement> reg10data;
     class Region1 : public BaseRegion
     {
     public:
@@ -567,7 +567,7 @@ namespace IF97
     /********************************************************************************/
     /**************************       Region #2       *******************************/
     /********************************************************************************/
-    static RegionResidualElement Region2residdata[] = {
+    static const RegionResidualElement Region2residdata[] = {
         {1,0,-0.0017731742473213},
         {1,1,-0.017834862292358},
         {1,2,-0.045996013696365},
@@ -613,7 +613,7 @@ namespace IF97
         {24,58,-9.436970724121E-07}
     };
 
-    static RegionIdealElement Region2idealdata[] = {
+    static const RegionIdealElement Region2idealdata[] = {
     {0, -0.96927686500217e1},
     {1, 0.10086655968018e2},
     {-5, -0.56087911283020e-2 },
@@ -624,8 +624,8 @@ namespace IF97
     {2, -0.28408632460772},
     {3, 0.21268463753307e-1},
     };
-    static std::vector<RegionResidualElement> reg2rdata(Region2residdata, Region2residdata + sizeof(Region2residdata)/sizeof(RegionResidualElement));
-    static std::vector<RegionIdealElement> reg20data(Region2idealdata, Region2idealdata + sizeof(Region2idealdata)/sizeof(RegionIdealElement));
+    static const std::vector<RegionResidualElement> reg2rdata(Region2residdata, Region2residdata + sizeof(Region2residdata)/sizeof(RegionResidualElement));
+    static const std::vector<RegionIdealElement> reg20data(Region2idealdata, Region2idealdata + sizeof(Region2idealdata)/sizeof(RegionIdealElement));
     class Region2 : public BaseRegion
     {
     public:
@@ -643,7 +643,7 @@ namespace IF97
         }
     };
 
-    static double Region23data[] = {
+    static const double Region23data[] = {
     0.34805185628969e3,
     -0.11671859879975e1, 
     0.10192970039326e-2,
@@ -651,7 +651,7 @@ namespace IF97
     0.13918839778870e2
     };
 
-    static const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
+    static const const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
 
     inline double Region23_T(double T){
         const double p_star = 1*p_fact, T_star = 1, theta = T/T_star;
@@ -670,7 +670,7 @@ namespace IF97
     /********************************************************************************/
 
     namespace Region3Backwards{
-        static RegionResidualElement Region3Adata[] = {
+        static const RegionResidualElement Region3Adata[] = {
         {-12, 5, 0.110879558823853e-2},
         {-12, 10, 0.572616740810616e3},
         {-12, 12, -0.767051948380852e5},
@@ -703,7 +703,7 @@ namespace IF97
         {2, 2, 0.797441793901017e-1},
         };
 
-        static RegionResidualElement Region3Bdata[] = {
+        static const RegionResidualElement Region3Bdata[] = {
         {-12, 10, -0.827670470003621e-1},
         {-12, 12, 0.416887126010565e2},
         {-10, 8, 0.483651982197059e-1},
@@ -738,7 +738,7 @@ namespace IF97
         {4, 1, 0.128369435967012},
         };
 
-        static RegionResidualElement Region3Cdata[] = {
+        static const RegionResidualElement Region3Cdata[] = {
         {-12, 6, 3.11967788763030},
         {-12, 8, 2.76713458847564e+04},
         {-12, 10, 3.22583103403269e+07},
@@ -776,7 +776,7 @@ namespace IF97
         {8, 1, 4.38319858566475e-02},
         };
 
-        static RegionResidualElement Region3Ddata[] = {
+        static const RegionResidualElement Region3Ddata[] = {
         {-12, 4, -4.52484847171645e-10},
         {-12, 6, 3.15210389538801e-05},
         {-12, 7, -2.14991352047545e-03},
@@ -817,7 +817,7 @@ namespace IF97
         {3, 0, 5.51478022765087e-03},
         };
 
-        static RegionResidualElement Region3Edata[] = {
+        static const RegionResidualElement Region3Edata[] = {
         {-12, 14, 7.15815808404721e+08},
         {-12, 16, -1.14328360753449e+11},
         {-10, 3, 3.76531002015720e-12},
@@ -849,7 +849,7 @@ namespace IF97
         {2, 2, -3.41931835910405e+01},
         };
 
-        static RegionResidualElement Region3Fdata[] = {
+        static const RegionResidualElement Region3Fdata[] = {
         {0, -3, -2.51756547792325e-08},
         {0, -2, 6.01307193668763e-06},
         {0, -1, -1.00615977450049e-03},
@@ -894,7 +894,7 @@ namespace IF97
         {32, -12, -4.86632965074563e-10},
         };
 
-        static RegionResidualElement Region3Gdata[] = {
+        static const RegionResidualElement Region3Gdata[] = {
         {-12, 7, 4.12209020652996e-05},
         {-12, 12, -1.14987238280587e+06},
         {-12, 14, 9.48180885032080e+09},
@@ -935,7 +935,7 @@ namespace IF97
         {10, 6, -8.37513931798655e+15},
         };
 
-        static RegionResidualElement Region3Hdata[] = {
+        static const RegionResidualElement Region3Hdata[] = {
         {-12, 8, 5.61379678887577e-02},
         {-12, 12, 7.74135421587083e+09},
         {-10, 4, 1.11482975877938e-09},
@@ -967,7 +967,7 @@ namespace IF97
         {1, 2, 2.49971752957491e+01},
         };
 
-        static RegionResidualElement Region3Idata[] = {
+        static const RegionResidualElement Region3Idata[] = {
         {0, 0, 1.06905684359136},
         {0, 1, -1.48620857922333},
         {0, 10, 2.59862256980408e+14},
@@ -1012,7 +1012,7 @@ namespace IF97
         {36, -8, 6.58110546759474e+01},
         };
 
-        static RegionResidualElement Region3Jdata[] = {
+        static const RegionResidualElement Region3Jdata[] = {
         {0, -1, -1.11371317395540e-04},
         {0, 0, 1.00342892423685},
         {0, 1, 5.30615581928979},
@@ -1044,7 +1044,7 @@ namespace IF97
         {28, -5, 2.70929002720228},
         };
 
-        static RegionResidualElement Region3Kdata[] = {
+        static const RegionResidualElement Region3Kdata[] = {
         {-2, 10, -4.01215699576099e+08},
         {-2, 12, 4.84501478318406e+10},
         {-1, -5, 3.94721471363678e-15},
@@ -1081,7 +1081,7 @@ namespace IF97
         {12, -10, 5.41449377329581e-09},
         };
 
-        static RegionResidualElement Region3Ldata[] = {
+        static const RegionResidualElement Region3Ldata[] = {
         {-12, 14, 2.60702058647537e+09},
         {-12, 16, -1.88277213604704e+14},
         {-12, 18, 5.54923870289667e+18},
@@ -1127,7 +1127,7 @@ namespace IF97
         {14, 10, 6.42794932373694e+32},
         };
 
-        static RegionResidualElement Region3Mdata[] = {
+        static const RegionResidualElement Region3Mdata[] = {
         {0, 0, 8.11384363481847e-01},
         {3, 0, -5.68199310990094e+03},
         {8, 0, -1.78657198172556e+10},
@@ -1170,7 +1170,7 @@ namespace IF97
         {24, 36, 4.79817895699239e+64},
         };
 
-        static RegionResidualElement Region3Ndata[] = {
+        static const RegionResidualElement Region3Ndata[] = {
         {0, -12, 2.80967799943151e-39},
         {3, -12, 6.14869006573609e-31},
         {4, -12, 5.82238667048942e-28},
@@ -1212,7 +1212,7 @@ namespace IF97
         {1, 6, 4.00849240129329e+14},
         };
 
-        static RegionResidualElement Region3Odata[] = {
+        static const RegionResidualElement Region3Odata[] = {
         {0, -12, 1.28746023979718e-35},
         {0, -4, -7.35234770382342e-12},
         {0, -1, 2.89078692149150e-03},
@@ -1239,7 +1239,7 @@ namespace IF97
         {24, -12, -5.16720236575302e-11},
         };
 
-        static RegionResidualElement Region3Pdata[] = {
+        static const RegionResidualElement Region3Pdata[] = {
         {0, -1, -9.82825342010366e-05},
         {0, 0, 1.05145700850612},
         {0, 1, 1.16033094095084e+02},
@@ -1269,7 +1269,7 @@ namespace IF97
         {36, -12, -3.45042834640005e-04},
         };
 
-        static RegionResidualElement Region3Qdata[] = {
+        static const RegionResidualElement Region3Qdata[] = {
         {-12, 10, -8.20433843259950e+04},
         {-12, 12, 4.73271518461586e+10},
         {-10, 6, -8.05950021005413e-02},
@@ -1296,7 +1296,7 @@ namespace IF97
         {1, 3, -3.19114969006533e+03},
         };
 
-        static RegionResidualElement Region3Rdata[] = {
+        static const RegionResidualElement Region3Rdata[] = {
         {-8, 6, 1.44165955660863e-03},
         {-8, 14, -7.01438599628258e+12},
         {-3, -3, -8.30946716459219e-17},
@@ -1326,7 +1326,7 @@ namespace IF97
         {14, -12, 3.77501980025469e-09},
         };
 
-        static RegionResidualElement Region3Sdata[] = {
+        static const RegionResidualElement Region3Sdata[] = {
         {-12, 20, -5.32466612140254e+22},
         {-12, 24, 1.00415480000824e+31},
         {-10, 22, -1.91540001821367e+29},
@@ -1358,7 +1358,7 @@ namespace IF97
         {14, 24, 9.50898170425042e+53},
         };
 
-        static RegionResidualElement Region3Tdata[] = {
+        static const RegionResidualElement Region3Tdata[] = {
         {0, 0, 1.55287249586268},
         {0, 1, 6.64235115009031},
         {0, 4, -2.89366236727210e+03},
@@ -1394,7 +1394,7 @@ namespace IF97
         {36, 36, -2.81396013562745e+76},
         };
 
-        static RegionResidualElement Region3Udata[] = {
+        static const RegionResidualElement Region3Udata[] = {
         {-12, 14, 1.22088349258355e+17},
         {-10, 10, 1.04216468608488e+09},
         {-10, 12, -8.82666931564652e+15},
@@ -1435,7 +1435,7 @@ namespace IF97
         {14, 6, -7.81754507698846e+27},
         };
 
-        static RegionResidualElement Region3Vdata[] = {
+        static const RegionResidualElement Region3Vdata[] = {
         {-10, -8, -4.15652812061591e-55},
         {-8, -12, 1.77441742924043e-61},
         {-6, -12, -3.57078668203377e-55},
@@ -1477,7 +1477,7 @@ namespace IF97
         {14, 1, 2.47761392329058e+26},
         };
 
-        static RegionResidualElement Region3Wdata[] = {
+        static const RegionResidualElement Region3Wdata[] = {
         {-12, 8, -5.86219133817016e-08},
         {-12, 14, -8.94460355005526e+10},
         {-10, -1, 5.31168037519774e-31},
@@ -1515,7 +1515,7 @@ namespace IF97
         {10, -8, 8.58133791857099e-06},
         };
 
-        static RegionResidualElement Region3Xdata[] = {
+        static const RegionResidualElement Region3Xdata[] = {
         {-8, 14, 3.77373741298151e+18},
         {-6, 10, -5.07100883722913e+12},
         {-5, 10, -1.03363225598860e+15},
@@ -1554,7 +1554,7 @@ namespace IF97
         {14, -6, 4.30867658061468e+06},
         };
 
-        static RegionResidualElement Region3Ydata[] = {
+        static const RegionResidualElement Region3Ydata[] = {
         {0, -3, -5.25597995024633e-10},
         {0, 1, 5.83441305228407e+03},
         {0, 5, -1.34778968457925e+16},
@@ -1577,7 +1577,7 @@ namespace IF97
         {12, -8, -8.28198594040141e+04},
         };
 
-        static RegionResidualElement Region3Zdata[] = {
+        static const RegionResidualElement Region3Zdata[] = {
         {-8, 3, 2.4400789229065e-11},
         {-6, 6, -4.6305743033124e+06},
         {-5, 6, 7.2880327477771e+09},
@@ -1612,7 +1612,7 @@ namespace IF97
             std::vector<double> n;
         public:
     
-            Region3BackwardsRegion(RegionResidualElement data[], std::size_t N){
+            Region3BackwardsRegion(const RegionResidualElement data[], std::size_t N){
                 this->N = N;
                 for (std::size_t i = 0; i < N; ++i){
                     n.push_back(data[i].n);
@@ -1620,7 +1620,7 @@ namespace IF97
                     J.push_back(data[i].J);
                 }
             }
-            virtual double v(double T, double p){
+            virtual double v(double T, double p) const{
                 const double pi = p/p_star, theta = T/T_star;
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -1633,7 +1633,7 @@ namespace IF97
             // for v(T,p) in Region 3. However, it can be used for the functions T(p,h) [Y=T, X=h] or
             // T(p,s) [Y=T, X=s] in Regions 1, 2, or 3.  Additionally, it can be called for
             // v(p,h) [Y=v, X=h] or v(p,s) [Y=v, X=s] in Region 3
-            virtual double Y(double p, double X){
+            virtual double Y(double p, double X) const{
                 const double pi = p/p_star, eta = X/X_star;
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -1727,7 +1727,7 @@ namespace IF97
             Region3n() : Region3BackwardsRegion(Region3Ndata, 39){
                 v_star = 0.0031; p_star = 23*p_fact; T_star = 650; a = 0.976; b = 0.997;
             };
-            double v(double T, double p){
+            double v(double T, double p) const{
                 const double pi = p/p_star, theta = T/T_star;
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -1810,32 +1810,32 @@ namespace IF97
         };
 
         inline double Region3_v_TP(char region, double T, double p){
-            static Region3a R3a;
-            static Region3b R3b;
-            static Region3c R3c;
-            static Region3d R3d;
-            static Region3e R3e;
-            static Region3f R3f;
-            static Region3g R3g;
-            static Region3h R3h;
-            static Region3i R3i;
-            static Region3j R3j;
-            static Region3k R3k;
-            static Region3l R3l;
-            static Region3m R3m;
-            static Region3n R3n;
-            static Region3o R3o;
-            static Region3p R3p;
-            static Region3q R3q;
-            static Region3r R3r;
-            static Region3s R3s;
-            static Region3t R3t;
-            static Region3u R3u;
-            static Region3v R3v;
-            static Region3w R3w;
-            static Region3x R3x;
-            static Region3y R3y;
-            static Region3z R3z;
+            static const Region3a R3a;
+            static const Region3b R3b;
+            static const Region3c R3c;
+            static const Region3d R3d;
+            static const Region3e R3e;
+            static const Region3f R3f;
+            static const Region3g R3g;
+            static const Region3h R3h;
+            static const Region3i R3i;
+            static const Region3j R3j;
+            static const Region3k R3k;
+            static const Region3l R3l;
+            static const Region3m R3m;
+            static const Region3n R3n;
+            static const Region3o R3o;
+            static const Region3p R3p;
+            static const Region3q R3q;
+            static const Region3r R3r;
+            static const Region3s R3s;
+            static const Region3t R3t;
+            static const Region3u R3u;
+            static const Region3v R3v;
+            static const Region3w R3w;
+            static const Region3x R3x;
+            static const Region3y R3y;
+            static const Region3z R3z;
 
             switch(region){
                 case 'A': return R3a.v(T, p);
@@ -1874,7 +1874,7 @@ namespace IF97
             double n;
         };
 
-        static DivisionElement ABdata[] = {
+        static const DivisionElement ABdata[] = {
         {0, 0.154793642129415e4},
         {1, -0.187661219490113e3},
         {2, 0.213144632222113e2},
@@ -1882,14 +1882,14 @@ namespace IF97
         {-2, 0.918419702359447e3},
         };
 
-        static DivisionElement CDdata[] = {
+        static const DivisionElement CDdata[] = {
         {0, 0.585276966696349e3},
         {1, 0.278233532206915e1},
         {2, -0.127283549295878e-1},
         {3, 0.159090746562729e-3}
         };
 
-        static DivisionElement GHdata[] = {
+        static const DivisionElement GHdata[] = {
         {0, -0.249284240900418e5},
         {1, 0.428143584791546e4},
         {2, -0.269029173140130e3},
@@ -1897,7 +1897,7 @@ namespace IF97
         {4, -0.787105249910383e-1},
         };
 
-        static DivisionElement IJdata[] = {
+        static const DivisionElement IJdata[] = {
         {0, 0.584814781649163e3},
         {1, -0.616179320924617},
         {2, 0.260763050899562},
@@ -1905,7 +1905,7 @@ namespace IF97
         {4, 0.515308185433082e-4},
         };
 
-        static DivisionElement JKdata[] = {
+        static const DivisionElement JKdata[] = {
         {0, 0.617229772068439e3},
         {1, -0.770600270141675e1},
         {2, 0.697072596851896},
@@ -1913,14 +1913,14 @@ namespace IF97
         {4, 0.137897492684194e-3},
         };
 
-        static DivisionElement MNdata[] = {
+        static const DivisionElement MNdata[] = {
         {0, 0.535339483742384e3},
         {1, 0.761978122720128e1},
         {2, -0.158365725441648},
         {3, 0.192871054508108e-2},
         };
 
-        static DivisionElement OPdata[] = {
+        static const DivisionElement OPdata[] = {
         {0, 0.969461372400213e3},
         {1, -0.332500170441278e3},
         {2, 0.642859598466067e2},
@@ -1928,28 +1928,28 @@ namespace IF97
         {-2, -0.152313732937084e4},
         };
 
-        static DivisionElement QUdata[] = {
+        static const DivisionElement QUdata[] = {
         {0, 0.565603648239126e3},
         {1, 0.529062258221222e1},
         {2, -0.102020639611016},
         {3, 0.122240301070145e-2},
         };
 
-        static DivisionElement RXdata[] = {
+        static const DivisionElement RXdata[] = {
         {0, 0.584561202520006e3},
         {1, -0.102961025163669e1},
         {2, 0.243293362700452},
         {3, -0.294905044740799e-2},
         };
 
-        static DivisionElement UVdata[] = {
+        static const DivisionElement UVdata[] = {
         {0, 0.528199646263062e3},
         {1, 0.890579602135307e1},
         {2, -0.222814134903755},
         {3, 0.286791682263697e-2},
         };
 
-        static DivisionElement WXdata[] = {
+        static const DivisionElement WXdata[] = {
         {0, 0.728052609145380e1},
         {1, 0.973505869861952e2},
         {2, 0.147370491183191e2},
@@ -1964,14 +1964,14 @@ namespace IF97
             std::vector<double> n;
         public:
     
-            Region3RegionDivision(DivisionElement data[], std::size_t N){
+            Region3RegionDivision(const DivisionElement data[], std::size_t N){
                 this->N = N;
                 for (std::size_t i = 0; i < N; ++i){
                     n.push_back(data[i].n);
                     I.push_back(data[i].I);
                 }
             }
-            virtual double T_p(double p){
+            virtual double T_p(double p) const{
                 const double pi = p/(1.0*p_fact);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -1983,7 +1983,7 @@ namespace IF97
 
         class ABline : public Region3RegionDivision{ 
             public: ABline() : Region3RegionDivision(ABdata, 5){ }; 
-            virtual double T_p(double p){
+            virtual double T_p(double p) const{
                 const double pi = p/(1.0*p_fact), ln_pi = log(pi);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -1995,7 +1995,7 @@ namespace IF97
         class CDline : public Region3RegionDivision{ public: CDline() : Region3RegionDivision(CDdata, 4){ }; };
         class EFline { 
         public:
-            double T_p(double p){ 
+            double T_p(double p) const{ 
                 const double pi = p/(1.0*p_fact); 
                 return 3.727888004*(pi - 22.064) + 647.096; 
             }; 
@@ -2007,7 +2007,7 @@ namespace IF97
         class OPline : public Region3RegionDivision{ 
         public: 
             OPline() : Region3RegionDivision(OPdata, 5){ }; 
-            virtual double T_p(double p){
+            virtual double T_p(double p) const{
                 const double pi = p/(1.0*p_fact), ln_pi = log(pi);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -2021,7 +2021,7 @@ namespace IF97
         class UVline : public Region3RegionDivision{ public: UVline() : Region3RegionDivision(UVdata, 4){ }; };
         class WXline : public Region3RegionDivision{ 
             public: WXline() : Region3RegionDivision(WXdata, 5){ }; 
-            virtual double T_p(double p){
+            virtual double T_p(double p) const{
                 const double pi = p/(1.0*p_fact), ln_pi = log(pi);
                 double summer = 0;
                 for (std::size_t i = 0; i < N; ++i){
@@ -2034,18 +2034,18 @@ namespace IF97
         enum DividingLineEnum {LINE_AB, LINE_CD, LINE_EF, LINE_GH, LINE_IJ, LINE_JK, LINE_MN, LINE_OP, LINE_QU, LINE_RX, LINE_UV, LINE_WX};
 
         inline double DividingLine(DividingLineEnum region, double p){
-            static ABline AB;
-            static CDline CD;
-            static EFline EF;
-            static GHline GH;
-            static IJline IJ;
-            static JKline JK;
-            static MNline MN;
-            static OPline OP;
-            static QUline QU;
-            static RXline RX;
-            static UVline UV;
-            static WXline WX;
+            static const ABline AB;
+            static const CDline CD;
+            static const EFline EF;
+            static const GHline GH;
+            static const IJline IJ;
+            static const JKline JK;
+            static const MNline MN;
+            static const OPline OP;
+            static const QUline QU;
+            static const RXline RX;
+            static const UVline UV;
+            static const WXline WX;
 
             switch(region){
                 case LINE_AB: return AB.T_p(p);
@@ -2183,7 +2183,7 @@ namespace IF97
     /********************************************************************************/
     /**************************       Region #3       *******************************/
     /********************************************************************************/
-    static RegionResidualElement Region3residdata[] = {
+    static const RegionResidualElement Region3residdata[] = {
     {0, 0,    0.10658070028513e1},
     {0, 0,   -0.15732845290239e2},
     {0, 1,    0.20944396974307e2},
@@ -2226,7 +2226,7 @@ namespace IF97
     {11, 26, -0.44923899061815e-4},
     };
 
-    static std::vector<RegionResidualElement> reg3rdata(Region3residdata, Region3residdata + sizeof(Region3residdata)/sizeof(RegionResidualElement));
+    static const std::vector<RegionResidualElement> reg3rdata(Region3residdata, Region3residdata + sizeof(Region3residdata)/sizeof(RegionResidualElement));
 
     class Region3
     {
@@ -2418,7 +2418,7 @@ namespace IF97
         //    The equation is rearranged to solve for rho and turned
         //    into functions f(T,P,rho0) and f'(T,P,rho0) for the
         //    Newton-Raphson technique.  Functions for
-        //    dphi/ddelta and dÂ²phi/ddeltaÂ² were also required.  These
+        //    dphi/ddelta and d²phi/ddelta² were also required.  These
         //    additional Taylor functions are defined above.
         //
         double f(double T, double p, double rho0) const{
@@ -2550,7 +2550,7 @@ namespace IF97
             return subregion;  // in case no adjustment needs to be made
         };  // SatSubRegionAdjust
 
-        double output(IF97parameters key, double T, double p, IF97SatState State){
+        double output(IF97parameters key, double T, double p, IF97SatState State) const{
             double rho;
             char region = Region3Backwards::BackwardsRegion3RegionDetermination(T, p);
 
@@ -2593,7 +2593,7 @@ namespace IF97
         int i;
         double n;
     };
-    static SaturationElement sat[] = {
+    static const SaturationElement sat[] = {
         {1,  0.11670521452767e4},
         {2, -0.72421316703206e6},
         {3, -0.17073846940092e2},
@@ -2605,7 +2605,7 @@ namespace IF97
         {9, -0.23855557567849},
         {10, 0.65017534844798e3},
     };
-    static std::vector<SaturationElement> reg4data(sat, sat + sizeof(sat)/sizeof(SaturationElement));
+    static const std::vector<SaturationElement> reg4data(sat, sat + sizeof(sat)/sizeof(SaturationElement));
     /// This "region" is the saturation curve
     class Region4
     {
@@ -2651,10 +2651,10 @@ namespace IF97
             const double G = n[2]*beta2 + n[5]*beta + n[8];
             */
 
-            static double EFG[3];
-            static double &E = EFG[0];
-            static double &F = EFG[1];
-            static double &G = EFG[2];
+            double EFG[3];
+            double &E = EFG[0];
+            double &F = EFG[1];
+            double &G = EFG[2];
 
             // Each cycle can be vectorized
             EFG[0] = 1.0; EFG[1] = n[1]; EFG[2] = n[2];
@@ -2702,7 +2702,7 @@ namespace IF97
     /********************************************************************************/
     /**************************       Region #5       *******************************/
     /********************************************************************************/
-    static RegionResidualElement Region5residdata[] = {
+    static const RegionResidualElement Region5residdata[] = {
         {1, 1,  0.15736404855259e-2},
         {1, 2,  0.90153761673944e-3},
         {1, 3, -0.50270077677648e-2},
@@ -2710,7 +2710,7 @@ namespace IF97
         {2, 9, -0.41163275453471e-5},
         {3, 7,  0.37919454822955e-7}
     };
-    static RegionIdealElement Region5idealdata[] = {
+    static const RegionIdealElement Region5idealdata[] = {
         { 0, -0.13179983674201e2},
         { 1,  0.68540841634434e1},
         {-3, -0.24805148933466e-1},
@@ -2718,8 +2718,8 @@ namespace IF97
         {-1, -0.31161318213925e1},
         { 2, -0.32961626538917}
     };
-    static std::vector<RegionResidualElement> reg5rdata(Region5residdata, Region5residdata + sizeof(Region5residdata)/sizeof(RegionResidualElement));
-    static std::vector<RegionIdealElement> reg50data(Region5idealdata, Region5idealdata + sizeof(Region5idealdata)/sizeof(RegionIdealElement));
+    static const std::vector<RegionResidualElement> reg5rdata(Region5residdata, Region5residdata + sizeof(Region5residdata)/sizeof(RegionResidualElement));
+    static const std::vector<RegionIdealElement> reg50data(Region5idealdata, Region5idealdata + sizeof(Region5idealdata)/sizeof(RegionIdealElement));
 
     class Region5 : public BaseRegion
     {
@@ -2755,7 +2755,7 @@ namespace IF97
             double n; ///< The leading numerical constant
         };
 
-        static BackwardRegionResidualElement Coeff1H[] = {
+        static const BackwardRegionResidualElement Coeff1H[] = {
             {0,  0, -0.23872489924521E+03},
             {0,  1,  0.40421188637945E+03},
             {0,  2,  0.11349746881718E+03},
@@ -2778,7 +2778,7 @@ namespace IF97
             {6, 32, -0.15020185953503E-16}
         };
 
-        static BackwardRegionResidualElement Coeff1S[] = {
+        static const BackwardRegionResidualElement Coeff1S[] = {
             {0,  0,  0.17478268058307E+03},
             {0,  1,  0.34806930892873E+02},
             {0,  2,  0.65292584978455E+01},
@@ -2801,7 +2801,7 @@ namespace IF97
             {4, 32, -0.30732199903668E-30}
         };
 
-        static BackwardRegionResidualElement Coeff1HS[] = {
+        static const BackwardRegionResidualElement Coeff1HS[] = {
             {0,  0, -0.691997014660582E0},
             {0,  1, -0.183612548787560E2},
             {0,  2, -0.928332409297335E1},
@@ -2823,7 +2823,7 @@ namespace IF97
             {5,  0, -0.436407041874559E3}
         };
 
-        static BackwardRegionResidualElement Coeff2aH[] = {
+        static const BackwardRegionResidualElement Coeff2aH[] = {
             {0,  0,  0.10898952318288E+04},
             {0,  1,  0.84951654495535E+03},
             {0,  2, -0.10781748091826E+03},
@@ -2860,7 +2860,7 @@ namespace IF97
             {7, 28, -0.62459855192507E+02}
         };
 
-        static BackwardRegionResidualElement Coeff2bH[] = {
+        static const BackwardRegionResidualElement Coeff2bH[] = {
             {0,  0,  0.14895041079516E+04},
             {0,  1,  0.74307798314034E+03},
             {0,  2, -0.97708318797837E+02},
@@ -2901,7 +2901,7 @@ namespace IF97
             {9, 40,  0.86934156344163E-14}
         };
 
-        static BackwardRegionResidualElement Coeff2cH[] = {
+        static const BackwardRegionResidualElement Coeff2cH[] = {
             {-7,  0, -0.32368398555242E+13},
             {-7,  4,  0.73263350902181E+13},
             {-6,  0,  0.35825089945447E+12},
@@ -2927,7 +2927,7 @@ namespace IF97
             { 6, 22,  0.12918582991878E-02}
         };
 
-        static BackwardRegionResidualElement Coeff2aS[] = {
+        static const BackwardRegionResidualElement Coeff2aS[] = {
             {-1.50, -24, -0.39235983861984E+6},
             {-1.50, -23,  0.51526573827270E+6},
             {-1.50, -19,  0.40482443161048E+5},
@@ -2976,7 +2976,7 @@ namespace IF97
             { 1.50,  18, -0.82198102652018E-5}
         };
 
-        static BackwardRegionResidualElement Coeff2bS[] = {
+        static const BackwardRegionResidualElement Coeff2bS[] = {
             {-6,  0,  0.31687665083497E+6},
             {-6, 11,  0.20864175881858E+2},
             {-5,  0, -0.39859399803599E+6},
@@ -3023,7 +3023,7 @@ namespace IF97
             { 5,  2,  0.16409393674725E-8}
         };
 
-        static BackwardRegionResidualElement Coeff2cS[] = {
+        static const BackwardRegionResidualElement Coeff2cS[] = {
             {-2, 0,  0.90968501005365E+03},
             {-2, 1,  0.24045667088420E+04},
             {-1, 0, -0.59162326387130E+03},
@@ -3056,7 +3056,7 @@ namespace IF97
             { 7, 5, -0.16429828281347E-09}
         };
 
-        static BackwardRegionResidualElement Coeff2aHS[] = {
+        static const BackwardRegionResidualElement Coeff2aHS[] = {
             {0,  1, -0.182575361923032E-1},
             {0,  3, -0.125229548799536E+0},
             {0,  6,  0.592290437320145E+0},
@@ -3088,7 +3088,7 @@ namespace IF97
             {7,  1,  0.400645798472063E-1}
         };
 
-        static BackwardRegionResidualElement Coeff2bHS[] = {
+        static const BackwardRegionResidualElement Coeff2bHS[] = {
             { 0,  0,  0.801496989929495E-01},
             { 0,  1, -0.543862807146111E+00},
             { 0,  2,  0.337455597421283E+00},
@@ -3124,7 +3124,7 @@ namespace IF97
             {14, 16, -0.123651009018773E+15}
         };
 
-        static BackwardRegionResidualElement Coeff2cHS[] = {
+        static const BackwardRegionResidualElement Coeff2cHS[] = {
             { 0,  0,  0.112225607199012E+00},
             { 0,  1, -0.339005953606712E+01},
             { 0,  2, -0.320503911730094E+02},
@@ -3158,7 +3158,7 @@ namespace IF97
             {16, 10, -0.111754907323424E+16}
         };
 
-        static BackwardRegionResidualElement Coeff3aH[] = {
+        static const BackwardRegionResidualElement Coeff3aH[] = {
             {-12,  0, -0.133645667811215E-6},
             {-12,  1,  0.455912656802978E-5},
             {-12,  2, -0.146294640700979E-4},
@@ -3192,7 +3192,7 @@ namespace IF97
             { 12,  5, -0.133027883575669E-1}
         };
 
-        static BackwardRegionResidualElement Coeff3bH[] = {
+        static const BackwardRegionResidualElement Coeff3bH[] = {
             {-12,  0,  0.323254573644920E-4},
             {-12,  1, -0.127575556587181E-3},
             {-10,  0, -0.475851877356068E-3},
@@ -3228,7 +3228,7 @@ namespace IF97
             {  8,  1,  0.676682064330275E-2}
         };
 
-        static BackwardRegionResidualElement Coeff3aS[] = {
+        static const BackwardRegionResidualElement Coeff3aS[] = {
             {-12.00, 28,  0.150042008263875E+10},
             {-12.00, 32, -0.159397258480424E+12},
             {-10.00,  4,  0.502181140217975E-03},
@@ -3264,7 +3264,7 @@ namespace IF97
             { 10.00,  2,  0.123220024851555E-02}
         };
 
-        static BackwardRegionResidualElement Coeff3bS[] = {
+        static const BackwardRegionResidualElement Coeff3bS[] = {
             {-12,  1,  0.527111701601660E+00},
             {-12,  3, -0.401317830052742E+02},
             {-12,  4,  0.153020073134484E+03},
@@ -3295,7 +3295,7 @@ namespace IF97
             { 14,  2, -0.215095749182309E-04}
         };
 
-        static BackwardRegionResidualElement Coeff3aHS[] = {
+        static const BackwardRegionResidualElement Coeff3aHS[] = {
             { 0,  0,  0.770889828326934E01},
             { 0,  1, -0.260835009128688E02},
             { 0,  5,  0.267416218930389E03},
@@ -3331,7 +3331,7 @@ namespace IF97
             {32, 28,  0.377121605943324E41}
         };
 
-        static BackwardRegionResidualElement Coeff3bHS[] = {
+        static const BackwardRegionResidualElement Coeff3bHS[] = {
             {-12,  2,  0.125244360717979E-12},
             {-12, 10, -0.126599322553713E-01},
             {-12, 12,  0.506878030140626E+01},
@@ -3369,7 +3369,7 @@ namespace IF97
             { 14,  7,  0.568795808129714E+10}
         };
 
-        static BackwardRegionResidualElement Coeffb14HS[] = {
+        static const BackwardRegionResidualElement Coeffb14HS[] = {
             { 0, 14,  0.332171191705237E+0},
             { 0, 36,  0.611217706323496E-3},
             { 1,  3, -0.882092478906822E+1},
@@ -3399,7 +3399,7 @@ namespace IF97
             {32,  8,  0.655444787064505E+2}
         };
 
-        static BackwardRegionResidualElement Coeffb3a4HS[] = {
+        static const BackwardRegionResidualElement Coeffb3a4HS[] = {
             { 0,  1,  0.822673364673336E+0},
             { 0,  4,  0.181977213534479E+0},
             { 0, 10, -0.112000260313624E-1},
@@ -3421,7 +3421,7 @@ namespace IF97
             {32,  6,  0.631052532240980E+0}
         };
 
-        static BackwardRegionResidualElement Coeffb2abHS[] = {
+        static const BackwardRegionResidualElement Coeffb2abHS[] = {
             { 1,  8, -0.524581170928788E03},
             { 1, 24, -0.926947218142218E07},
             { 2,  4, -0.237385107491666E03},
@@ -3454,7 +3454,7 @@ namespace IF97
             {36, 28, -0.710971318427851E39}
         };
 
-        static BackwardRegionResidualElement Coeffb2c3bHS[] = {
+        static const BackwardRegionResidualElement Coeffb2c3bHS[] = {
             { 0,  0,  0.104351280732769E01},
             { 0,  3, -0.227807912708513E01},
             { 0,  4,  0.180535256723202E01},
@@ -3473,7 +3473,7 @@ namespace IF97
             {36, 20, -0.116994334851995E41}
         };
 
-        static BackwardRegionResidualElement Coeffb13HS[] = {
+        static const BackwardRegionResidualElement Coeffb13HS[] = {
             { 0,   0,  0.913965547600543E+00},
             { 1,  -2, -0.430944856041991E-04},
             { 1,   2,  0.603235694765419E+02},
@@ -3482,7 +3482,7 @@ namespace IF97
             { 6,  -3, -0.690815545851641E+02}
         };
 
-        static BackwardRegionResidualElement CoeffTb23HS[] = {
+        static const BackwardRegionResidualElement CoeffTb23HS[] = {
             {-12,  10,  0.629096260829810E-03},
             {-10,   8, -0.823453502583165E-03},
             { -8,   3,  0.515446951519474E-07},
@@ -3510,7 +3510,7 @@ namespace IF97
             { 14,  1,  0.783237062349385E+07}
         };
 
-        static BackwardRegionResidualElement CoeffT4HS[] = {
+        static const BackwardRegionResidualElement CoeffT4HS[] = {
             { 0,  0,  0.179882673606601E+00},
             { 0,  3, -0.267507455199603E+00},
             { 0, 12,  0.116276722612600E+01},
@@ -3558,7 +3558,7 @@ namespace IF97
             std::vector<double> n;
         public:
     
-            BackwardsRegion(BackwardRegionResidualElement data[], std::size_t N){
+            BackwardsRegion(const BackwardRegionResidualElement data[], std::size_t N){
                 this->N = N;
                 for (std::size_t i = 0; i < N; ++i){
                     n.push_back(data[i].n);
@@ -3778,7 +3778,7 @@ namespace IF97
             };
         };
 
-        static double Region2b2cdata[] = {
+        static const double Region2b2cdata[] = {
 	     0.90584278514723E+3,
 	    -0.67955786399241E+0,
 	     0.12809002730136E-3,
@@ -3786,7 +3786,7 @@ namespace IF97
 	     0.45257578905948E+1
         };
 
-        static const std::vector<double> region2b2c_n(Region2b2cdata, Region2b2cdata + sizeof(Region2b2cdata)/sizeof(double));
+        static const const std::vector<double> region2b2c_n(Region2b2cdata, Region2b2cdata + sizeof(Region2b2cdata)/sizeof(double));
 
         inline double P2b2c_h(double h){
             // Only called for Region determination and debugging.  No range checking.
@@ -3801,14 +3801,14 @@ namespace IF97
             return ETA*h_star;
         }
 
-        static double Region3abdata[] = {
+        static const double Region3abdata[] = {
 	     0.201464004206875E+4,
 	     0.374696550136983E+1,
 	    -0.219921901054187E-1,
 	     0.875131686009950E-4,
         };
 
-        static const std::vector<double> region3ab_n(Region3abdata, Region3abdata + sizeof(Region3abdata)/sizeof(double));
+        static const const std::vector<double> region3ab_n(Region3abdata, Region3abdata + sizeof(Region3abdata)/sizeof(double));
 
         inline double H3ab_p(double p){
             // Only called for Region determination and debugging.  No range checking.
@@ -3817,14 +3817,14 @@ namespace IF97
             return ETA*h_star;
         };
 
-        static double Region2abdata[] = {
+        static const double Region2abdata[] = {
 	    -0.349898083432139E+4,
 	     0.257560716905876E+4,
 	    -0.421073558227969E+3,
 	     0.276349063799944E+2,
         };
 
-        static const std::vector<double> region2ab_n(Region2abdata, Region2abdata + sizeof(Region2abdata)/sizeof(double));
+        static const const std::vector<double> region2ab_n(Region2abdata, Region2abdata + sizeof(Region2abdata)/sizeof(double));
 
         inline double H2ab_s(double s){
             // Only called for Region determination and debugging.  No range checking.
@@ -3835,16 +3835,16 @@ namespace IF97
 
         inline double H13_s(double s){
             // Only called for Region determination and debugging.  No range checking.
-            static Boundary13HS b13; 
+            static const Boundary13HS b13; 
             return b13.h_s(s);
         };
 
         inline double Hsat_s(double s){
             // Only called for Region determination and debugging.  Has range checking.
-            static Boundary14HS b14hs;
-            static Boundary3a4HS b3a4hs;
-            static Boundary2c3b4HS b2c3b4hs;
-            static Boundary2ab4HS b2ab4hs;
+            static const Boundary14HS b14hs;
+            static const Boundary3a4HS b3a4hs;
+            static const Boundary2c3b4HS b2c3b4hs;
+            static const Boundary2ab4HS b2ab4hs;
             if (s < 0)
                 throw std::out_of_range("Entropy out of range");
             else if (s <= SfT23 )
@@ -3870,7 +3870,7 @@ namespace IF97
 
     inline IF97REGIONS RegionDetermination_TP(double T, double p)
     {
-        static Region4 R4;
+        static const Region4 R4;
         // Check overall IF97 boundary limits for Pressure
         if ((p < Pmin) || (p > Pmax)) throw std::out_of_range("Pressure out of range");
 
@@ -3911,11 +3911,11 @@ namespace IF97
     };
 
     inline double RegionOutput(IF97parameters outkey, double T, double p, IF97SatState State){
-        static Region1 R1;
-        static Region2 R2;
-        static Region3 R3;
-        static Region4 R4;
-        static Region5 R5;
+        static const Region1 R1;
+        static const Region2 R2;
+        static const Region3 R3;
+        static const Region4 R4;
+        static const Region5 R5;
 
         IF97REGIONS region = RegionDetermination_TP(T, p);
 
@@ -3948,8 +3948,8 @@ namespace IF97
 
     inline IF97REGIONS RegionDetermination_pX(double p, double X, IF97parameters inkey){
         // Setup needed Region Equations for region determination
-        static Region1 R1;
-        static Region2 R2;
+        static const Region1 R1;
+        static const Region2 R2;
         // Saturation Region Limit Variables (initialized outside of the if statements below)
         double Tsat = 0;
         double Xliq = 0;
@@ -4026,20 +4026,20 @@ namespace IF97
         // Note that this routine returns only temperature (IF97_T).  All other values should be
         // calculated from this temperature and the known pressure using forward equations.
         // Setup Backward Regions for output
-        static Backwards::Region1H B1H;
-        static Backwards::Region1S B1S;
-        static Backwards::Region2aH B2aH;
-        static Backwards::Region2bH B2bH;
-        static Backwards::Region2cH B2cH;
-        static Backwards::Region2aS B2aS;
-        static Backwards::Region2bS B2bS;
-        static Backwards::Region2cS B2cS;
-        static Backwards::Region3aH B3aH;
-        static Backwards::Region3bH B3bH;
-        static Backwards::Region3aS B3aS;
-        static Backwards::Region3bS B3bS;
+        static const Backwards::Region1H B1H;
+        static const Backwards::Region1S B1S;
+        static const Backwards::Region2aH B2aH;
+        static const Backwards::Region2bH B2bH;
+        static const Backwards::Region2cH B2cH;
+        static const Backwards::Region2aS B2aS;
+        static const Backwards::Region2bS B2bS;
+        static const Backwards::Region2cS B2cS;
+        static const Backwards::Region3aH B3aH;
+        static const Backwards::Region3bH B3bH;
+        static const Backwards::Region3aS B3aS;
+        static const Backwards::Region3bS B3bS;
 
-        // NOTE: Uncertainty in these reverse functions are Â±25 mK, as documented in
+        // NOTE: Uncertainty in these reverse functions are ±25 mK, as documented in
         //       IAPWS R7-97(2012) and IAPWS SR3-03(2014). This can result in temperatures
         //       that are very slightly (within 25 mK) on the opposite side of the
         //       saturation curve from S/H values that are very near saturation.  Use of these
@@ -4062,7 +4062,7 @@ namespace IF97
                                           // When limiting to Tsat, this will keep
                                           // temperature in Region 1 or Region 2.
         if ((p < Pcrit) && Clip) {        // If below Pcrit (where Tsat is available),
-            double Tsat = Tsat97(p);      //     Only calculate Tsat Â± eps once and 
+            double Tsat = Tsat97(p);      //     Only calculate Tsat ± eps once and 
             tmin = Tsat + eps;            //     set tmin just above and
             tmax = Tsat - eps;            //     tmax just below saturation.
         }
@@ -4152,8 +4152,8 @@ namespace IF97
         //       TODO: the 2014 Supplementary Release for v(p,h) and v(p,s) are 
         //       more direct and may be slightly faster, since only one algebraic 
         //       equation is needed instead of two in Region 3.
-        static Region1 R1;
-        static Region2 R2;
+        static const Region1 R1;
+        static const Region2 R2;
         const double T = RegionOutputBackward( p, X, inkey,true,NONE);  // Get Adjusted value of T
         if (RegionDetermination_pX(p, X, inkey) == REGION_4){      // If in saturation dome
             const double Tsat = Tsat97(p);
@@ -4186,9 +4186,9 @@ namespace IF97
             // There are no reverse functions for other than (p,H) or (p,S)
             throw std::invalid_argument("Reverse state cannot be determined for these inputs.");
 
-        static Region1 R1;
-        static Region2 R2;
-        static Region3 R3;
+        static const Region1 R1;
+        static const Region2 R2;
+        static const Region3 R3;
 
         double Xliq = 0.0, Xvap = 0.0, Yliq = 0.0, Yvap = 0.0;
         double TL = 0.0, TV = 0.0;
@@ -4369,14 +4369,14 @@ namespace IF97
     };
 
 
-    static double HTmaxdata[] = {
+    static const double HTmaxdata[] = {
         1.00645619394616E4,
         1.94706669580164E5,
         -4.67105212810782E5,
         -3.38175262587035E4
     };
 
-    static const std::vector<double> Hmax_n(HTmaxdata, HTmaxdata + sizeof(HTmaxdata)/sizeof(double));
+    static const const std::vector<double> Hmax_n(HTmaxdata, HTmaxdata + sizeof(HTmaxdata)/sizeof(double));
 
     inline double Hmax(double s){
     // This function covers the top and right domain boundaries of constant Pmax and Tmax
@@ -4385,7 +4385,7 @@ namespace IF97
             return RegionOutput( IF97_HMASS,RegionOutputBackward(Pmax,s,IF97_SMASS,false,NONE),Pmax, NONE);
         else { 
         // Determining H(s) along Tmax is difficult because there is no direct p(T,s) formulation.
-        // This linear combination fit h(s)=a*ln(s)+b/s+c/sÂ²+d is not perfect, but it's close
+        // This linear combination fit h(s)=a*ln(s)+b/s+c/s²+d is not perfect, but it's close
         // and can serve as a limit along that Tmax boundary. Coefficients in HTmaxdata above.
         // There is a better way to do this using Newton-Raphson on Tmax = T(p,s), but it is iterative and slow.
             double ETA = Hmax_n[0]*log(sigma) + Hmax_n[1]/sigma + Hmax_n[2]/powi(sigma,2) +Hmax_n[3];
@@ -4405,9 +4405,9 @@ namespace IF97
     };
 
     inline IF97BACKREGIONS RegionDetermination_HS(double h, double s){
-        static Backwards::Boundary13HS b13;
-        static Backwards::Boundary23HS b23hs;
-        static Backwards::Region2cHS R2c;
+        static const Backwards::Boundary13HS b13;
+        static const Backwards::Boundary23HS b23hs;
+        static const Backwards::Region2cHS R2c;
 
         // Check Overall Boundaries
         if ( (s < Smin) || (s > Smax) ) 
@@ -4477,13 +4477,13 @@ namespace IF97
         // Note that this routine returns only temperature (IF97_T).  All other values should be
         // calculated from this temperature and the known pressure using forward equations.
         // Setup Backward Regions for output
-        static Backwards::Region1HS B1HS;
-        static Backwards::Region2aHS B2aHS;
-        static Backwards::Region2bHS B2bHS;
-        static Backwards::Region2cHS B2cHS;
-        static Backwards::Region3aHS B3aHS;
-        static Backwards::Region3bHS B3bHS;
-        static Backwards::Region4HS B4HS;
+        static const Backwards::Region1HS B1HS;
+        static const Backwards::Region2aHS B2aHS;
+        static const Backwards::Region2bHS B2bHS;
+        static const Backwards::Region2cHS B2cHS;
+        static const Backwards::Region3aHS B3aHS;
+        static const Backwards::Region3bHS B3bHS;
+        static const Backwards::Region4HS B4HS;
         //
         double Pval, Tval;
 
@@ -4540,28 +4540,28 @@ namespace IF97
     inline double cvmass_Tp(double T, double p){ return RegionOutput( IF97_CVMASS, T, p, NONE); };
     /// Get the speed of sound [m/s] as a function of T [K] and p [Pa]
     inline double speed_sound_Tp(double T, double p){ return RegionOutput( IF97_W, T, p, NONE); };
-    /// Get the [d(rho)/d(p)]T [kg/mÂ³/Pa] as a function of T [K] and p [Pa]
+    /// Get the [d(rho)/d(p)]T [kg/m³/Pa] as a function of T [K] and p [Pa]
     inline double drhodp_Tp(double T, double p){ return RegionOutput( IF97_DRHODP, T, p, NONE); };
 
     // ******************************************************************************** //
     //                            Transport Properties                                  //
     // ******************************************************************************** //
 
-    /// Get the viscosity [Pa-s] as a function of T [K] and Rho [kg/mÂ³]
+    /// Get the viscosity [Pa-s] as a function of T [K] and Rho [kg/m³]
     /// Used for function verification only
     inline double visc_TRho(double T, double rho) {	
         // Since we have density, we don't need to determine the region for viscosity.
-        static Region1 R1;  // All regions use base region equations for visc(T,rho).
+        static const Region1 R1;  // All regions use base region equations for visc(T,rho).
         return R1.visc( T, rho );
     };
     /// Get the viscosity [Pa-s] as a function of T [K] and p [Pa]
     inline double visc_Tp(double T, double p) { return RegionOutput(IF97_MU, T, p, NONE); };
 
-    /// Get the thermal conductivity [W/m-K] as a function of T [K], p [Pa], and Rho [kg/mÂ³]
+    /// Get the thermal conductivity [W/m-K] as a function of T [K], p [Pa], and Rho [kg/m³]
     /// Used for function verification only
     inline double tcond_TpRho(double T, double p, double rho) {
         // Since we have density, we don't need to determine the region for viscosity.
-        static Region1 R1;  // All regions use base region equations for tcond(T,p,rho).
+        static const Region1 R1;  // All regions use base region equations for tcond(T,p,rho).
         return R1.tcond(T, p, rho);
     };
     /// Get the thermal conductivity [W/m-K] as a function of T [K] and p [Pa]
@@ -4632,17 +4632,17 @@ namespace IF97
     // ******************************************************************************** //
     /// Get the saturation temperature [K] as a function of p [Pa]
     inline double Tsat97(double p){
-        static Region4 R4;
+        static const Region4 R4;
         return R4.T_p(p);
     };
     /// Get the saturation pressure [Pa] as a function of T [K]
     inline double psat97(double T){
-        static Region4 R4;
+        static const Region4 R4;
         return R4.p_T(T);
     };
     /// Get surface tension [N/m] as a function of T [K]
 	inline double sigma97(double T){
-		static Region4 R4;
+		static const Region4 R4;
 		return R4.sigma_t(T);
 	};
     // ******************************************************************************** //
@@ -4779,7 +4779,7 @@ struct Region3BackwardsData{
     char region; double T, p, v;
 };
 
-static Region3BackwardsData _Table5[] = {
+static const Region3BackwardsData _Table5[] = {
     // Table 5 data 
     {'A', 630, 50e6, 1.470853100e-3},
     {'A', 670, 80e6, 1.503831359e-3},
@@ -4839,7 +4839,7 @@ static Region3BackwardsData _Table5[] = {
 
 inline void print_IF97_Table5()
 {
-    static std::vector<Region3BackwardsData> Table5(_Table5, _Table5 + sizeof(_Table5)/sizeof(Region3BackwardsData));
+    static const std::vector<Region3BackwardsData> Table5(_Table5, _Table5 + sizeof(_Table5)/sizeof(Region3BackwardsData));
     for (std::size_t i = 0; i < Table5.size(); ++i){
         double v = IF97::Region3Backwards::Region3_v_TP(Table5[i].region, Table5[i].T, Table5[i].p);
         if (std::abs(v - Table5[i].v) > 1e-12){
@@ -4859,7 +4859,7 @@ struct Table3Data{
     double p, T;
 };
 
-static Table3Data _Table3[] = {
+static const Table3Data _Table3[] = {
     
     // Table 3
     {IF97::Region3Backwards::LINE_AB, 40e6, 6.930341408e2},
@@ -4876,16 +4876,16 @@ static Table3Data _Table3[] = {
     {IF97::Region3Backwards::LINE_UV, 22.3e6, 6.477996121e2},
     {IF97::Region3Backwards::LINE_WX, 22.3e6, 6.482049480e2},
 };
-static std::vector<Table3Data> Table3(_Table3, _Table3 + sizeof(_Table3)/sizeof(Table3Data));
+static const std::vector<Table3Data> Table3(_Table3, _Table3 + sizeof(_Table3)/sizeof(Table3Data));
 
 inline void print_boundary_line_Table3()
 {
     for (std::size_t i = 0; i < Table3.size(); ++i){
         double T = IF97::Region3Backwards::DividingLine(Table3[i].region, Table3[i].p);
         if (std::abs(T - Table3[i].T) > 1e-7){
-            printf("p: %g errT: %g\n", Table3[i].p, T - Table3[i].T);
-        }
-    }
+         printf("p: %g errT: %g\n", Table3[i].p, T - Table3[i].T);
+      }
+   }
 };
 
 #endif
