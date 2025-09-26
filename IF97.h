@@ -651,7 +651,7 @@ namespace IF97
     0.13918839778870e2
     };
 
-    static const const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
+    static const std::vector<double> region23_n(Region23data, Region23data + sizeof(Region23data)/sizeof(double));
 
     inline double Region23_T(double T){
         const double p_star = 1*p_fact, T_star = 1, theta = T/T_star;
@@ -3786,7 +3786,7 @@ namespace IF97
 	     0.45257578905948E+1
         };
 
-        static const const std::vector<double> region2b2c_n(Region2b2cdata, Region2b2cdata + sizeof(Region2b2cdata)/sizeof(double));
+        static const std::vector<double> region2b2c_n(Region2b2cdata, Region2b2cdata + sizeof(Region2b2cdata)/sizeof(double));
 
         inline double P2b2c_h(double h){
             // Only called for Region determination and debugging.  No range checking.
@@ -3808,7 +3808,7 @@ namespace IF97
 	     0.875131686009950E-4,
         };
 
-        static const const std::vector<double> region3ab_n(Region3abdata, Region3abdata + sizeof(Region3abdata)/sizeof(double));
+        static const std::vector<double> region3ab_n(Region3abdata, Region3abdata + sizeof(Region3abdata)/sizeof(double));
 
         inline double H3ab_p(double p){
             // Only called for Region determination and debugging.  No range checking.
@@ -3824,7 +3824,7 @@ namespace IF97
 	     0.276349063799944E+2,
         };
 
-        static const const std::vector<double> region2ab_n(Region2abdata, Region2abdata + sizeof(Region2abdata)/sizeof(double));
+        static const std::vector<double> region2ab_n(Region2abdata, Region2abdata + sizeof(Region2abdata)/sizeof(double));
 
         inline double H2ab_s(double s){
             // Only called for Region determination and debugging.  No range checking.
@@ -4376,7 +4376,7 @@ namespace IF97
         -3.38175262587035E4
     };
 
-    static const const std::vector<double> Hmax_n(HTmaxdata, HTmaxdata + sizeof(HTmaxdata)/sizeof(double));
+    static const std::vector<double> Hmax_n(HTmaxdata, HTmaxdata + sizeof(HTmaxdata)/sizeof(double));
 
     inline double Hmax(double s){
     // This function covers the top and right domain boundaries of constant Pmax and Tmax
