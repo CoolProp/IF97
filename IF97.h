@@ -2624,10 +2624,26 @@ namespace IF97
             if ( ( T < Tmin ) || ( T > Tcrit ) ){
                 throw std::out_of_range("Temperature out of range");
             }
+            // Initial formulas
             const double theta = T/T_star+n[9]/(T/T_star-n[10]);
-            const double AA =      theta*theta + n[1]*theta + n[2];
-            const double BB = n[3]*theta*theta + n[4]*theta + n[5];
-            const double CC = n[6]*theta*theta + n[7]*theta + n[8];
+            // const double AA =      theta*theta + n[1]*theta + n[2];
+            // const double BB = n[3]*theta*theta + n[4]*theta + n[5];
+            // const double CC = n[6]*theta*theta + n[7]*theta + n[8];
+
+            // First optimization
+            double ABC[3];
+            double& AA = ABC[0];
+            double& BB = ABC[1];
+            double& CC = ABC[2];
+            ABC[0] = 1.0; ABC[1] = n[3]; ABC[2] = n[6];
+            for (int j = 1; j < 3; ++j) {
+                for (int i = 0; i < 3; ++i) {
+                    ABC[i] *= theta;
+                }
+                for (int i = 0; i < 3; ++i) {
+                    ABC[i] += n[i * 3 + j];
+                }
+            }
             return p_star*powi(2*CC/(-BB+sqrt(BB*BB-4*AA*CC)), 4);
         };
         double T_p(double p) const{
