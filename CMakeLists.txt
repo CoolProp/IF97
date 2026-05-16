@@ -96,9 +96,12 @@ if(IF97_PRIME_MODULE)
         endforeach()
         list(SORT MATHCAD_SEARCH_PATHS COMPARE NATURAL ORDER DESCENDING)
         # Now make sure the executable is in one of these directories (newest first)
+        # Now make sure the executable is in one of these directories (newest first)
+        unset(MATHCAD_EXE CACHE)
         find_program(MATHCAD_EXE
           NAMES MathcadPrime.exe
-          PATHS ${MATHCAD_SEARCH_PATHS})
+          PATHS ${MATHCAD_SEARCH_PATHS}
+          NO_DEFAULT_PATH)
         # Strip off program name, and set IF97_PRIME_ROOT to parent path
         #get_filename_comopnent(PARENT_DIR "$MATHCAD_EXE" MATHCAD_ROOT)
         if(MATHCAD_EXE)
