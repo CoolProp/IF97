@@ -54,7 +54,7 @@ Make the Build for Mathcad Prime (any version above 3.0)
 
 * Go to the top level IF97 directory and make a build directory (something like \build or \buildPrime):
 
-    ```
+    ```bash
     mkdir buildPrime
     cd buildPrime
     ```
@@ -80,7 +80,7 @@ Make the Build for Legacy Mathcad 15 (Discontinued by PTC)
 
 * Go to the top level IF97 directory and make a build directory (something like \build15):
 
-    ```
+    ```bash
     mkdir build15 
     cd build15
     ```
