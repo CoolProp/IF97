@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.20)
 
 #######################################
 #         PROJECT INFORMATION         #
@@ -16,7 +16,7 @@ function(get_version file_name output)
   #message(STATUS "[${PROJECT_NAME}] - Found version number: ${FIRST_MATCH}")
   string(REGEX MATCH "[0-9]\\.[0-9]\\.[0-9]" SECOND_MATCH "${FIRST_MATCH}")
   if(SECOND_MATCH)
-    message(STATUS "[${PROJECT_NAME}] - Found version number: ${SECOND_MATCH}")
+    message(STATUS "[IF97] - Found version number: ${SECOND_MATCH}")
     set(${output} ${SECOND_MATCH} PARENT_SCOPE)
   else()
     message(FATAL_ERROR "Data were not found for the required build specification.")
@@ -25,11 +25,11 @@ endfunction()
 
 get_version("${CMAKE_CURRENT_LIST_DIR}/IF97.h" VERSION)
 
-
 # Project name
 project("IF97" LANGUAGES CXX VERSION ${VERSION})
 
 message(STATUS "[${PROJECT_NAME}] - Building v${PROJECT_VERSION} of ${PROJECT_NAME}")
+string(REPLACE "." "," IF97_VERSION "${VERSION}")
 
 option(IF97_PRIME_MODULE "Build MathCAD Prime wrapper" OFF)
 option(IF97_MATHCAD15_MODULE "Build MathCAD 15 wrapper" OFF)
@@ -75,17 +75,73 @@ endif()
 #  MATHCAD PRIME MODULE #
 #########################
 if(IF97_PRIME_MODULE)
+    # Make sure we're on Winows - the only platform on which Mathad Prime runs
     if(NOT WIN32)
       message(FATAL_ERROR "[${PROJECT_NAME}] - IF97_PRIME_MODULE can only be used on windows host")
     endif()
+    # Check for valid Mathacd Prime Root directory provided by user.  If not provided, try to find it on our own.
     if( "${IF97_PRIME_ROOT}" STREQUAL "")
-        message(FATAL_ERROR "[${PROJECT_NAME}] - You must provide the path to MathCAD Prime Root directory using something like -DIF97_PRIME_ROOT=\"C:/Program Files/PTC/Mathcad Prime 3.1\"")
+        # PTC/Mathcad convention is a directory labeled "C:\Program Files\PTC\Mathad Prime X.X.X.X"
+        # Find all of these directories on the system and try to set IF97_PRIME_ROOT dynamically
+        file(GLOB PTC_CONTENTS 
+            LIST_DIRECTORIES true 
+            "C:/Program Files/PTC/Mathcad Prime*"
+        )
+        # Add them to a list, sorted by most recent Marhcad Prime release first
+        set(MATHCAD_SEARCH_PATHS "")
+        foreach(ITEM ${PTC_CONTENTS})
+            if(IS_DIRECTORY "${ITEM}")
+                list(APPEND MATHCAD_SEARCH_PATHS "${ITEM}")
+            endif()
+        endforeach()
+        list(SORT MATHCAD_SEARCH_PATHS COMPARE NATURAL ORDER DESCENDING)
+        # Now make sure the executable is in one of these directories (newest first)
+        find_program(MATHCAD_EXE
+          NAMES MathcadPrime.exe
+          PATHS ${MATHCAD_SEARCH_PATHS})
+        # Strip off program name, and set IF97_PRIME_ROOT to parent path
+        #get_filename_comopnent(PARENT_DIR "$MATHCAD_EXE" MATHCAD_ROOT)
+        if(MATHCAD_EXE)
+          cmake_path(GET MATHCAD_EXE PARENT_PATH IF97_PRIME_ROOT)
+          message(STATUS "[${PROJECT_NAME}] - Dynamically Found Mathcad @ \"${IF97_PRIME_ROOT}\"")
+          string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" MATHCAD_VERSION "${IF97_PRIME_ROOT}")
+          message(STATUS "[${PROJECT_NAME}] - Linking with Mathcad Prime Library v${MATHCAD_VERSION}\"")
+        else()
+          message(STATUS "[${PROJECT_NAME}] - Could not Dynamically Locate Mathcad Prime on this System")
+          message(FATAL_ERROR "[${PROJECT_NAME}] - You must provide the path to MathCAD Prime Root directory using something like -DIF97_PRIME_ROOT=\"C:/Program Files/PTC/Mathcad Prime 11.0.0.0\"")
+        endif()
     else()
-        message(STATUS "[${PROJECT_NAME}] - IF97_PRIME_ROOT: ${IF97_PRIME_ROOT}")
+        # Mathcad Root directory specified.  Make sure it's a valid Mathcad Prime installation directory
+        find_program(MATHCAD_EXE
+          NAMES MathcadPrime.exe
+          PATHS ${IF97_PRIME_ROOT})
+        if(MATHCAD_EXE)
+          string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" MATHCAD_VERSION "${IF97_PRIME_ROOT}")
+          message(STATUS "[${PROJECT_NAME}] - Linking with Mathcad Prime Library v${MATHCAD_VERSION}\"")
+        else()
+          message(STATUS "[${PROJECT_NAME}] - Could not find Mathcad Prime at ${IF97_PRIME_ROOT}")
+          message(FATAL_ERROR "[${PROJECT_NAME}] - Check the path to the MathCAD Prime Root directory provided using something like -DIF97_PRIME_ROOT=\"C:/Program Files/PTC/Mathcad Prime 11.0.0.0\"")
+        endif()
+    endif()
+    # Embed Windows VERSIONINFO so IF97.dll's Properties dialog shows
+    # FileVersion/ProductVersion fields a la CoolProp(#2863). The .rc 
+    # is configured from VERSION above and added to the source
+    # list only on MSVC and MSYS2(MinGW), where rc.exe is available.
+    set(IF97_RESOURCE "")
+    if(MSVC)
+      configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/dev/IF97.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/IF97.rc"
+        @ONLY)
+      list(APPEND IF97_RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/IF97.rc")
     endif()
     file(GLOB_RECURSE IF97_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes/*.h")
     include_directories("${IF97_PRIME_ROOT}/Custom Functions" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/includes")
-    add_library(IF97 SHARED ${IF97_HEADERS} "${CMAKE_CURRENT_SOURCE_DIR}/IF97.h" "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/MathCAD/IF97.cpp")
+    add_library(IF97 SHARED
+      ${IF97_HEADERS}
+      "${CMAKE_CURRENT_SOURCE_DIR}/IF97.h"
+      "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/MathCAD/IF97.cpp"
+       ${IF97_RESOURCE})
     target_link_libraries(IF97 "${IF97_PRIME_ROOT}/Custom Functions/mcaduser.lib")
     set_target_properties(IF97 PROPERTIES LINK_FLAGS "/ENTRY:\"DllEntryPoint\"")
     set_target_properties(IF97 PROPERTIES SUFFIX ".dll" PREFIX "")
