@@ -68,12 +68,14 @@ Make the Build for Mathcad Prime (any version above 3.0)
              -DCMAKE_VERBOSE_MAKEFILE=ON
     ```
 	     
-	> Insert your version of Mathcad Prime in place of "10.0.0.0" (or omit).  
-    > Insert your version of Visual Studio for the -G option.  
-	> Note that Mathcad Prime is 64-bit and requires the `-A x64` switch on this command.  
-    > Prior to VS 2017, use something like: `-G "Visual Studio 14 2015 Win64`
-
-    > **NOTE:** Specifying the Mathcad Prime root directory is optional.  CMake will attempt to find the most recent version of Mathcad Prime on the system and use that one to link the Mathcad Prime library and header file.  If a valid Mathcad Prime installation directory cannot be found, or you want to specify an older version on the system to link to, then supply the ``-DIF97_PRIME_ROOT`` flag as directed above.
+	- Insert your version of Mathcad Prime in place of "10.0.0.0" (or omit).  
+    - Insert your version of Visual Studio for the `-G` option.  
+    - Note that Mathcad Prime is 64-bit and requires the `-A x64` switch on this command.  
+    - Prior to VS 2017, use something like: `-G "Visual Studio 14 2015 Win64"`.  
+    .
+  
+    > **NOTE:**
+    > Specifying the Mathcad Prime root directory is optional.  CMake will attempt to find the most recent version of Mathcad Prime on the system and use that one to link the Mathcad Prime library and header file.  If a valid Mathcad Prime installation directory cannot be found, or you want to specify an older version on the system to link to, then supply the ``-DIF97_PRIME_ROOT`` flag as directed above.
 
 Make the Build for Legacy Mathcad 15 (Discontinued by PTC)
 ----------------------------------------------------------
@@ -94,9 +96,9 @@ Make the Build for Legacy Mathcad 15 (Discontinued by PTC)
              -DCMAKE_VERBOSE_MAKEFILE=ON 
 	```
          
-	> Insert your version of Visual Studio for the -G option.  
-    > Legacy Mathcad was 32-bit and requires a 32-bit add-in DLL.  
-    > Prior to VS2017, use something like `-G "Visual Studio 14 2015` as 32-bit was the default.
+	- Insert your version of Visual Studio for the -G option.  
+    - Legacy Mathcad was 32-bit and requires a 32-bit add-in DLL.  
+    - Prior to VS2017, use something like `-G "Visual Studio 14 2015` as 32-bit was the default.
 
 Build the Project
 -----------------
