@@ -386,6 +386,49 @@ int main() {
     cout << "Relative errors above should be on the order of 1E-10 or lower.\n";
     cout << "The RMS of all relative errors (" << ecount << ") is " << scientific << setprecision(3) << RMS1 << endl << endl << endl;
 
+
+    // ******************************************************************************
+    // Vapor dome below s"(T23min): iterative p(h,s), NOT an IAPWS backward equation
+    // ******************************************************************************
+    cout << div2;
+    cout << "      Vapor Dome Round Trip p(h,s) and Q(h,s) for s < s\"(T23min)\n\n";
+    cout << "IAPWS has no backward equation for (h,s) inside the vapor dome below\n";
+    cout << "s\"(T23min).  IF97.h solves it iteratively against the forward saturation\n";
+    cout << "equations.  The h,s pairs below are built from the forward saturation\n";
+    cout << "functions and sent back through p_hsmass and Q_hsmass.\n";
+    cout << div2;
+    {
+        const double Pdome[9] = {1e-3, 1e-2, 1e-1, 1, 5, 10, 15, 20, 22};  // [MPa]
+        const double Qdome[10] = {0, 1e-9, 1e-6, 0.01, 0.1, 0.5, 0.9, 0.99, 1 - 1e-9, 1};
+        int ndome = 0, nfail = 0;
+        double wp = 0, wq = 0, wh = 0, ws = 0;
+        for (int ip = 0; ip < 9; ip++) {
+            for (int iq = 0; iq < 10; iq++) {
+                double hd = hmass_pQ(Pdome[ip], Qdome[iq]), sd = smass_pQ(Pdome[ip], Qdome[iq]);
+                if (sd >= SgT23) continue;
+                ndome++;
+                try {
+                    double pd = p_hsmass(hd, sd), qd = Q_hsmass(hd, sd);
+                    double ep = fabs(pd - Pdome[ip]) / Pdome[ip], eq = fabs(qd - Qdome[iq]);
+                    double eh = fabs(hmass_pQ(pd, qd) - hd) / hd, es = fabs(smass_pQ(pd, qd) - sd) / sd;
+                    wp = max(wp, ep); wq = max(wq, eq); wh = max(wh, eh); ws = max(ws, es);
+                    if (ep > 1e-8 || eq > 1e-8 || eh > 1e-9 || es > 1e-9) nfail++;
+                } catch (std::exception &) { nfail++; }
+            }
+        }
+        printf("States tested: %d   Failures: %d\n", ndome, nfail);
+        printf("Worst errors:  p [rel] %9.3e   Q [abs] %9.3e   h [rel] %9.3e   s [rel] %9.3e\n", wp, wq, wh, ws);
+        cout << "Failures require p within 1E-8 (rel), Q within 1E-8 (abs), and h and s within 1E-9 (rel).\n";
+        // Single phase states with s < s"(T23min) must still use the IAPWS backward equations
+        double hl = hmass_Tp(400.0, 1.0), sl = smass_Tp(400.0, 1.0);
+        double hs = hmass_Tp(640.0, 30.0), ss = smass_Tp(640.0, 30.0);
+        printf("Compressed liquid (1 MPa, 400 K):      p(h,s) = %.6g MPa\n", p_hsmass(hl, sl));
+        printf("Supercritical liquid (30 MPa, 640 K):  p(h,s) = %.6g MPa\n", p_hsmass(hs, ss));
+        bool threw = false;
+        try { p_hsmass(1e9, 1); } catch (std::exception &) { threw = true; }
+        printf("p(h=1E9,s=1) %s (should throw)\n", threw ? "throws" : "DID NOT THROW");
+        cout << endl << endl;
+    }
     cout << div1;
     cout << "                                           TRANSPORT PROPERTIES\n";
     cout << div1 << endl << endl;

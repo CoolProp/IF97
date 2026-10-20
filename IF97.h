@@ -34,8 +34,8 @@ struct RegionResidualElement      // Structure for the double indexed state equa
 namespace IF97
 {
     // Modified power function below, powi(x,i), is for integer powers of doubles only.  It can be
-    // up to 5X faster than std::pow() when using integer powers.  This can significantly spped up
-    // the forward IF97 functions.  Transport functions and reverse funcitons require powers of
+    // up to 5X faster than std::pow() when using integer powers.  This can significantly speed up
+    // the forward IF97 functions.  Transport functions and reverse functions require powers of
     // reals and should still use std::pow().
     // 
     inline double powi(double x, int i)
@@ -53,7 +53,7 @@ namespace IF97
     }
 
     // CoolProp-IF97 Version Number
-    static const char IF97VERSION [] = "v2.2.1";
+    static const char IF97VERSION [] = "v2.3.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -489,7 +489,8 @@ namespace IF97
     /**************************       Region #1       *******************************/
     /********************************************************************************/
     static const RegionResidualElement Region1residdata[] = {
-        // Note: the coefficients of n_i have been multiplied by -1**I_i such that all Gibbs terms are of the form (PI-7.1)**(I_i) rather than (7.1-PI)**(I_i)
+        // Note: the coefficients of n_i have been multiplied by -1**I_i such that all
+        // Gibbs terms are of the form (PI-7.1)**(I_i) rather than (7.1-PI)**(I_i)
         {0, -2, 0.14632971213167},
         {0, -1, -0.84548187169114},
         {0, 0, -3.756360367204},
@@ -2477,7 +2478,7 @@ namespace IF97
         double drhodp(double T, double rho) const
         /// Derived from IAPWS Revised Advisory Note No. 3 (See Table 2, Section 3.1 & 3.3)
         /// NOTE: rho is passed in here, not p as it is in Regions 1, 2, & 5.  This is done
-        ///       because p(T,rho) is a simple algebraic in Region 3, the Helmholz functions
+        ///       because p(T,rho) is a simple algebraic in Region 3, the Helmholtz functions
         ///       are functions of (T,rho), and the work has already been done by the output()
         ///       function to convert p to rho @ T.
         {
@@ -3875,6 +3876,16 @@ namespace IF97
                 throw std::out_of_range("Entropy out of range");
         };
 
+        inline double HsatMargin_s(double s){
+            // Enthalpy margin [J/kg] above Hsat_s(s) inside which a state "might be in the dome".
+            // About 1.5 times the worst measured error of each Hsat_s fit piece against the forward
+            // saturation equations (worst cases are all within a few kPa of the critical pressure).
+            if (s <= SfT23)      return 10.0;     // Region 1-4 piece  (worst measured 3.4 J/kg)
+            else if (s <= Scrit) return 150.0;    // Region 3a-4 piece (worst measured 87 J/kg)
+            else if (s <= S2bc)  return 100.0;    // Region 2c3b-4 piece (worst measured 45 J/kg)
+            else                 return 10.0;     // Region 2ab-4 piece (worst measured 1.2 J/kg)
+        };
+
     };  // Backwards Namespace
 
     /********************************************************************************/
@@ -4011,7 +4022,7 @@ namespace IF97
         else if (X <= R1.output(inkey, T23min, p))         // T23min is also the Temp between R1 & R3a
             return REGION_1;                               // ...otherwise R3a (fallthrough)
         else if (X >= R2.output(inkey, Region23_p(p), p))  // compare with X along B23 curve
-            return REGION_2;                               // ...othersise R3b (fallthrough)
+            return REGION_2;                               // ...otherwise R3b (fallthrough)
         else
             return REGION_3;                               // Return R3 since R4 has already been accounted for above.
 
@@ -4060,14 +4071,14 @@ namespace IF97
         //       that are very slightly (within 25 mK) on the opposite side of the
         //       saturation curve from S/H values that are very near saturation.  Use of these
         //       temperatures (with specified pressure) to calculate other properties can
-        //       result in wildly inacurate properties returned from the wrong side of the
+        //       result in wildly inaccurate properties returned from the wrong side of the
         //       saturation curve. Code is added here in 2024 to limit T to the correct side 
-        //       of the saturation curve based on the (p,S) or (p,H) deternmined Region.
+        //       of the saturation curve based on the (p,S) or (p,H) determined Region.
         //
         //       There are times, however, when we don't want to adjust the return temp,
-        //       like when directly calcualating other properties in Region 4.  The
+        //       like when directly calculating other properties in Region 4.  The
         //       boolean parameter Clip is provided to make that choice.  If Clip is false,
-        //       this function limiits to IF97's Tmin and Tmax; aka, no clipping.
+        //       this function limits to IF97's Tmin and Tmax; aka, no clipping.
         //
         // Make sure input and output keys are valid for Backward formulas
         if ((inkey != IF97_HMASS) && (inkey != IF97_SMASS))
@@ -4176,7 +4187,7 @@ namespace IF97
             const double Xliq = RegionOutput(inkey, Tsat, p, LIQUID);  // Makes determination between Regions 1 & 3.
             const double Xvap = RegionOutput(inkey, Tsat, p, VAPOR);   // Makes determination between Regions 2 & 3.
             const double vliq = 1.0 / RegionOutput(IF97_DMASS, Tsat, p, LIQUID);  // Get Liquid density
-            const double vvap = 1.0 / RegionOutput(IF97_DMASS, Tsat, p, VAPOR);   // Get Vaopr density
+            const double vvap = 1.0 / RegionOutput(IF97_DMASS, Tsat, p, VAPOR);   // Get Vapor density
             return 1.0/(vliq + (X-Xliq)*(vvap-vliq)/(Xvap-Xliq));      //    Return Mixture Density
         } else {                                                       // else
             return RegionOutput(IF97_DMASS, T, p, NONE);
@@ -4215,7 +4226,7 @@ namespace IF97
 
         switch (RegionDetermination_pX(p, X, inkey)) {
             case REGION_4: {                            // If in saturation dome (p <= Pcrit, Region 4)
-                                                        // Get Sat. Liquid & Vapor values direclty from region eqs.
+                                                        // Get Sat. Liquid & Vapor values directly from region eqs.
                 const double Tsat = Tsat97(p);
                 if (p > P23min) {                              // Pressure in Region 3
                     Xliq = R3.output(inkey, Tsat, p, LIQUID);  //   RegionOutput(inkey, T, p, LIQUID);
@@ -4420,7 +4431,9 @@ namespace IF97
         }
     };
 
-    inline IF97BACKREGIONS RegionDetermination_HS(double h, double s){
+    inline IF97BACKREGIONS RegionDetermination_HS(double h, double s, bool skip4 = false){
+        // skip4 = true ignores the Region 4 (saturation dome) tests; used once the dome solver
+        // has shown that the state is single phase.
         static const Backwards::Boundary13HS b13;
         static const Backwards::Boundary23HS b23hs;
         static const Backwards::Region2cHS R2c;
@@ -4435,7 +4448,7 @@ namespace IF97
         // Start at the low entropy curves and work our way up.
         // =================================== Region 1 Check =========================
         if (s <= SfT23){
-            if (h < Backwards::Hsat_s(s))     //   If below Saturated Liquid Curve
+            if (!skip4 && h < Backwards::Hsat_s(s))     //   If below Saturated Liquid Curve
                 return BACK_4;                //       REGION 4
             else if (s < S13min)              //   If below H13 Curve
                 return BACK_1;                //       REGION 1
@@ -4446,17 +4459,17 @@ namespace IF97
                     return BACK_3A;           //           REGION 3 
                  }                            //
         } else if (s <= Scrit){  //========== Region 3a Check (S < Scrit) ==============
-            if (h < Backwards::Hsat_s(s))     //  If below Saturated Liquid Curve
+            if (!skip4 && h < Backwards::Hsat_s(s))     //  If below Saturated Liquid Curve
                 return BACK_4;                //      REGION 4
             else                              //  If above curve
                 return BACK_3A;               //      REGION 3(a)
         } else if (s <= S23min){  //========== Region 3b Check            ==============
-            if (h < Backwards::Hsat_s(s))     //  If below Saturated Liquid Curve
+            if (!skip4 && h < Backwards::Hsat_s(s))     //  If below Saturated Liquid Curve
                 return BACK_4;                //      REGION 4
             else                              //  If above curve
                 return BACK_3B;               //      REGION 3(a)
         } else if (s <= S23max){  //========== Region 3b/2c Check Along B23 Curve ======
-            if (h < Backwards::Hsat_s(s))     //  if below Saturated Vapor Curve
+            if (!skip4 && h < Backwards::Hsat_s(s))     //  if below Saturated Vapor Curve
                 return BACK_4;                //      REGION 4
             else if (h < H23min)              //  if below bounding box
                 return BACK_3B;               //      REGION 3(b)
@@ -4472,12 +4485,12 @@ namespace IF97
                     return BACK_2C;                  //      REGION 2(c)
             } 
         } else if (s <= S2bc){   //========== Region 3b Check            ==============
-            if (h < Backwards::Hsat_s(s))     //  If below Saturated Liquid Curve
+            if (!skip4 && h < Backwards::Hsat_s(s))     //  If below Saturated Liquid Curve
                 return BACK_4;                //      REGION 4
             else                              //  If above curve
                 return BACK_2C;               //      REGION 2(c)
         } else if (s < Sgtrip) { //========== Region 2a/2b (s > S2bc) above Sat. Curve ==
-            if (h < Backwards::Hsat_s(s))     //  If below Saturated Vapor Curve
+            if (!skip4 && h < Backwards::Hsat_s(s))     //  If below Saturated Vapor Curve
                 return BACK_4;                //      REGION_4
             else {                            //  If above Curve then
                 if (h > Backwards::H2ab_s(s))   //      if h > h2ab(s) Curve (P=4 MPa)
@@ -4488,6 +4501,78 @@ namespace IF97
         } else
             return BACK_2A;      //========== Region 2a fall thru ========================
     };  // Region Determination HS
+
+    // ---------------------------------------------------------------------------------
+    // Vapor dome (Region 4) below s"(T23min) = SgT23.
+    // IAPWS has no backward T(h,s) or p(h,s) equation here, so this is NOT an IAPWS
+    // backward equation.  It is an iterative solve against the forward saturation
+    // equations and is roughly 30 to 100 times slower than the IAPWS backward equations.
+    // Inside the dome h = hL + Q*(hV-hL) and s = sL + Q*(sV-sL).  At a trial pressure, the
+    // quality from h (Qh) and from s (Qs) agree only at the correct pressure, so we
+    // solve g(ln p) = Qh - Qs = 0.  The root is unique only where 0 <= Qh <= 1 (there g falls
+    // monotonically with p), so the search is first confined to the contiguous run of
+    // pressures with 0 <= Qh <= 1 and then bisected.  Returns false if the state is not
+    // in the dome.
+    // ---------------------------------------------------------------------------------
+    inline bool DomeSolve_HS(double h, double s, double &p, double &T, double &Q){
+        const double tolQ = 1e-7;                        // Quality tolerance for ends of the run (Q is only resolved to ~3E-8 near Pcrit)
+        const int    NSCAN = 96;                         // Number of log-spaced scan nodes
+        const double pHi = std::nextafter(Pcrit, Ptrip);   // Largest pressure strictly below Pcrit
+        const double lnPlo = log(Ptrip), lnPhi = log(pHi);
+        double Qh = 0.0, Qs = 0.0;
+        // g(ln p) = Qh - Qs; also leaves Qh and Qs set for the last pressure evaluated
+        auto g = [&](double lnp)->double {
+            // exp(log(x)) can round just outside [Ptrip, pHi], where the saturation functions throw
+            const double pp = std::min(std::max(exp(lnp), Ptrip), pHi), Ts = Tsat97(pp);
+            const double hL = RegionOutput(IF97_HMASS, Ts, pp, LIQUID), hV = RegionOutput(IF97_HMASS, Ts, pp, VAPOR);
+            const double sL = RegionOutput(IF97_SMASS, Ts, pp, LIQUID), sV = RegionOutput(IF97_SMASS, Ts, pp, VAPOR);
+            Qh = (h - hL)/(hV - hL); Qs = (s - sL)/(sV - sL);
+            return Qh - Qs;
+        };
+        auto node = [&](int i)->double { return lnPlo + (lnPhi - lnPlo)*i/(NSCAN - 1); };
+        auto inRun = [&](double lnp)->bool { g(lnp); return (Qh >= 0.0 && Qh <= 1.0); };
+        // Scan for the contiguous run of nodes where 0 <= Qh <= 1
+        int first = -1, last = -1;
+        for (int i = 0; i < NSCAN; i++) {
+            if (inRun(node(i))) {
+                if (first < 0) first = i;
+                last = i;
+            } else if (first >= 0) break;
+        }
+        if (first < 0) return false;
+        // Refine each end of the run by bisection, keeping the end on the 0 <= Qh <= 1 side
+        double lnA = node(first), lnB = node(last);
+        if (first > 0) {
+            double out = node(first - 1), in = lnA;
+            for (int k = 0; k < 40; k++) {
+                const double mid = 0.5*(in + out);
+                if (inRun(mid)) in = mid; else out = mid;
+            }
+            lnA = in;
+        }
+        if (last < NSCAN - 1) {
+            double out = node(last + 1), in = lnB;
+            for (int k = 0; k < 40; k++) {
+                const double mid = 0.5*(in + out);
+                if (inRun(mid)) in = mid; else out = mid;
+            }
+            lnB = in;
+        }
+        // g must fall through zero across the run (within tolerance), otherwise no dome state
+        if (g(lnA) < -tolQ) return false;
+        if (g(lnB) >  tolQ) return false;
+        double lo = lnA, hi = lnB;
+        for (int k = 0; k < 45; k++) {
+            const double mid = 0.5*(lo + hi);
+            if (g(mid) > 0.0) lo = mid; else hi = mid;
+        }
+        g(0.5*(lo + hi));
+        if (Qs < -tolQ || Qs > 1.0 + tolQ) return false;
+        p = std::min(std::max(exp(0.5*(lo + hi)), Ptrip), pHi);
+        T = Tsat97(p);
+        Q = std::min(1.0, std::max(0.0, Qh));
+        return true;
+    };
 
     inline double BackwardOutputHS(IF97parameters outkey,double h, double s){
         // Note that this routine returns only temperature (IF97_T).  All other values should be
@@ -4507,9 +4592,24 @@ namespace IF97
         if ((outkey != IF97_P) && (outkey != IF97_T))
             throw std::invalid_argument("Backward HS Formulas output Temperature or Pressure only.");
 
+        // Special case: Region 4 (the vapor dome) below SgT23 is handled HERE, before the switch
+        // on the IAPWS regions below.  IAPWS has no backward equation for this part of the dome.
+        // If the state might be in the dome (within the Hsat_s fit error of the saturation curve
+        // or below it), solve for it with DomeSolve_HS and return directly.  If the solver shows
+        // the state is single phase, skip the Hsat_s Region 4 test so the state goes to the
+        // correct single-phase region in the switch.  Either way, BACK_4 never reaches the
+        // switch for s < SgT23.
+        bool skip4 = false;
+        if ((s >= Smin) && (s < SgT23) && (h >= Hmin(s)) && (h < Backwards::Hsat_s(s) + Backwards::HsatMargin_s(s))) {
+            double pd, Td, Qd;
+            if (DomeSolve_HS(h, s, pd, Td, Qd))
+                return (outkey == IF97_P) ? pd : Td;
+            skip4 = true;      // Not in the dome, so ignore the Hsat_s fit's Region 4 test
+        }
+
         // Get Saturation Parameters
 
-        IF97BACKREGIONS region = RegionDetermination_HS(h, s);
+        IF97BACKREGIONS region = RegionDetermination_HS(h, s, skip4);
 
         switch (region){
         case BACK_1:   Pval = B1HS.p_hs(h,s);  break;
@@ -4518,9 +4618,10 @@ namespace IF97
         case BACK_2C:  Pval = B2cHS.p_hs(h,s); break;
         case BACK_3A:  Pval = B3aHS.p_hs(h,s); break;
         case BACK_3B:  Pval = B3bHS.p_hs(h,s); break;
-        case BACK_4:   if (s >= SgT23)   // T(h,s) only defined over part of the 2-phase region
+        case BACK_4:   if (s >= SgT23)   // IAPWS T(h,s) is only defined for s >= SgT23
                            Tval = B4HS.t_hs(h,s);
-                       else
+                       else              // Should never be reached: dome states with s < SgT23 are
+                                         // solved by DomeSolve_HS above.  Kept as a safety net.
                            throw std::out_of_range("Entropy out of range");
                        break;
         default: throw std::out_of_range("Unable to match region");
@@ -4668,14 +4769,14 @@ namespace IF97
         return RegionOutputBackward( p, h, IF97_HMASS,true,NONE);
     };
     inline double rhomass_phmass(double p,double h){
-//        return rho_pX( p, h, IF97_HMASS); << Replace with the IF97 Suppliment Backward formula
+//        return rho_pX( p, h, IF97_HMASS); << Replace with the IF97 Supplement Backward formula
         return Y_pX(IF97_DMASS, p, h, IF97_HMASS);  // Use this one for now.
     };
     inline double T_psmass(double p,double s){
         return RegionOutputBackward( p, s, IF97_SMASS,true,NONE);
     };
     inline double rhomass_psmass(double p,double s){
-//        return rho_pX( p, s, IF97_SMASS); << Replace with the IF97 Suppliment Backward formula
+//        return rho_pX( p, s, IF97_SMASS); << Replace with the IF97 Supplement Backward formula
         return Y_pX(IF97_DMASS, p, s, IF97_SMASS);  // Use this one for now.
     };
     inline double p_hsmass(double h, double s){
@@ -4757,34 +4858,16 @@ namespace IF97
     inline double Q_pv(double p,double v){
         return Q_pX(p, 1.0/v, IF97_DMASS);
     };
-/*************************************************************************/
-/* Vapor Quality as a function of H and S cannot be implemented at this  */
-/* time as there IAPWS has not released a backward formula that covers   */
-/* the entire vapor dome.  T(H,S) is only currently defined for the      */
-/* range of s > s"(T23sat).  Leaving this code here in case IAPWS        */
-/* releases a fit for the entire vapor dome.                             */
-/*************************************************************************/
-/*  inline double Q_hsmass(double h, double s){
-        double hliq, hvap;
+    /// Vapor quality as a function of h and s.  For s < SgT23 (s"(T23min)) the two-phase region is
+    /// solved iteratively from the forward equations (not an IAPWS backward equation, see DomeSolve_HS).
+    inline double Q_hsmass(double h, double s){
         if ((s < Smin) || (s > Smax)) {
             throw std::out_of_range("Entropy out of range");
         } else if ((h < Hmin(s)) || (h > Hmax(s))) {
             throw std::out_of_range("Enthalpy out of range");
         }
-        double p = BackwardOutputHS(IF97_P, h, s);
-        double t = RegionOutputBackward( p, h, IF97_HMASS);
-        if ((p > Pcrit) && (t > Tcrit)) {
-            throw std::out_of_range("Temperature out of range");
-        } else if (BackwardRegion(p, h, IF97_HMASS) == 4) {
-            hliq = RegionOutput( IF97_HMASS, Tsat97(p), p, LIQUID);
-            hvap = RegionOutput( IF97_HMASS, Tsat97(p), p, VAPOR);
-            return std::min(1.0,std::max(0.0,(h-hliq)/(hvap-hliq)));
-        } else if (p > Pcrit) {
-            return 0.0;
-        } else {
-            return 1.0;
-        }
-    };                                                                   */
+        return Q_phmass(BackwardOutputHS(IF97_P, h, s), h);
+    };
 /*************************************************************************/
 
 }; /* namespace IF97 */

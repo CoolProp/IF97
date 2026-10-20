@@ -26,7 +26,7 @@ LRESULT  if97_PHS(
         else if (e.what()[0] == 'U')                            // e.what == "Unable to determine region"
             return MAKELRESULT(REGION_NOT_FOUND,2);
         else                                                    // some other error
-            return MAKELRESULT(INTERRUPTED,2);
+            return MAKELRESULT(UNKNOWN,0);
     }
     catch (const std::logic_error&) {
         return MAKELRESULT(NO_SOLUTION_FOUND,1);

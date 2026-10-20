@@ -128,6 +128,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
     // *************************************************************
     // Quality Functions
     // *************************************************************
+    #include "xhs.h"
     #include "xph.h"
     #include "xprho.h"
     #include "xps.h"
@@ -255,6 +256,7 @@ enum EC  {MUST_BE_REAL = 1, INSUFFICIENT_MEMORY, INTERRUPTED, T_OUT_OF_RANGE, P_
                     // *************************************************************
                     // Quality functions
                     // *************************************************************
+                    CreateUserFunction( hDLL, &if97_xhs);
                     CreateUserFunction( hDLL, &if97_xph );
                     CreateUserFunction( hDLL, &if97_xprho );
                     CreateUserFunction( hDLL, &if97_xps );
