@@ -3878,11 +3878,11 @@ namespace IF97
 
         inline double HsatMargin_s(double s){
             // Enthalpy margin [J/kg] above Hsat_s(s) inside which a state "might be in the dome".
-            // About 1.5 times the worst measured error of each Hsat_s fit piece against the forward
-            // saturation equations (worst cases are all within a few kPa of the critical pressure).
+            // About 1.5 to 2 times the worst measured error of each Hsat_s fit piece against the
+            // forward saturation equations (with iterated Region 3 saturation values).
             if (s <= SfT23)      return 10.0;     // Region 1-4 piece  (worst measured 3.4 J/kg)
-            else if (s <= Scrit) return 150.0;    // Region 3a-4 piece (worst measured 87 J/kg)
-            else if (s <= S2bc)  return 100.0;    // Region 2c3b-4 piece (worst measured 45 J/kg)
+            else if (s <= Scrit) return 10.0;     // Region 3a-4 piece (worst measured 4.4 J/kg)
+            else if (s <= S2bc)  return 15.0;     // Region 2c3b-4 piece (worst measured 7.2 J/kg)
             else                 return 10.0;     // Region 2ab-4 piece (worst measured 1.2 J/kg)
         };
 
@@ -4513,22 +4513,31 @@ namespace IF97
     // monotonically with p), so the search is first confined to the contiguous run of
     // pressures with 0 <= Qh <= 1 and then bisected.  Returns false if the state is not
     // in the dome.
+    // NOTE: Define REGION3_ITERATE when using this (and p_hsmass, T_hsmass, Q_hsmass, Region_hs).
+    // Without it, the saturated liquid and vapor h and s from the algebraic Region 3 v(p,T)
+    // equations are off by up to several kJ/kg within about 1% of Pcrit (and not monotonic),
+    // which is far larger than the quality tolerances used here.
     // ---------------------------------------------------------------------------------
     inline bool DomeSolve_HS(double h, double s, double &p, double &T, double &Q){
-        const double tolQ = 1e-7;                        // Quality tolerance for ends of the run (Q is only resolved to ~3E-8 near Pcrit)
+        const double tolQ = 1e-8;                        // Quality tolerance for ends of the run (forward Q is good to ~6E-9)
+        const double noiseH = 2e-6*R_fact;               // Noise floor of saturated h [J/kg or kJ/kg] (measured ~1E-4 J/kg near Pcrit)
         const int    NSCAN = 96;                         // Number of log-spaced scan nodes
         const double pHi = std::nextafter(Pcrit, Ptrip);   // Largest pressure strictly below Pcrit
         const double lnPlo = log(Ptrip), lnPhi = log(pHi);
-        double Qh = 0.0, Qs = 0.0;
-        // g(ln p) = Qh - Qs; also leaves Qh and Qs set for the last pressure evaluated
+        double Qh = 0.0, Qs = 0.0, dH = 1.0;
+        // g(ln p) = Qh - Qs; also leaves Qh, Qs, and dH = hV - hL set for the last pressure evaluated
         auto g = [&](double lnp)->double {
             // exp(log(x)) can round just outside [Ptrip, pHi], where the saturation functions throw
             const double pp = std::min(std::max(exp(lnp), Ptrip), pHi), Ts = Tsat97(pp);
             const double hL = RegionOutput(IF97_HMASS, Ts, pp, LIQUID), hV = RegionOutput(IF97_HMASS, Ts, pp, VAPOR);
             const double sL = RegionOutput(IF97_SMASS, Ts, pp, LIQUID), sV = RegionOutput(IF97_SMASS, Ts, pp, VAPOR);
-            Qh = (h - hL)/(hV - hL); Qs = (s - sL)/(sV - sL);
+            dH = hV - hL;
+            Qh = (h - hL)/dH; Qs = (s - sL)/(sV - sL);
             return Qh - Qs;
         };
+        // Quality tolerance at the last pressure evaluated.  hV - hL goes to zero at the critical point, so
+        // the noise in h limits how well Q is resolved there; widen the tolerance to match.
+        auto tolAtLast = [&]()->double { return std::max(tolQ, noiseH/dH); };
         auto node = [&](int i)->double { return lnPlo + (lnPhi - lnPlo)*i/(NSCAN - 1); };
         auto inRun = [&](double lnp)->bool { g(lnp); return (Qh >= 0.0 && Qh <= 1.0); };
         // Scan for the contiguous run of nodes where 0 <= Qh <= 1
@@ -4559,19 +4568,27 @@ namespace IF97
             lnB = in;
         }
         // g must fall through zero across the run (within tolerance), otherwise no dome state
-        if (g(lnA) < -tolQ) return false;
-        if (g(lnB) >  tolQ) return false;
+        const double gA = g(lnA), tolA = tolAtLast();    // (separate statements: evaluation order matters)
+        const double gB = g(lnB), tolB = tolAtLast();
+        if (gA < -tolA || gB > tolB) return false;
         double lo = lnA, hi = lnB;
         for (int k = 0; k < 45; k++) {
             const double mid = 0.5*(lo + hi);
             if (g(mid) > 0.0) lo = mid; else hi = mid;
         }
         g(0.5*(lo + hi));
-        if (Qs < -tolQ || Qs > 1.0 + tolQ) return false;
+        const double tolF = tolAtLast();
+        if (Qs < -tolF || Qs > 1.0 + tolF) return false;
         p = std::min(std::max(exp(0.5*(lo + hi)), Ptrip), pHi);
         T = Tsat97(p);
         Q = std::min(1.0, std::max(0.0, Qh));
         return true;
+    };
+
+    // True if (h,s) might be in the vapor dome below SgT23: within the Hsat_s fit error of the
+    // saturation curve, or below it.  Cheap, so single phase states far from the curve skip the solver.
+    inline bool HS_MaybeDome(double h, double s){
+        return (s >= Smin) && (s < SgT23) && (h >= Hmin(s)) && (h < Backwards::Hsat_s(s) + Backwards::HsatMargin_s(s));
     };
 
     inline double BackwardOutputHS(IF97parameters outkey,double h, double s){
@@ -4600,7 +4617,7 @@ namespace IF97
         // correct single-phase region in the switch.  Either way, BACK_4 never reaches the
         // switch for s < SgT23.
         bool skip4 = false;
-        if ((s >= Smin) && (s < SgT23) && (h >= Hmin(s)) && (h < Backwards::Hsat_s(s) + Backwards::HsatMargin_s(s))) {
+        if (HS_MaybeDome(h, s)) {
             double pd, Td, Qd;
             if (DomeSolve_HS(h, s, pd, Td, Qd))
                 return (outkey == IF97_P) ? pd : Td;
@@ -4796,6 +4813,49 @@ namespace IF97
     };
     inline int Region_ps(double p, double s){
         return BackwardRegion( p, s, IF97_SMASS);
+    };
+    /// Region (1, 2, 3, or 4) as a function of h and s.  Unlike Region_ph(p_hsmass(h,s), h), this is
+    /// consistent with p_hsmass, T_hsmass, and Q_hsmass: a state is Region 4 here exactly when those
+    /// functions treat it as two-phase, including states on a saturation edge, where round-off in
+    /// p_hsmass would otherwise let the (p,h) classifier call them single phase.
+    inline int Region_hs(double h, double s){
+        bool skip4 = false;
+        if (HS_MaybeDome(h, s)) {
+            double pd, Td, Qd;
+            if (DomeSolve_HS(h, s, pd, Td, Qd))
+                return 4;
+            skip4 = true;      // Not in the dome, so ignore the Hsat_s fit's Region 4 test
+        }
+        switch (RegionDetermination_HS(h, s, skip4)) {
+        case BACK_1:  return 1;
+        case BACK_2A:
+        case BACK_2B:
+        case BACK_2C: return 2;
+        case BACK_3A:
+        case BACK_3B: return 3;
+        case BACK_4:  return 4;
+        default:      return 0;
+        }
+    };
+    /// Same as Region_hs(h,s), but when the state is in Region 4 (two-phase) it also returns the
+    /// saturation pressure p, temperature T, and quality Q from the same solve, instead of
+    /// requiring separate calls to p_hsmass, T_hsmass, and Q_hsmass (each of which repeats the
+    /// dome solver for s < SgT23).  p, T, and Q are not modified unless the return value is 4.
+    inline int Region_hs(double h, double s, double &p, double &T, double &Q){
+        if (HS_MaybeDome(h, s)) {
+            double pd, Td, Qd;
+            if (DomeSolve_HS(h, s, pd, Td, Qd)) {
+                p = pd; T = Td; Q = Qd;
+                return 4;
+            }
+        }
+        const int region = Region_hs(h, s);     // repeats the dome solver only if it just failed
+        if (region == 4) {                      // s >= SgT23, where the IAPWS backward equation applies
+            p = BackwardOutputHS(IF97_P, h, s);
+            T = BackwardOutputHS(IF97_T, h, s);
+            Q = Q_pX(p, h, IF97_HMASS);
+        }
+        return region;
     };
     // ******************************************************************************** //
     //                              Trivial Functions                                   //

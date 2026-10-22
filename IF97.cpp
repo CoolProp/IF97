@@ -427,6 +427,57 @@ int main() {
         bool threw = false;
         try { p_hsmass(1e9, 1); } catch (std::exception &) { threw = true; }
         printf("p(h=1E9,s=1) %s (should throw)\n", threw ? "throws" : "DID NOT THROW");
+
+        // Saturation edge and interior states must be Region 4 from Region_hs, and p and Q must round trip.
+        // (Region_ph(p_hsmass(h,s),h) can call an exact edge state single phase because of round-off.)
+        const double Qedge[9] = {0, 1e-6, 1e-3, 0.1, 0.5, 0.9, 0.999, 1 - 1e-6, 1};
+        int nedge = 0, nnot4 = 0, nbad = 0;
+        double wpe = 0, wqe = 0;
+        for (int iq = 0; iq < 9; iq++) {
+            for (double pe = Ptrip*1.0001; pe < 0.9999*Pcrit; pe *= 1.007) {
+                double hL = hliq_p(pe), hV = hvap_p(pe), sL = sliq_p(pe), sV = svap_p(pe);
+                double he = hL + Qedge[iq]*(hV - hL), se = sL + Qedge[iq]*(sV - sL);
+                if (se >= SgT23) continue;
+                nedge++;
+                try {
+                    if (Region_hs(he, se) != 4) nnot4++;
+                    double ep = fabs(p_hsmass(he, se) - pe) / pe, eq = fabs(Q_hsmass(he, se) - Qedge[iq]);
+                    wpe = max(wpe, ep); wqe = max(wqe, eq);
+                    if (ep > 1e-6 || eq > 1e-6) nbad++;
+                } catch (std::exception &) { nbad++; }
+            }
+        }
+        printf("Edge and interior states: %d   Not Region 4: %d   p or Q out of tolerance: %d\n", nedge, nnot4, nbad);
+        printf("Worst errors:  p [rel] %9.3e   Q [abs] %9.3e\n", wpe, wqe);
+        // Single phase states 0.1 K either side of saturation must NOT be Region 4
+        int nout = 0, nin = 0;
+        for (double pe = 0.01; pe < 21.0; pe *= 1.01) {
+            double Ts = Tsat97(pe);
+            for (int side = 0; side < 2; side++) {
+                double Te = side ? Ts + 0.1 : Ts - 0.1, he = hmass_Tp(Te, pe), se = smass_Tp(Te, pe);
+                if (se >= SgT23) continue;
+                nout++;
+                if (Region_hs(he, se) == 4) nin++;
+            }
+        }
+        printf("Single phase states 0.1 K from Tsat: %d   Reported as Region 4: %d (should be 0)\n", nout, nin);
+        // Region_hs(h,s,p,T,Q) must agree with Region_hs(h,s) and with p_hsmass, T_hsmass, and Q_hsmass
+        int nov = 0, novbad = 0;
+        for (int iq = 0; iq < 9; iq++) {
+            for (double pe = Ptrip*1.0001; pe < 0.9999*Pcrit; pe *= 1.05) {
+                double hL = hliq_p(pe), hV = hvap_p(pe), sL = sliq_p(pe), sV = svap_p(pe);
+                double he = hL + Qedge[iq]*(hV - hL), se = sL + Qedge[iq]*(sV - sL);
+                double po = -1, To = -1, Qo = -1;
+                nov++;
+                try {
+                    int r = Region_hs(he, se, po, To, Qo);
+                    if (r != Region_hs(he, se)) novbad++;
+                    else if (r == 4 && (po != p_hsmass(he, se) || To != T_hsmass(he, se) || fabs(Qo - Q_hsmass(he, se)) > 1e-12)) novbad++;
+                    else if (r != 4 && (po != -1 || To != -1 || Qo != -1)) novbad++;
+                } catch (std::exception &) { novbad++; }
+            }
+        }
+        printf("Region_hs(h,s,p,T,Q) overload states: %d   Disagreements: %d (should be 0)\n", nov, novbad);
         cout << endl << endl;
     }
     cout << div1;
