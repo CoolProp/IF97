@@ -3,11 +3,12 @@
 // table values.  If not set, the default behavior of IF97.h is to use straight SI units
 // with pressure in [Pa] and enthalpy in [J].
 #define IAPWS_UNITS
-// This compiler flag causes the Region 3 v(p,T) function to be iterated to improve
-// accuracy.  If not defined, the Region 3 v(p,T) function will return the direct
-// value from the supplementary release IAPWS SR5-05(2016), which may be in error
-// by up to 1E-6 of the iterative solution in Region 3.
-#define REGION3_ITERATE
+// By default, the Region 3 v(p,T) function is iterated to improve accuracy.  Defining
+// this compiler flag turns the iteration off, so the Region 3 v(p,T) function returns the
+// direct value from the supplementary release IAPWS SR5-05(2016), which may be in error
+// by up to 1E-6 of the iterative solution in Region 3 (and much more in enthalpy near
+// the critical point).
+// #define REGION3_NO_ITERATE
 
 #include "IF97.h"
 #include <iostream>
@@ -158,7 +159,7 @@ int main() {
     cout << "        the critical point and can be as high as 1.5E-2.  However, since the calculated values are actually\n";
     cout << "        using the IF97 iterative solution in region 3, the error is actually the distance from these initial guess\n";
     cout << "        values to the more accurate iterative solution, not the actual error in the formulation.  See NOTE 3 below.\n";
-    cout << "        To see the actual error in this explicit equation, undefine the REGION3_ITERATE flag at the top of this \n";
+    cout << "        To see the actual error in this explicit equation, define the REGION3_NO_ITERATE flag at the top of this \n";
     cout << "        file to turn off the iterative solution and provide just the explicit results from v(p,T).  Doing so will\n";
     cout << "        increase the error in the previous verification table to the order of 1E-6 for points in region 3, but\n";
     cout << "        drop the relative error in this table to on the order of 1E-10.\n\n";

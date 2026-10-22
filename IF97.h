@@ -53,7 +53,7 @@ namespace IF97
     }
 
     // CoolProp-IF97 Version Number
-    static const char IF97VERSION [] = "v2.3.0";
+    static const char IF97VERSION [] = "v2.4.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -2280,7 +2280,7 @@ namespace IF97
             }
             return summer;
         };
-#ifdef REGION3_ITERATE
+#ifndef REGION3_NO_ITERATE
         //
         // These two extra terms Needed to evaluate Newton-Raphson
         // ****************************************************************************
@@ -2412,7 +2412,7 @@ namespace IF97
             return rho*R*T*delta_dphi_ddelta(T, rho)*(p_fact/1000/R_fact);
         };
 
-#ifdef REGION3_ITERATE
+#ifndef REGION3_NO_ITERATE
         //
         // Newton-Raphson Technique for solving p(T,rho) for rho
         //    Solves to find root of p - rho*R*T*delta*dphi_ddelta = 0
@@ -2562,7 +2562,7 @@ namespace IF97
 
             rho = 1/Region3Backwards::Region3_v_TP(region, T, p);
 
-#ifdef REGION3_ITERATE
+#ifndef REGION3_NO_ITERATE
             // Use previous rho value from algebraic equations 
             //      as an initial guess to solve rhomass iteratively 
             //      with Newton-Raphson
@@ -4513,8 +4513,8 @@ namespace IF97
     // monotonically with p), so the search is first confined to the contiguous run of
     // pressures with 0 <= Qh <= 1 and then bisected.  Returns false if the state is not
     // in the dome.
-    // NOTE: Define REGION3_ITERATE when using this (and p_hsmass, T_hsmass, Q_hsmass, Region_hs).
-    // Without it, the saturated liquid and vapor h and s from the algebraic Region 3 v(p,T)
+    // NOTE: Do not define REGION3_NO_ITERATE when using this (or p_hsmass, T_hsmass, Q_hsmass, Region_hs).
+    // With it, the saturated liquid and vapor h and s from the algebraic Region 3 v(p,T)
     // equations are off by up to several kJ/kg within about 1% of Pcrit (and not monotonic),
     // which is far larger than the quality tolerances used here.
     // ---------------------------------------------------------------------------------

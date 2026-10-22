@@ -141,6 +141,6 @@ Legacy Mathcad 15 (Discontinued)
 ------
 Compiler Flags
 ==============
-The Mathcad wrapper code uses the ``REGION3_ITERATE`` flag to provide more accurate (but slightly slower) calculation of density in Region 3 (mostly super-critical), but does **_not_** use the ``IAPWS_UNITS`` flag by default, leaving all input/output values in SI units.
+The Mathcad wrapper code uses the default iterative calculation of density in Region 3 (mostly super-critical), which is more accurate but slightly slower (it does not define ``REGION3_NO_ITERATE``), and does **_not_** use the ``IAPWS_UNITS`` flag by default, leaving all input/output values in SI units.
 
 The `IAPWS_UNITS` flag can be set (uncommented) in the top of the IF97.cpp file to input and output IAPWS units (Pressures in MPa and energy in kJ) for easy comparison with IAPWS release documents.

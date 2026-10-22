@@ -12,11 +12,10 @@
 enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for STRING, use MC_STRING below
 #undef STRING                 // un-define STRING as it may conflict with STRING in other libraries
 
-//  By default, IF97.h uses the supplemental curve fit equations in Region 3 which are less accurate, but faster than iterating
-//  to find the density in terms of T & p.  Defining REGION3_ITERATE will use these equations to find density and then use it 
-//  as an initial guess for a more accurate reverse calculation using a Newton-Raphson technique.  This technique takes about 
-//  2.6X longer than the supplemental equations alone.
-#define REGION3_ITERATE
+//  By default, IF97.h uses the supplemental curve fit equations in Region 3 to find the density in terms of T & p and then
+//  uses it as an initial guess for a more accurate reverse calculation using a Newton-Raphson technique.  This technique
+//  takes about 2.6X longer than the supplemental equations alone.  Defining REGION3_NO_ITERATE turns the iteration off.
+// #define REGION3_NO_ITERATE
 
 // #define IAPWS_UNITS          // Set to use IAPWS Units of [MPa] and [kJ] (instead of [Pa] and [J] )
 #include "IF97.h"
