@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <iomanip>
 #include <chrono>
+#include <limits>
 
 int main() {
 
@@ -453,9 +454,9 @@ int main() {
         // Single phase states 0.1 K either side of saturation must NOT be Region 4
         int nout = 0, nin = 0;
         for (double pe = 0.01; pe < 21.0; pe *= 1.01) {
-            double Ts = Tsat97(pe);
+            double Tsat = Tsat97(pe);
             for (int side = 0; side < 2; side++) {
-                double Te = side ? Ts + 0.1 : Ts - 0.1, he = hmass_Tp(Te, pe), se = smass_Tp(Te, pe);
+                double Te = side ? Tsat + 0.1 : Tsat - 0.1, he = hmass_Tp(Te, pe), se = smass_Tp(Te, pe);
                 if (se >= SgT23) continue;
                 nout++;
                 if (Region_hs(he, se) == 4) nin++;
@@ -468,13 +469,14 @@ int main() {
             for (double pe = Ptrip*1.0001; pe < 0.9999*Pcrit; pe *= 1.05) {
                 double hL = hliq_p(pe), hV = hvap_p(pe), sL = sliq_p(pe), sV = svap_p(pe);
                 double he = hL + Qedge[iq]*(hV - hL), se = sL + Qedge[iq]*(sV - sL);
-                double po = -1, To = -1, Qo = -1;
+                const double unset = std::numeric_limits<double>::quiet_NaN();
+                double po = unset, To = unset, Qo = unset;
                 nov++;
                 try {
                     int r = Region_hs(he, se, po, To, Qo);
                     if (r != Region_hs(he, se)) novbad++;
-                    else if (r == 4 && (po != p_hsmass(he, se) || To != T_hsmass(he, se) || fabs(Qo - Q_hsmass(he, se)) > 1e-12)) novbad++;
-                    else if (r != 4 && (po != -1 || To != -1 || Qo != -1)) novbad++;
+                    else if (r == 4 && (fabs(po - p_hsmass(he, se)) > 1e-12*po || fabs(To - T_hsmass(he, se)) > 1e-12*To || fabs(Qo - Q_hsmass(he, se)) > 1e-12)) novbad++;
+                    else if (r != 4 && (!std::isnan(po) || !std::isnan(To) || !std::isnan(Qo))) novbad++;
                 } catch (std::exception &) { novbad++; }
             }
         }

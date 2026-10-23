@@ -4621,16 +4621,17 @@ namespace IF97
         else {
             // Brent's method on [lnA, lnB], where gA > 0 >= gB
             double a = lnA, b = lnB, fa = gA, fb = gB, c = a, fc = fa, d = b - a, e = d;
+            bool cIsA = true;      // True when c has just been set equal to a (only two distinct points)
             for (int k = 0; k < 100; k++) {
-                if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) { c = a; fc = fa; d = b - a; e = d; }
-                if (fabs(fc) < fabs(fb)) { a = b; b = c; c = a; fa = fb; fb = fc; fc = fa; }
+                if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) { c = a; fc = fa; d = b - a; e = d; cIsA = true; }
+                if (fabs(fc) < fabs(fb)) { a = b; b = c; c = a; fa = fb; fb = fc; fc = fa; cIsA = true; }
                 const double tol = 2e-15*fabs(b) + 1e-14, xm = 0.5*(c - b);
                 if (fabs(xm) <= tol || fb == 0.0) break;
                 if (fabs(e) >= tol && fabs(fa) > fabs(fb)) {
                     // Try interpolation (secant, or inverse quadratic if three points differ)
                     double pq, qq;
                     const double sg = fb/fa;
-                    if (a == c) { pq = 2.0*xm*sg; qq = 1.0 - sg; }
+                    if (cIsA) { pq = 2.0*xm*sg; qq = 1.0 - sg; }
                     else {
                         const double q1 = fa/fc, r1 = fb/fc;
                         pq = sg*(2.0*xm*q1*(q1 - r1) - (b - a)*(r1 - 1.0));
@@ -4641,7 +4642,7 @@ namespace IF97
                     if (2.0*pq < std::min(3.0*xm*qq - fabs(tol*qq), fabs(e*qq))) { e = d; d = pq/qq; }
                     else { d = xm; e = d; }          // Interpolation not good enough, bisect
                 } else { d = xm; e = d; }
-                a = b; fa = fb;
+                a = b; fa = fb; cIsA = false;
                 b += (fabs(d) > tol) ? d : (xm > 0.0 ? tol : -tol);
                 fb = g(b);
             }

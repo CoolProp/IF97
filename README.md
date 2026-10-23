@@ -29,7 +29,7 @@ cmake ..
 cmake --build .
 ```
 
-This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf and other IAPWS documents as noted in the output.  In Region 3, the backwards equations are used, which results in some loss of precision, but it is usually less than 0.001%.  
+This will spit out the values for the computer-program verification, they should agree with the values from http://www.iapws.org/relguide/IF97-Rev.pdf and other IAPWS documents as noted in the output.  In Region 3, iteration of the density is the default.  Defining ``REGION3_NO_ITERATE`` uses the supplemental backward equations directly, with an error on the order of 1E-6 (usually less than 0.001%).  
 
 Accessing IF97 from your software
 ---------------------------------
