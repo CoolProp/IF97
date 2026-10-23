@@ -53,7 +53,7 @@ namespace IF97
     }
 
     // CoolProp-IF97 Version Number
-    static const char IF97VERSION [] = "v2.3.0";
+    static const char IF97VERSION [] = "v2.4.0";
     // Setup Water Constants for Trivial Functions and use in Region Classes
     // Constant values from:
     // Revised Release on the IAPWS Industrial Formulation 1997
@@ -2280,7 +2280,7 @@ namespace IF97
             }
             return summer;
         };
-#ifdef REGION3_ITERATE
+#ifndef REGION3_NO_ITERATE
         //
         // These two extra terms Needed to evaluate Newton-Raphson
         // ****************************************************************************
@@ -2412,7 +2412,7 @@ namespace IF97
             return rho*R*T*delta_dphi_ddelta(T, rho)*(p_fact/1000/R_fact);
         };
 
-#ifdef REGION3_ITERATE
+#ifndef REGION3_NO_ITERATE
         //
         // Newton-Raphson Technique for solving p(T,rho) for rho
         //    Solves to find root of p - rho*R*T*delta*dphi_ddelta = 0
@@ -2562,7 +2562,7 @@ namespace IF97
 
             rho = 1/Region3Backwards::Region3_v_TP(region, T, p);
 
-#ifdef REGION3_ITERATE
+#ifndef REGION3_NO_ITERATE
             // Use previous rho value from algebraic equations 
             //      as an initial guess to solve rhomass iteratively 
             //      with Newton-Raphson
@@ -3878,11 +3878,11 @@ namespace IF97
 
         inline double HsatMargin_s(double s){
             // Enthalpy margin [J/kg] above Hsat_s(s) inside which a state "might be in the dome".
-            // About 1.5 times the worst measured error of each Hsat_s fit piece against the forward
-            // saturation equations (worst cases are all within a few kPa of the critical pressure).
+            // About 1.5 to 2 times the worst measured error of each Hsat_s fit piece against the
+            // forward saturation equations (with iterated Region 3 saturation values).
             if (s <= SfT23)      return 10.0;     // Region 1-4 piece  (worst measured 3.4 J/kg)
-            else if (s <= Scrit) return 150.0;    // Region 3a-4 piece (worst measured 87 J/kg)
-            else if (s <= S2bc)  return 100.0;    // Region 2c3b-4 piece (worst measured 45 J/kg)
+            else if (s <= Scrit) return 10.0;     // Region 3a-4 piece (worst measured 4.4 J/kg)
+            else if (s <= S2bc)  return 15.0;     // Region 2c3b-4 piece (worst measured 7.2 J/kg)
             else                 return 10.0;     // Region 2ab-4 piece (worst measured 1.2 J/kg)
         };
 
@@ -4506,72 +4506,161 @@ namespace IF97
     // Vapor dome (Region 4) below s"(T23min) = SgT23.
     // IAPWS has no backward T(h,s) or p(h,s) equation here, so this is NOT an IAPWS
     // backward equation.  It is an iterative solve against the forward saturation
-    // equations and is roughly 30 to 100 times slower than the IAPWS backward equations.
+    // equations, so it is slower than the IAPWS backward equations (roughly 5 to 10 times for
+    // typical states, and more near the critical point or a saturation edge).
     // Inside the dome h = hL + Q*(hV-hL) and s = sL + Q*(sV-sL).  At a trial pressure, the
     // quality from h (Qh) and from s (Qs) agree only at the correct pressure, so we
     // solve g(ln p) = Qh - Qs = 0.  The root is unique only where 0 <= Qh <= 1 (there g falls
     // monotonically with p), so the search is first confined to the contiguous run of
-    // pressures with 0 <= Qh <= 1 and then bisected.  Returns false if the state is not
-    // in the dome.
+    // pressures with 0 <= Qh <= 1.  The run is found on a table of saturation values at fixed
+    // log-spaced pressures (computed on first use).  If g changes sign between two nodes in the run,
+    // the root is bracketed by them and found with Brent's method.  Otherwise the state is at or
+    // near an end of the run (a saturation edge) or is not in the dome, and the end of the run is
+    // found by bisection first.  Returns false if the state is not in the dome.
+    // NOTE: Do not define REGION3_NO_ITERATE when using this (or p_hsmass, T_hsmass, Q_hsmass, Region_hs).
+    // With it, the saturated liquid and vapor h and s from the algebraic Region 3 v(p,T)
+    // equations are off by up to several kJ/kg within about 1% of Pcrit (and not monotonic),
+    // which is far larger than the quality tolerances used here.
     // ---------------------------------------------------------------------------------
+    // Saturated liquid and vapor h and s at the fixed log-spaced pressures scanned by DomeSolve_HS
+    struct DomeScanTable {
+        enum { N = 96 };                                 // Number of log-spaced scan nodes
+        double lnp[N], hL[N], hV[N], sL[N], sV[N];
+        DomeScanTable(){
+            const double pHi = std::nextafter(Pcrit, Ptrip);   // Largest pressure strictly below Pcrit
+            const double lnPlo = log(Ptrip), lnPhi = log(pHi);
+            for (int i = 0; i < N; i++) {
+                lnp[i] = lnPlo + (lnPhi - lnPlo)*i/(N - 1);
+                // exp(log(x)) can round just outside [Ptrip, pHi], where the saturation functions throw
+                const double pp = std::min(std::max(exp(lnp[i]), Ptrip), pHi), Ts = Tsat97(pp);
+                hL[i] = RegionOutput(IF97_HMASS, Ts, pp, LIQUID); hV[i] = RegionOutput(IF97_HMASS, Ts, pp, VAPOR);
+                sL[i] = RegionOutput(IF97_SMASS, Ts, pp, LIQUID); sV[i] = RegionOutput(IF97_SMASS, Ts, pp, VAPOR);
+            }
+        }
+    };
+
     inline bool DomeSolve_HS(double h, double s, double &p, double &T, double &Q){
-        const double tolQ = 1e-7;                        // Quality tolerance for ends of the run (Q is only resolved to ~3E-8 near Pcrit)
-        const int    NSCAN = 96;                         // Number of log-spaced scan nodes
+        const double tolQ = 1e-8;                        // Quality tolerance for ends of the run (forward Q is good to ~6E-9)
+        const double noiseH = 2e-6*R_fact;               // Noise floor of saturated h [J/kg or kJ/kg] (measured ~1E-4 J/kg near Pcrit)
         const double pHi = std::nextafter(Pcrit, Ptrip);   // Largest pressure strictly below Pcrit
-        const double lnPlo = log(Ptrip), lnPhi = log(pHi);
-        double Qh = 0.0, Qs = 0.0;
-        // g(ln p) = Qh - Qs; also leaves Qh and Qs set for the last pressure evaluated
+        static const DomeScanTable tab;
+        const int N = DomeScanTable::N;
+        double Qh = 0.0, Qs = 0.0, dH = 1.0;
+        auto pressure = [&](double lnp)->double { return std::min(std::max(exp(lnp), Ptrip), pHi); };
+        // Sets Qh and dH = hV - hL for the pressure and returns whether 0 <= Qh <= 1 (cheaper than g)
+        auto inRun = [&](double lnp)->bool {
+            const double pp = pressure(lnp), Ts = Tsat97(pp);
+            const double hL = RegionOutput(IF97_HMASS, Ts, pp, LIQUID), hV = RegionOutput(IF97_HMASS, Ts, pp, VAPOR);
+            dH = hV - hL; Qh = (h - hL)/dH;
+            return (Qh >= 0.0 && Qh <= 1.0);
+        };
+        // g(ln p) = Qh - Qs; also leaves Qh, Qs, and dH set for the last pressure evaluated
         auto g = [&](double lnp)->double {
-            // exp(log(x)) can round just outside [Ptrip, pHi], where the saturation functions throw
-            const double pp = std::min(std::max(exp(lnp), Ptrip), pHi), Ts = Tsat97(pp);
+            const double pp = pressure(lnp), Ts = Tsat97(pp);
             const double hL = RegionOutput(IF97_HMASS, Ts, pp, LIQUID), hV = RegionOutput(IF97_HMASS, Ts, pp, VAPOR);
             const double sL = RegionOutput(IF97_SMASS, Ts, pp, LIQUID), sV = RegionOutput(IF97_SMASS, Ts, pp, VAPOR);
-            Qh = (h - hL)/(hV - hL); Qs = (s - sL)/(sV - sL);
+            dH = hV - hL;
+            Qh = (h - hL)/dH; Qs = (s - sL)/(sV - sL);
             return Qh - Qs;
         };
-        auto node = [&](int i)->double { return lnPlo + (lnPhi - lnPlo)*i/(NSCAN - 1); };
-        auto inRun = [&](double lnp)->bool { g(lnp); return (Qh >= 0.0 && Qh <= 1.0); };
-        // Scan for the contiguous run of nodes where 0 <= Qh <= 1
+        // Quality tolerance at the last pressure evaluated.  hV - hL goes to zero at the critical point, so
+        // the noise in h limits how well Q is resolved there; widen the tolerance to match.
+        auto tolAtLast = [&]()->double { return std::max(tolQ, noiseH/dH); };
+        // Scan the table for the first contiguous run of nodes where 0 <= Qh <= 1
+        double gn[N];
         int first = -1, last = -1;
-        for (int i = 0; i < NSCAN; i++) {
-            if (inRun(node(i))) {
+        for (int i = 0; i < N; i++) {
+            const double qh = (h - tab.hL[i])/(tab.hV[i] - tab.hL[i]), qs = (s - tab.sL[i])/(tab.sV[i] - tab.sL[i]);
+            gn[i] = qh - qs;
+            if (qh >= 0.0 && qh <= 1.0) {
                 if (first < 0) first = i;
                 last = i;
             } else if (first >= 0) break;
         }
         if (first < 0) return false;
-        // Refine each end of the run by bisection, keeping the end on the 0 <= Qh <= 1 side
-        double lnA = node(first), lnB = node(last);
-        if (first > 0) {
-            double out = node(first - 1), in = lnA;
-            for (int k = 0; k < 40; k++) {
-                const double mid = 0.5*(in + out);
-                if (inRun(mid)) in = mid; else out = mid;
+        // Bracket [lnA, lnB] for the root, with g(lnA) = gA and g(lnB) = gB
+        double lnA = tab.lnp[first], lnB = tab.lnp[last], gA = gn[first], gB = gn[last];
+        int pair = -1;
+        for (int i = first; i < last; i++)
+            if (gn[i] > 0.0 && gn[i + 1] <= 0.0) { pair = i; break; }
+        if (pair >= 0) {
+            lnA = tab.lnp[pair]; lnB = tab.lnp[pair + 1]; gA = gn[pair]; gB = gn[pair + 1];
+        } else {
+            // No sign change between nodes: the root, if any, is at the start or the end of the run, which lies
+            // between the first (last) node and its neighbor outside the run.  Refine the end(s) where g
+            // does not already have the sign it needs, by bisection, keeping the end on the 0 <= Qh <= 1 side.
+            if (gA <= 0.0) {
+                if (first > 0) {
+                    double out = tab.lnp[first - 1], in = lnA;
+                    for (int k = 0; k < 40; k++) {
+                        const double mid = 0.5*(in + out);
+                        if (inRun(mid)) in = mid; else out = mid;
+                    }
+                    lnA = in;
+                }
+                // g must fall through zero across the run (within tolerance), otherwise no dome state
+                gA = g(lnA);
+                if (gA < -tolAtLast()) return false;
             }
-            lnA = in;
-        }
-        if (last < NSCAN - 1) {
-            double out = node(last + 1), in = lnB;
-            for (int k = 0; k < 40; k++) {
-                const double mid = 0.5*(in + out);
-                if (inRun(mid)) in = mid; else out = mid;
+            if (gB > 0.0) {
+                if (last < N - 1) {
+                    double out = tab.lnp[last + 1], in = lnB;
+                    for (int k = 0; k < 40; k++) {
+                        const double mid = 0.5*(in + out);
+                        if (inRun(mid)) in = mid; else out = mid;
+                    }
+                    lnB = in;
+                }
+                gB = g(lnB);
+                if (gB > tolAtLast()) return false;
             }
-            lnB = in;
         }
-        // g must fall through zero across the run (within tolerance), otherwise no dome state
-        if (g(lnA) < -tolQ) return false;
-        if (g(lnB) >  tolQ) return false;
-        double lo = lnA, hi = lnB;
-        for (int k = 0; k < 45; k++) {
-            const double mid = 0.5*(lo + hi);
-            if (g(mid) > 0.0) lo = mid; else hi = mid;
+        double x;     // ln p of the root
+        if (gA <= 0.0)      x = lnA;     // Root is at the start of the run, within tolerance
+        else if (gB > 0.0)  x = lnB;     // Root is at the end of the run, within tolerance
+        else {
+            // Brent's method on [lnA, lnB], where gA > 0 >= gB
+            double a = lnA, b = lnB, fa = gA, fb = gB, c = a, fc = fa, d = b - a, e = d;
+            bool cIsA = true;      // True when c has just been set equal to a (only two distinct points)
+            for (int k = 0; k < 100; k++) {
+                if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) { c = a; fc = fa; d = b - a; e = d; cIsA = true; }
+                if (fabs(fc) < fabs(fb)) { a = b; b = c; c = a; fa = fb; fb = fc; fc = fa; cIsA = true; }
+                const double tol = 2e-15*fabs(b) + 1e-14, xm = 0.5*(c - b);
+                if (fabs(xm) <= tol || fb == 0.0) break;
+                if (fabs(e) >= tol && fabs(fa) > fabs(fb)) {
+                    // Try interpolation (secant, or inverse quadratic if three points differ)
+                    double pq, qq;
+                    const double sg = fb/fa;
+                    if (cIsA) { pq = 2.0*xm*sg; qq = 1.0 - sg; }
+                    else {
+                        const double q1 = fa/fc, r1 = fb/fc;
+                        pq = sg*(2.0*xm*q1*(q1 - r1) - (b - a)*(r1 - 1.0));
+                        qq = (q1 - 1.0)*(r1 - 1.0)*(sg - 1.0);
+                    }
+                    if (pq > 0.0) qq = -qq;
+                    pq = fabs(pq);
+                    if (2.0*pq < std::min(3.0*xm*qq - fabs(tol*qq), fabs(e*qq))) { e = d; d = pq/qq; }
+                    else { d = xm; e = d; }          // Interpolation not good enough, bisect
+                } else { d = xm; e = d; }
+                a = b; fa = fb; cIsA = false;
+                b += (fabs(d) > tol) ? d : (xm > 0.0 ? tol : -tol);
+                fb = g(b);
+            }
+            x = b;
         }
-        g(0.5*(lo + hi));
-        if (Qs < -tolQ || Qs > 1.0 + tolQ) return false;
-        p = std::min(std::max(exp(0.5*(lo + hi)), Ptrip), pHi);
+        g(x);
+        const double tolF = tolAtLast();
+        if (Qs < -tolF || Qs > 1.0 + tolF) return false;
+        p = pressure(x);
         T = Tsat97(p);
         Q = std::min(1.0, std::max(0.0, Qh));
         return true;
+    };
+
+    // True if (h,s) might be in the vapor dome below SgT23: within the Hsat_s fit error of the
+    // saturation curve, or below it.  Cheap, so single phase states far from the curve skip the solver.
+    inline bool HS_MaybeDome(double h, double s){
+        return (s >= Smin) && (s < SgT23) && (h >= Hmin(s)) && (h < Backwards::Hsat_s(s) + Backwards::HsatMargin_s(s));
     };
 
     inline double BackwardOutputHS(IF97parameters outkey,double h, double s){
@@ -4600,7 +4689,7 @@ namespace IF97
         // correct single-phase region in the switch.  Either way, BACK_4 never reaches the
         // switch for s < SgT23.
         bool skip4 = false;
-        if ((s >= Smin) && (s < SgT23) && (h >= Hmin(s)) && (h < Backwards::Hsat_s(s) + Backwards::HsatMargin_s(s))) {
+        if (HS_MaybeDome(h, s)) {
             double pd, Td, Qd;
             if (DomeSolve_HS(h, s, pd, Td, Qd))
                 return (outkey == IF97_P) ? pd : Td;
@@ -4796,6 +4885,49 @@ namespace IF97
     };
     inline int Region_ps(double p, double s){
         return BackwardRegion( p, s, IF97_SMASS);
+    };
+    /// Region (1, 2, 3, or 4) as a function of h and s.  Unlike Region_ph(p_hsmass(h,s), h), this is
+    /// consistent with p_hsmass, T_hsmass, and Q_hsmass: a state is Region 4 here exactly when those
+    /// functions treat it as two-phase, including states on a saturation edge, where round-off in
+    /// p_hsmass would otherwise let the (p,h) classifier call them single phase.
+    inline int Region_hs(double h, double s){
+        bool skip4 = false;
+        if (HS_MaybeDome(h, s)) {
+            double pd, Td, Qd;
+            if (DomeSolve_HS(h, s, pd, Td, Qd))
+                return 4;
+            skip4 = true;      // Not in the dome, so ignore the Hsat_s fit's Region 4 test
+        }
+        switch (RegionDetermination_HS(h, s, skip4)) {
+        case BACK_1:  return 1;
+        case BACK_2A:
+        case BACK_2B:
+        case BACK_2C: return 2;
+        case BACK_3A:
+        case BACK_3B: return 3;
+        case BACK_4:  return 4;
+        default:      return 0;
+        }
+    };
+    /// Same as Region_hs(h,s), but when the state is in Region 4 (two-phase) it also returns the
+    /// saturation pressure p, temperature T, and quality Q from the same solve, instead of
+    /// requiring separate calls to p_hsmass, T_hsmass, and Q_hsmass (each of which repeats the
+    /// dome solver for s < SgT23).  p, T, and Q are not modified unless the return value is 4.
+    inline int Region_hs(double h, double s, double &p, double &T, double &Q){
+        if (HS_MaybeDome(h, s)) {
+            double pd, Td, Qd;
+            if (DomeSolve_HS(h, s, pd, Td, Qd)) {
+                p = pd; T = Td; Q = Qd;
+                return 4;
+            }
+        }
+        const int region = Region_hs(h, s);     // repeats the dome solver only if it just failed
+        if (region == 4) {                      // s >= SgT23, where the IAPWS backward equation applies
+            p = BackwardOutputHS(IF97_P, h, s);
+            T = BackwardOutputHS(IF97_T, h, s);
+            Q = Q_pX(p, h, IF97_HMASS);
+        }
+        return region;
     };
     // ******************************************************************************** //
     //                              Trivial Functions                                   //

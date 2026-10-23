@@ -3,17 +3,19 @@
 // table values.  If not set, the default behavior of IF97.h is to use straight SI units
 // with pressure in [Pa] and enthalpy in [J].
 #define IAPWS_UNITS
-// This compiler flag causes the Region 3 v(p,T) function to be iterated to improve
-// accuracy.  If not defined, the Region 3 v(p,T) function will return the direct
-// value from the supplementary release IAPWS SR5-05(2016), which may be in error
-// by up to 1E-6 of the iterative solution in Region 3.
-#define REGION3_ITERATE
+// By default, the Region 3 v(p,T) function is iterated to improve accuracy.  Defining
+// this compiler flag turns the iteration off, so the Region 3 v(p,T) function returns the
+// direct value from the supplementary release IAPWS SR5-05(2016), which may be in error
+// by up to 1E-6 of the iterative solution in Region 3 (and much more in enthalpy near
+// the critical point).
+// #define REGION3_NO_ITERATE
 
 #include "IF97.h"
 #include <iostream>
 #include <stdio.h>
 #include <iomanip>
 #include <chrono>
+#include <limits>
 
 int main() {
 
@@ -158,7 +160,7 @@ int main() {
     cout << "        the critical point and can be as high as 1.5E-2.  However, since the calculated values are actually\n";
     cout << "        using the IF97 iterative solution in region 3, the error is actually the distance from these initial guess\n";
     cout << "        values to the more accurate iterative solution, not the actual error in the formulation.  See NOTE 3 below.\n";
-    cout << "        To see the actual error in this explicit equation, undefine the REGION3_ITERATE flag at the top of this \n";
+    cout << "        To see the actual error in this explicit equation, define the REGION3_NO_ITERATE flag at the top of this \n";
     cout << "        file to turn off the iterative solution and provide just the explicit results from v(p,T).  Doing so will\n";
     cout << "        increase the error in the previous verification table to the order of 1E-6 for points in region 3, but\n";
     cout << "        drop the relative error in this table to on the order of 1E-10.\n\n";
@@ -427,6 +429,58 @@ int main() {
         bool threw = false;
         try { p_hsmass(1e9, 1); } catch (std::exception &) { threw = true; }
         printf("p(h=1E9,s=1) %s (should throw)\n", threw ? "throws" : "DID NOT THROW");
+
+        // Saturation edge and interior states must be Region 4 from Region_hs, and p and Q must round trip.
+        // (Region_ph(p_hsmass(h,s),h) can call an exact edge state single phase because of round-off.)
+        const double Qedge[9] = {0, 1e-6, 1e-3, 0.1, 0.5, 0.9, 0.999, 1 - 1e-6, 1};
+        int nedge = 0, nnot4 = 0, nbad = 0;
+        double wpe = 0, wqe = 0;
+        for (int iq = 0; iq < 9; iq++) {
+            for (double pe = Ptrip*1.0001; pe < 0.9999*Pcrit; pe *= 1.007) {
+                double hL = hliq_p(pe), hV = hvap_p(pe), sL = sliq_p(pe), sV = svap_p(pe);
+                double he = hL + Qedge[iq]*(hV - hL), se = sL + Qedge[iq]*(sV - sL);
+                if (se >= SgT23) continue;
+                nedge++;
+                try {
+                    if (Region_hs(he, se) != 4) nnot4++;
+                    double ep = fabs(p_hsmass(he, se) - pe) / pe, eq = fabs(Q_hsmass(he, se) - Qedge[iq]);
+                    wpe = max(wpe, ep); wqe = max(wqe, eq);
+                    if (ep > 1e-6 || eq > 1e-6) nbad++;
+                } catch (std::exception &) { nbad++; }
+            }
+        }
+        printf("Edge and interior states: %d   Not Region 4: %d   p or Q out of tolerance: %d\n", nedge, nnot4, nbad);
+        printf("Worst errors:  p [rel] %9.3e   Q [abs] %9.3e\n", wpe, wqe);
+        // Single phase states 0.1 K either side of saturation must NOT be Region 4
+        int nout = 0, nin = 0;
+        for (double pe = 0.01; pe < 21.0; pe *= 1.01) {
+            double Tsat = Tsat97(pe);
+            for (int side = 0; side < 2; side++) {
+                double Te = side ? Tsat + 0.1 : Tsat - 0.1, he = hmass_Tp(Te, pe), se = smass_Tp(Te, pe);
+                if (se >= SgT23) continue;
+                nout++;
+                if (Region_hs(he, se) == 4) nin++;
+            }
+        }
+        printf("Single phase states 0.1 K from Tsat: %d   Reported as Region 4: %d (should be 0)\n", nout, nin);
+        // Region_hs(h,s,p,T,Q) must agree with Region_hs(h,s) and with p_hsmass, T_hsmass, and Q_hsmass
+        int nov = 0, novbad = 0;
+        for (int iq = 0; iq < 9; iq++) {
+            for (double pe = Ptrip*1.0001; pe < 0.9999*Pcrit; pe *= 1.05) {
+                double hL = hliq_p(pe), hV = hvap_p(pe), sL = sliq_p(pe), sV = svap_p(pe);
+                double he = hL + Qedge[iq]*(hV - hL), se = sL + Qedge[iq]*(sV - sL);
+                constexpr double unset = std::numeric_limits<double>::quiet_NaN();
+                double po = unset, To = unset, Qo = unset;
+                nov++;
+                try {
+                    int r = Region_hs(he, se, po, To, Qo);
+                    if (r != Region_hs(he, se)) novbad++;
+                    else if (r == 4 && (!std::isfinite(po) || !std::isfinite(To) || !std::isfinite(Qo) || fabs(po - p_hsmass(he, se)) > 1e-12*po || fabs(To - T_hsmass(he, se)) > 1e-12*To || fabs(Qo - Q_hsmass(he, se)) > 1e-12)) novbad++;
+                    else if (r != 4 && (!std::isnan(po) || !std::isnan(To) || !std::isnan(Qo))) novbad++;
+                } catch (std::exception &) { novbad++; }
+            }
+        }
+        printf("Region_hs(h,s,p,T,Q) overload states: %d   Disagreements: %d (should be 0)\n", nov, novbad);
         cout << endl << endl;
     }
     cout << div1;
