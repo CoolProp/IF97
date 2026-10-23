@@ -475,7 +475,7 @@ int main() {
                 try {
                     int r = Region_hs(he, se, po, To, Qo);
                     if (r != Region_hs(he, se)) novbad++;
-                    else if (r == 4 && (fabs(po - p_hsmass(he, se)) > 1e-12*po || fabs(To - T_hsmass(he, se)) > 1e-12*To || fabs(Qo - Q_hsmass(he, se)) > 1e-12)) novbad++;
+                    else if (r == 4 && (!std::isfinite(po) || !std::isfinite(To) || !std::isfinite(Qo) || fabs(po - p_hsmass(he, se)) > 1e-12*po || fabs(To - T_hsmass(he, se)) > 1e-12*To || fabs(Qo - Q_hsmass(he, se)) > 1e-12)) novbad++;
                     else if (r != 4 && (!std::isnan(po) || !std::isnan(To) || !std::isnan(Qo))) novbad++;
                 } catch (std::exception &) { novbad++; }
             }
