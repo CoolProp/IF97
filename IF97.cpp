@@ -469,7 +469,7 @@ int main() {
             for (double pe = Ptrip*1.0001; pe < 0.9999*Pcrit; pe *= 1.05) {
                 double hL = hliq_p(pe), hV = hvap_p(pe), sL = sliq_p(pe), sV = svap_p(pe);
                 double he = hL + Qedge[iq]*(hV - hL), se = sL + Qedge[iq]*(sV - sL);
-                const double unset = std::numeric_limits<double>::quiet_NaN();
+                constexpr double unset = std::numeric_limits<double>::quiet_NaN();
                 double po = unset, To = unset, Qo = unset;
                 nov++;
                 try {
