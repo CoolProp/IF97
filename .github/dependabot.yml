@@ -1,0 +1,18 @@
+version: 2
+
+# Version-update monitoring for the GitHub Actions used in .github/workflows/.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Group minor and patch updates of all action references into one PR
+    groups:
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    open-pull-requests-limit: 5
