@@ -19,11 +19,11 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName",      "CoolProp project"
-            VALUE "FileDescription",  "IF97 Water Properties Library"
+            VALUE "FileDescription",  "IF97 Water Properties Library, @IF97_UNITS_DESCRIPTION@"
             VALUE "FileVersion",      "@VERSION@"
-            VALUE "InternalName",     "IF97"
+            VALUE "InternalName",     "@IF97_PRIME_DLL_NAME@"
             VALUE "LegalCopyright",   "MIT License"
-            VALUE "OriginalFilename", "IF97.dll"
+            VALUE "OriginalFilename", "@IF97_PRIME_DLL_NAME@.dll"
             VALUE "ProductName",      "IF97 Mathcad Prime Add-in"
             VALUE "ProductVersion",   "@VERSION@"
         END
