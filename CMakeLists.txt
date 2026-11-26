@@ -36,6 +36,8 @@ option(IF97_MATHCAD15_MODULE "Build MathCAD 15 wrapper" OFF)
 option(IF97_HEADER_MODULE "Install header file only" OFF)
 option(IF97_CMAKE_MODULE "Install CMake interface library" OFF)
 option(IF97_FLAG "Skip IF97 test executable" OFF)
+option(IF97_IAPWS_UNITS "Build the Mathcad wrapper with IAPWS units ([MPa] and [kJ]) instead of SI units ([Pa] and [J])" OFF)
+set(IF97_PRIME_DLL_NAME "IF97" CACHE STRING "Base name of the Mathcad Prime wrapper DLL (IF97 gives IF97.dll)")
 
 list(APPEND options ${IF97_PRIME_MODULE} ${IF97_MATHCAD15_MODULE} ${IF97_HEADER_MODULE} ${IF97_CMAKE_MODULE} ${IF97_FLAG})
 set(options_count 0)
@@ -114,15 +116,23 @@ if(IF97_PRIME_MODULE)
           message(FATAL_ERROR "[${PROJECT_NAME}] - You must provide the path to MathCAD Prime Root directory using something like -DIF97_PRIME_ROOT=\"C:/Program Files/PTC/Mathcad Prime 11.0.0.0\"")
         endif()
     else()
-        # Mathcad Root directory specified.  Make sure it's a valid Mathcad Prime installation directory
-        find_program(MATHCAD_EXE
-          NAMES MathcadPrime.exe
-          PATHS ${IF97_PRIME_ROOT})
-        if(MATHCAD_EXE)
-          string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" MATHCAD_VERSION "${IF97_PRIME_ROOT}")
-          message(STATUS "[${PROJECT_NAME}] - Linking with Mathcad Prime Library v${MATHCAD_VERSION}\"")
+        # Mathcad Root directory specified.  Make sure it holds what the build needs: the Custom Functions
+        # SDK files (header and import library).  MathcadPrime.exe is not required, so a CI runner that only
+        # has copies of the SDK files in a "Custom Functions" folder works the same as a full Prime install.
+        if(EXISTS "${IF97_PRIME_ROOT}/Custom Functions/mcaduser.lib" AND EXISTS "${IF97_PRIME_ROOT}/Custom Functions/MCADINCL.H")
+          # The version message is informational only, and needs a full Prime install
+          find_program(MATHCAD_EXE
+            NAMES MathcadPrime.exe
+            PATHS ${IF97_PRIME_ROOT}
+            NO_DEFAULT_PATH)
+          if(MATHCAD_EXE)
+            string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" MATHCAD_VERSION "${IF97_PRIME_ROOT}")
+            message(STATUS "[${PROJECT_NAME}] - Linking with Mathcad Prime Library v${MATHCAD_VERSION}\"")
+          else()
+            message(STATUS "[${PROJECT_NAME}] - Linking with Mathcad Prime SDK files found in ${IF97_PRIME_ROOT}/Custom Functions")
+          endif()
         else()
-          message(STATUS "[${PROJECT_NAME}] - Could not find Mathcad Prime at ${IF97_PRIME_ROOT}")
+          message(STATUS "[${PROJECT_NAME}] - Could not find mcaduser.lib and MCADINCL.H in ${IF97_PRIME_ROOT}/Custom Functions")
           message(FATAL_ERROR "[${PROJECT_NAME}] - Check the path to the MathCAD Prime Root directory provided using something like -DIF97_PRIME_ROOT=\"C:/Program Files/PTC/Mathcad Prime 11.0.0.0\"")
         endif()
     endif()
@@ -131,6 +141,11 @@ if(IF97_PRIME_MODULE)
     # is configured from VERSION above and added to the source
     # list only on MSVC and MSYS2(MinGW), where rc.exe is available.
     set(IF97_RESOURCE "")
+    if(IF97_IAPWS_UNITS)
+      set(IF97_UNITS_DESCRIPTION "IAPWS units (MPa, kJ)")
+    else()
+      set(IF97_UNITS_DESCRIPTION "SI units (Pa, J)")
+    endif()
     if(MSVC)
       configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/wrapper/Mathcad/dev/IF97.rc.in"
@@ -147,7 +162,10 @@ if(IF97_PRIME_MODULE)
        ${IF97_RESOURCE})
     target_link_libraries(IF97 "${IF97_PRIME_ROOT}/Custom Functions/mcaduser.lib")
     set_target_properties(IF97 PROPERTIES LINK_FLAGS "/ENTRY:\"DllEntryPoint\"")
-    set_target_properties(IF97 PROPERTIES SUFFIX ".dll" PREFIX "")
+    set_target_properties(IF97 PROPERTIES SUFFIX ".dll" PREFIX "" OUTPUT_NAME "${IF97_PRIME_DLL_NAME}")
+    if(IF97_IAPWS_UNITS)
+      target_compile_definitions(IF97 PRIVATE IAPWS_UNITS)
+    endif()
 #    install(TARGETS IF97 DESTINATION "${IF97_INSTALL_PREFIX}/MathCADPrime")
 #    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/wrappers/MathCAD/if97_validation.mcdx" DESTINATION MathCADPrime)
 endif()
