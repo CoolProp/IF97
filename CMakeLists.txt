@@ -141,6 +141,10 @@ if(IF97_PRIME_MODULE)
     # is configured from VERSION above and added to the source
     # list only on MSVC and MSYS2(MinGW), where rc.exe is available.
     set(IF97_RESOURCE "")
+    # The name goes into the DLL file name and the version resource, so keep it to safe characters
+    if(NOT IF97_PRIME_DLL_NAME MATCHES "^[A-Za-z0-9_.-]+$")
+      message(FATAL_ERROR "[${PROJECT_NAME}] - IF97_PRIME_DLL_NAME must be a non-empty file name base made of letters, digits, underscores, dots, and hyphens (got \"${IF97_PRIME_DLL_NAME}\")")
+    endif()
     if(IF97_IAPWS_UNITS)
       set(IF97_UNITS_DESCRIPTION "IAPWS units (MPa, kJ)")
     else()
